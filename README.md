@@ -26,6 +26,14 @@ poetry install
 poetry run uvicorn main:app --reload
 ```
 
+LiveKit Agent:
+```bash
+cd backend
+export OPENAI_API_KEY=sk-...
+export FISH_API_KEY=...
+python -m fancall.agent.worker dev
+```
+
 자세한 내용: [backend/README.md](backend/README.md)
 
 ### Frontend
