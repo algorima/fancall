@@ -3,8 +3,8 @@
 ## 개발 환경
 
 ```bash
-git clone https://github.com/algorima/trade-safety.git
-cd trade-safety
+git clone https://github.com/algorima/fancall.git
+cd fancall
 
 # Backend
 cd backend
@@ -41,15 +41,15 @@ Conventional Commits 형식: `<type>(<scope>): <한국어 제목>`
 
 ### Scope
 변경 영역을 나타냅니다:
-- 플랫폼: `frontend`, `backend`
-- 비즈니스: `analysis`, `detection`, `translation`
+- 플랫폼: `frontend`, `backend`, `agent`
+- 비즈니스: `room`, `call`, `avatar`
 - 데이터: `db`, `models`, `api`
 - UI: `ui`, `theme`, `i18n`
-- 연동: `openai`, `sentry`
+- 연동: `livekit`, `openai`, `fishaudio`, `hedra`
 - 배포: `docker`, `deploy`, `config`, `workflow`
 - 기타: `deps`, `service`
 
-예시: `feat(frontend): 결과 페이지 헤더 구현`
+예시: `feat(frontend): 통화 화면 UI 구현`
 
 ## 브랜치 네이밍
 

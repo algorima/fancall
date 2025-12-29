@@ -1,4 +1,4 @@
-# Trade Safety 개발 가이드
+# Fancall 개발 가이드
 
 ## 프로젝트 구조
 
