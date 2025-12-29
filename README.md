@@ -10,9 +10,6 @@ AI-powered video call with virtual companions
 - AI 아이돌과 1:1 대화
 - Fish Audio TTS 음성 합성
 - Hedra 아바타 지원 (선택)
-- 자동 녹화 및 공유
-- IP 기반 할당량 (3분/일)
-- Freemium 모델
 
 ---
 
