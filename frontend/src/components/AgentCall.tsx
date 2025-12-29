@@ -220,9 +220,7 @@ export function AgentCall({
             className="btn btn-primary"
           >
             <PaperAirplaneIcon className="size-5" />
-            {isSending
-              ? t("agentCall.chat.sending")
-              : t("agentCall.chat.send")}
+            {isSending ? t("agentCall.chat.sending") : t("agentCall.chat.send")}
           </button>
         </form>
       </div>
