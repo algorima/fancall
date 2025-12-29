@@ -55,14 +55,14 @@ python -m fancall.agent.worker connect --room <room-name>
 
 ```python
 from fancall.api.router import create_fancall_router
-from fancall.factories import LiveRoomManagerFactory
+from fancall.factories import LiveRoomRepositoryFactory
 from fancall.settings import LiveKitSettings
 
 router = create_fancall_router(
     livekit_settings=LiveKitSettings(),
     jwt_settings=jwt_settings,
     db_session_factory=db_session_factory,
-    manager_factory=LiveRoomManagerFactory(db_session_factory),
+    repository_factory=LiveRoomRepositoryFactory(db_session_factory),
 )
 app.include_router(router, prefix="/api")
 ```
