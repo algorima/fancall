@@ -11,6 +11,13 @@ AI-powered video call with virtual companions
 
 ## 빠른 시작
 
+### LiveKit 서버
+
+```bash
+brew install livekit
+livekit-server --dev
+```
+
 ### Backend
 
 ```bash
