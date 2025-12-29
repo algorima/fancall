@@ -18,7 +18,6 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, "src/index.ts"),
-        locale: resolve(__dirname, "src/i18n/translations.ts"),
       },
       formats: ["es", "cjs"],
       fileName: (format, entryName) =>
@@ -45,9 +44,8 @@ export default defineConfig({
       include: [
         "src/components/**/*",
         "src/repositories/**/*",
-        "src/types.ts",
+        "src/schemas.ts",
         "src/index.ts",
-        "src/i18n/translations.ts",
       ],
       exclude: [
         "src/app",
