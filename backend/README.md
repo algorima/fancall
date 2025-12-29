@@ -16,6 +16,15 @@ cd backend
 poetry install
 ```
 
+## LiveKit 서버 (로컬)
+
+```bash
+brew install livekit
+livekit-server --dev
+```
+
+서버: `ws://localhost:7880` (API Key: `devkey`, Secret: `secret`)
+
 ## 사용법
 
 ### FastAPI 통합
@@ -42,6 +51,9 @@ python -m fancall.agent.worker dev
 
 # 프로덕션 모드
 python -m fancall.agent.worker start
+
+# 특정 룸 연결
+python -m fancall.agent.worker connect --room <room-name>
 ```
 
 ## 개발

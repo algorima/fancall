@@ -2,16 +2,12 @@
 
 AI-powered video call with virtual companions
 
----
-
 ## 주요 기능
 
 - LiveKit 기반 실시간 음성/영상 통화
 - AI 아이돌과 1:1 대화
 - Fish Audio TTS 음성 합성
 - Hedra 아바타 지원 (선택)
-
----
 
 ## 빠른 시작
 
@@ -20,42 +16,10 @@ AI-powered video call with virtual companions
 ```bash
 cd backend
 poetry install
-export LIVEKIT_URL=ws://localhost:7880
-export LIVEKIT_API_KEY=devkey
-export LIVEKIT_API_SECRET=secret
-export DATABASE_URL=sqlite:///./fancall.db
 poetry run uvicorn main:app --reload
 ```
 
-API 문서:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-### LiveKit 서버 (로컬)
-
-```bash
-brew install livekit
-livekit-server --dev
-```
-
-서버: `ws://localhost:7880` (API Key: `devkey`, Secret: `secret`)
-
-### LiveKit Agent
-
-```bash
-cd backend
-export OPENAI_API_KEY=sk-...
-export FISH_API_KEY=...
-
-# 개발 모드
-python -m fancall.agent.worker dev
-
-# 프로덕션 모드
-python -m fancall.agent.worker start
-
-# 특정 룸 연결
-python -m fancall.agent.worker connect --room <room-name>
-```
+자세한 내용: [backend/README.md](backend/README.md)
 
 ### Frontend
 
@@ -65,43 +29,18 @@ npm install
 npm run dev
 ```
 
-접속: http://localhost:3000
+자세한 내용: [frontend/README.md](frontend/README.md)
 
----
+## 라이브러리 통합
 
-## 라이브러리 사용
-
-기존 프로젝트에 통합하려면 [통합 가이드](docs/integration-guide.md)를 참조하세요.
-
----
-
-## 프로젝트 구조
-
-```
-backend/
-├── fancall/       # 라이브러리
-│   ├── api/       # FastAPI router
-│   ├── agent/     # LiveKit agent worker
-│   └── services/  # LiveKit service
-└── main.py        # Standalone 앱
-
-frontend/
-├── src/
-│   ├── components/    # React components
-│   ├── repositories/  # API clients
-│   └── schemas.ts     # TypeScript schemas
-└── index.ts       # Library exports
-```
-
----
+기존 프로젝트에 통합: [docs/integration-guide.md](docs/integration-guide.md)
 
 ## 문서
 
+- [Backend](backend/README.md) - Python 패키지
+- [Frontend](frontend/README.md) - React 컴포넌트
 - [통합 가이드](docs/integration-guide.md)
 - [기여 가이드](CONTRIBUTING.md)
-- [개발 원칙](CLAUDE.md)
-
----
 
 ## 라이선스
 
