@@ -11,6 +11,13 @@ AI-powered video call with virtual companions
 
 ## 빠른 시작
 
+### LiveKit 서버
+
+```bash
+brew install livekit
+livekit-server --dev
+```
+
 ### Backend
 
 ```bash
@@ -19,7 +26,7 @@ poetry install
 poetry run uvicorn main:app --reload
 ```
 
-LiveKit 서버/Agent 설정: [backend/README.md](backend/README.md)
+자세한 내용: [backend/README.md](backend/README.md)
 
 ### Frontend
 
