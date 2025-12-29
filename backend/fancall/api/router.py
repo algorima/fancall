@@ -2,8 +2,6 @@
 Fancall API router
 """
 
-# pylint: disable=duplicate-code
-
 import uuid
 
 from aioia_core.auth import UserInfoProvider
