@@ -1,5 +1,5 @@
 """
-Fancall managers
+Fancall repositories
 """
 
 from __future__ import annotations
@@ -24,14 +24,14 @@ def _convert_live_room_to_db_model(live_room: LiveRoomCreate) -> dict:
     return live_room.model_dump(exclude_unset=True)
 
 
-class DatabaseLiveRoomManager(
+class DatabaseLiveRoomRepository(
     BaseManager[LiveRoom, DBLiveRoom, LiveRoomCreate, LiveRoomUpdate]
 ):
-    """Database implementation of LiveRoomManager"""
+    """Database implementation of LiveRoomRepository"""
 
     def __init__(self, db_session: Session):
         """
-        Initialize DatabaseLiveRoomManager.
+        Initialize DatabaseLiveRoomRepository.
 
         Args:
             db_session: SQLAlchemy session

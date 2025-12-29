@@ -16,8 +16,8 @@ from aioia_core.settings import JWTSettings
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import sessionmaker
 
-from fancall.factories import LiveRoomManagerFactory
-from fancall.managers import DatabaseLiveRoomManager
+from fancall.factories import LiveRoomRepositoryFactory
+from fancall.repositories.live_room_repository import DatabaseLiveRoomRepository
 from fancall.schemas import (
     AgentDispatchRequest,
     DispatchResponse,
@@ -31,7 +31,7 @@ from fancall.settings import LiveKitSettings
 
 
 class LiveRoomRouter(
-    BaseCrudRouter[LiveRoom, LiveRoomCreate, LiveRoomUpdate, DatabaseLiveRoomManager]
+    BaseCrudRouter[LiveRoom, LiveRoomCreate, LiveRoomUpdate, DatabaseLiveRoomRepository]
 ):
     """Router for LiveRoom with LiveKit integration"""
 
@@ -83,10 +83,10 @@ class LiveRoomRouter(
             room_id: str,
             user_id: str | None = Depends(self.get_current_user_id_dep),
             db_session=Depends(self.get_db_dep),
-            manager: DatabaseLiveRoomManager = Depends(self.get_manager_dep),
+            repository: DatabaseLiveRoomRepository = Depends(self.get_manager_dep),
         ):
             # Verify room exists
-            live_room = manager.get_by_id(room_id)
+            live_room = repository.get_by_id(room_id)
             if not live_room:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -163,10 +163,10 @@ class LiveRoomRouter(
         async def dispatch_agent(
             room_id: str,
             request: AgentDispatchRequest,
-            manager: DatabaseLiveRoomManager = Depends(self.get_manager_dep),
+            repository: DatabaseLiveRoomRepository = Depends(self.get_manager_dep),
         ):
             # Verify room exists
-            live_room = manager.get_by_id(room_id)
+            live_room = repository.get_by_id(room_id)
             if not live_room:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -199,7 +199,7 @@ def create_fancall_router(
     livekit_settings: LiveKitSettings,
     jwt_settings: JWTSettings,
     db_session_factory: sessionmaker,
-    manager_factory: LiveRoomManagerFactory,
+    repository_factory: LiveRoomRepositoryFactory,
     user_info_provider: UserInfoProvider | None = None,
     resource_name: str = "live-rooms",
     tags: list[str] | None = None,
@@ -211,7 +211,7 @@ def create_fancall_router(
         livekit_settings: LiveKit settings
         jwt_settings: JWT settings for authentication
         db_session_factory: Database session factory
-        manager_factory: LiveRoom manager factory
+        repository_factory: LiveRoom repository factory
         user_info_provider: Optional user info provider
         resource_name: Resource name for routes (default: "live-rooms")
         tags: Optional OpenAPI tags
@@ -225,7 +225,7 @@ def create_fancall_router(
         create_schema=LiveRoomCreate,
         update_schema=LiveRoomUpdate,
         db_session_factory=db_session_factory,
-        manager_factory=manager_factory,
+        manager_factory=repository_factory,
         user_info_provider=user_info_provider,
         jwt_secret_key=jwt_settings.secret_key,
         resource_name=resource_name,
