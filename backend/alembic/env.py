@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import configure_mappers
 
 from alembic import context  # pylint: disable=no-name-in-module
-from trade_safety.models import (
-    DBTradeSafetyCheck,  # Import models to register with Base
+from fancall.models import (
+    DBLiveRoom,  # Import models to register with Base
 )
 
 database_settings = DatabaseSettings()

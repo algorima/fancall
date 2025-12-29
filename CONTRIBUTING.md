@@ -66,7 +66,7 @@ Conventional Commits 형식: `<type>(<scope>): <한국어 제목>`
 - 최대한 명사 사용
 - 단어 구분: - 로 가독성 향상
 
-예시: feat/URL-fetch, refactor/output-language, fix/i18n-config
+예시: feat/agent-dispatch, refactor/room-manager, fix/livekit-token
 
 
 
