@@ -14,7 +14,12 @@ AI 아이돌과 실시간 영상 통화 Python 패키지
 ```bash
 cd backend
 poetry install
+poetry run uvicorn main:app --reload
 ```
+
+API 문서:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
 ## LiveKit 서버 (로컬)
 
@@ -43,9 +48,13 @@ router = create_fancall_router(
 app.include_router(router, prefix="/api")
 ```
 
-### LiveKit Agent 실행
+### LiveKit Agent
 
 ```bash
+cd backend
+export OPENAI_API_KEY=sk-...
+export FISH_API_KEY=...
+
 # 개발 모드
 python -m fancall.agent.worker dev
 
