@@ -35,7 +35,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from fancall.api.router import create_fancall_router
-from fancall.factories import LiveRoomManagerFactory
+from fancall.factories import LiveRoomRepositoryFactory
 from fancall.settings import LiveKitSettings
 
 # Configure logging
@@ -164,7 +164,7 @@ fancall_router = create_fancall_router(
     livekit_settings=livekit_settings,
     jwt_settings=jwt_settings,
     db_session_factory=db_session_factory,
-    manager_factory=LiveRoomManagerFactory(db_session_factory),
+    repository_factory=LiveRoomRepositoryFactory(db_session_factory),
     user_info_provider=None,  # Standalone mode: no user authentication
 )
 app.include_router(fancall_router)

@@ -18,17 +18,17 @@ pip install git+https://github.com/algorima/fancall.git#subdirectory=backend
 
 ```python
 from fancall.api.router import create_fancall_router
-from fancall.factories import LiveRoomManagerFactory
+from fancall.factories import LiveRoomRepositoryFactory
 from fancall.settings import LiveKitSettings
 
 livekit_settings = LiveKitSettings()
-manager_factory = LiveRoomManagerFactory(db_session_factory)
+repository_factory = LiveRoomRepositoryFactory(db_session_factory)
 
 router = create_fancall_router(
     livekit_settings=livekit_settings,
     jwt_settings=jwt_settings,
     db_session_factory=db_session_factory,
-    manager_factory=manager_factory,
+    repository_factory=repository_factory,
     user_info_provider=user_info_provider,
 )
 app.include_router(router, prefix="/api")
