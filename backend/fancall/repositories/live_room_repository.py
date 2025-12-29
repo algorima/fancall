@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from aioia_core.managers import BaseManager
+from aioia_core.repositories import BaseRepository
 from sqlalchemy.orm import Session
 
 from fancall.models import DBLiveRoom
@@ -25,7 +25,7 @@ def _convert_live_room_to_db_model(live_room: LiveRoomCreate) -> dict:
 
 
 class DatabaseLiveRoomRepository(
-    BaseManager[LiveRoom, DBLiveRoom, LiveRoomCreate, LiveRoomUpdate]
+    BaseRepository[LiveRoom, DBLiveRoom, LiveRoomCreate, LiveRoomUpdate]
 ):
     """Database implementation of LiveRoomRepository"""
 

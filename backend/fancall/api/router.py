@@ -83,7 +83,7 @@ class LiveRoomRouter(
             room_id: str,
             user_id: str | None = Depends(self.get_current_user_id_dep),
             db_session=Depends(self.get_db_dep),
-            repository: DatabaseLiveRoomRepository = Depends(self.get_manager_dep),
+            repository: DatabaseLiveRoomRepository = Depends(self.get_repository_dep),
         ):
             # Verify room exists
             live_room = repository.get_by_id(room_id)
@@ -163,7 +163,7 @@ class LiveRoomRouter(
         async def dispatch_agent(
             room_id: str,
             request: AgentDispatchRequest,
-            repository: DatabaseLiveRoomRepository = Depends(self.get_manager_dep),
+            repository: DatabaseLiveRoomRepository = Depends(self.get_repository_dep),
         ):
             # Verify room exists
             live_room = repository.get_by_id(room_id)
@@ -225,7 +225,7 @@ def create_fancall_router(
         create_schema=LiveRoomCreate,
         update_schema=LiveRoomUpdate,
         db_session_factory=db_session_factory,
-        manager_factory=repository_factory,
+        repository_factory=repository_factory,
         user_info_provider=user_info_provider,
         jwt_secret_key=jwt_settings.secret_key,
         resource_name=resource_name,
