@@ -31,13 +31,30 @@ API 문서:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
+### LiveKit 서버 (로컬)
+
+```bash
+brew install livekit
+livekit-server --dev
+```
+
+서버: `ws://localhost:7880` (API Key: `devkey`, Secret: `secret`)
+
 ### LiveKit Agent
 
 ```bash
 cd backend
 export OPENAI_API_KEY=sk-...
 export FISH_API_KEY=...
+
+# 개발 모드
 python -m fancall.agent.worker dev
+
+# 프로덕션 모드
+python -m fancall.agent.worker start
+
+# 특정 룸 연결
+python -m fancall.agent.worker connect --room <room-name>
 ```
 
 ### Frontend
