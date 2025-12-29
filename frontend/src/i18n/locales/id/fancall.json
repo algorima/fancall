@@ -1,0 +1,28 @@
+{
+  "agentCall": {
+    "state": {
+      "connecting": "Menghubungkan...",
+      "listening": "Mendengarkan...",
+      "thinking": "Berpikir...",
+      "speaking": "Berbicara...",
+      "disconnected": "Terputus"
+    },
+    "chat": {
+      "placeholder": "Ketik pesan...",
+      "connecting": "Menghubungkan...",
+      "waitingForAgent": "Menunggu agen...",
+      "send": "Kirim",
+      "sending": "Mengirim..."
+    },
+    "audioPermission": {
+      "title": "Izin Pemutaran Audio Diperlukan",
+      "description": "Silakan izinkan pemutaran audio untuk berkomunikasi dengan pendamping Anda.",
+      "button": "Aktifkan Audio"
+    }
+  },
+  "liveRoomEntry": {
+    "loginRequired": "Silakan masuk untuk memulai ruang langsung.",
+    "failedToConnect": "Gagal terhubung ke ruang langsung.",
+    "failedToLoadLiveRoom": "Gagal memuat ruang langsung."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "agentCall": {
+    "state": {
+      "connecting": "Đang kết nối...",
+      "listening": "Đang nghe...",
+      "thinking": "Đang suy nghĩ...",
+      "speaking": "Đang nói...",
+      "disconnected": "Đã ngắt kết nối"
+    },
+    "chat": {
+      "placeholder": "Nhập tin nhắn...",
+      "connecting": "Đang kết nối...",
+      "waitingForAgent": "Đang chờ agent...",
+      "send": "Gửi",
+      "sending": "Đang gửi..."
+    },
+    "audioPermission": {
+      "title": "Cần quyền phát âm thanh",
+      "description": "Vui lòng cho phép phát âm thanh để giao tiếp với Companion của bạn.",
+      "button": "Bật âm thanh"
+    }
+  },
+  "liveRoomEntry": {
+    "loginRequired": "Vui lòng đăng nhập để bắt đầu phòng live.",
+    "failedToConnect": "Không thể kết nối phòng live.",
+    "failedToLoadLiveRoom": "Không thể tải phòng live."
+  }
+}

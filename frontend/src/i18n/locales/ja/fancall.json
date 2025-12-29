@@ -1,0 +1,28 @@
+{
+  "agentCall": {
+    "state": {
+      "connecting": "接続中...",
+      "listening": "聞いています...",
+      "thinking": "考え中...",
+      "speaking": "話しています...",
+      "disconnected": "接続解除"
+    },
+    "chat": {
+      "placeholder": "メッセージを入力してください...",
+      "connecting": "接続中...",
+      "waitingForAgent": "エージェントを待っています...",
+      "send": "送信",
+      "sending": "送信中..."
+    },
+    "audioPermission": {
+      "title": "オーディオ再生許可が必要です",
+      "description": "コンパニオンとの会話を行うためにオーディオ再生を許可してください。",
+      "button": "オーディオを有効にする"
+    }
+  },
+  "liveRoomEntry": {
+    "loginRequired": "ライブルームを開始するにはログインしてください。",
+    "failedToConnect": "ライブルームへの接続に失敗しました。",
+    "failedToLoadLiveRoom": "ライブルームの読み込みに失敗しました。"
+  }
+}

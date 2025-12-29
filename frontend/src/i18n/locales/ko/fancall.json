@@ -1,0 +1,28 @@
+{
+  "agentCall": {
+    "state": {
+      "connecting": "연결 중...",
+      "listening": "듣는 중...",
+      "thinking": "생각하는 중...",
+      "speaking": "말하는 중...",
+      "disconnected": "연결 끊김"
+    },
+    "chat": {
+      "placeholder": "메시지를 입력하세요...",
+      "connecting": "연결 중...",
+      "waitingForAgent": "에이전트를 기다리는 중...",
+      "send": "전송",
+      "sending": "전송 중..."
+    },
+    "audioPermission": {
+      "title": "오디오 재생 권한 필요",
+      "description": "컴패니언과의 대화를 위해 오디오 재생을 허용해 주세요.",
+      "button": "오디오 활성화"
+    }
+  },
+  "liveRoomEntry": {
+    "loginRequired": "라이브룸을 시작하려면 로그인하세요.",
+    "failedToConnect": "라이브룸 연결에 실패했습니다.",
+    "failedToLoadLiveRoom": "라이브룸을 불러오지 못했습니다."
+  }
+}

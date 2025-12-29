@@ -1,0 +1,28 @@
+{
+  "agentCall": {
+    "state": {
+      "connecting": "Kumokonekta...",
+      "listening": "Nakikinig...",
+      "thinking": "Nag-iisip...",
+      "speaking": "Nagsasalita...",
+      "disconnected": "Nadiskonekta"
+    },
+    "chat": {
+      "placeholder": "Mag-type ng message...",
+      "connecting": "Kumokonekta...",
+      "waitingForAgent": "Naghihintay ng agent...",
+      "send": "Ipadala",
+      "sending": "Ipinapadala..."
+    },
+    "audioPermission": {
+      "title": "Kailangan ng Audio Playback Permission",
+      "description": "Payagan ang audio playback para makipag-usap sa iyong companion.",
+      "button": "I-enable ang Audio"
+    }
+  },
+  "liveRoomEntry": {
+    "loginRequired": "Mag-login para magsimula ng live room.",
+    "failedToConnect": "Hindi nakakonekta sa live room.",
+    "failedToLoadLiveRoom": "Hindi na-load ang live room."
+  }
+}

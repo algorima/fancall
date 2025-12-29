@@ -16,6 +16,8 @@ import Image from "next/image";
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
+import { FANCALL_NS } from "@/i18n/translations";
+
 interface AgentCallProps {
   profilePictureUrl?: string | null;
   displayName: string;
@@ -32,7 +34,7 @@ export function AgentCall({
   biography,
 }: AgentCallProps) {
   const { state, audioTrack, agent } = useVoiceAssistant();
-  const { t } = useTranslation();
+  const { t } = useTranslation(FANCALL_NS);
   const tracks = useTracks();
   const room = useRoomContext();
   const [message, setMessage] = useState("");
@@ -109,17 +111,17 @@ export function AgentCall({
           <div className="mx-4 max-w-md rounded-2xl bg-base-100 p-6 text-center shadow-2xl">
             <SpeakerWaveIcon className="mx-auto mb-4 size-12 text-warning" />
             <h3 className="mb-2 text-lg font-semibold text-base-content">
-              {t("component.liveRoom.audioPermission.title")}
+              {t("agentCall.audioPermission.title")}
             </h3>
             <p className="mb-4 text-sm text-neutral-content">
-              {t("component.liveRoom.audioPermission.description")}
+              {t("agentCall.audioPermission.description")}
             </p>
             <button
               onClick={handleStartAudio}
               className="btn btn-primary btn-block"
             >
               <SpeakerWaveIcon className="size-5" />
-              {t("component.liveRoom.audioPermission.button")}
+              {t("agentCall.audioPermission.button")}
             </button>
           </div>
         </div>
@@ -182,12 +184,11 @@ export function AgentCall({
               "text-neutral-content",
           )}
         >
-          {state === "connecting" && t("component.liveRoom.state.connecting")}
-          {state === "listening" && t("component.liveRoom.state.listening")}
-          {state === "thinking" && t("component.liveRoom.state.thinking")}
-          {state === "speaking" && t("component.liveRoom.state.speaking")}
-          {state === "disconnected" &&
-            t("component.liveRoom.state.disconnected")}
+          {state === "connecting" && t("agentCall.state.connecting")}
+          {state === "listening" && t("agentCall.state.listening")}
+          {state === "thinking" && t("agentCall.state.thinking")}
+          {state === "speaking" && t("agentCall.state.speaking")}
+          {state === "disconnected" && t("agentCall.state.disconnected")}
         </div>
       </div>
 
@@ -204,10 +205,10 @@ export function AgentCall({
             disabled={!isConnected || !isAgentAvailable || isSending}
             placeholder={
               !isConnected
-                ? t("component.liveRoom.chat.connecting")
+                ? t("agentCall.chat.connecting")
                 : !isAgentAvailable
-                  ? t("component.liveRoom.chat.waitingForAgent")
-                  : t("component.liveRoom.chat.placeholder")
+                  ? t("agentCall.chat.waitingForAgent")
+                  : t("agentCall.chat.placeholder")
             }
             className="input input-bordered flex-1 focus:input-primary disabled:cursor-not-allowed disabled:opacity-50"
           />
@@ -220,8 +221,8 @@ export function AgentCall({
           >
             <PaperAirplaneIcon className="size-5" />
             {isSending
-              ? t("component.liveRoom.chat.sending")
-              : t("component.liveRoom.chat.send")}
+              ? t("agentCall.chat.sending")
+              : t("agentCall.chat.send")}
           </button>
         </form>
       </div>
