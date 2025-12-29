@@ -5,32 +5,13 @@ Fancall Pydantic schemas
 from datetime import datetime
 
 from humps import camelize
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
+
+from fancall.persona import AgentPersona
 
 
-class AgentDispatchRequest(BaseModel):
-    """Type-safe specification for LiveKit agent dispatch."""
-
-    model_config = ConfigDict(
-        alias_generator=camelize, populate_by_name=True, extra="ignore"
-    )
-
-    avatar_id: str | None = Field(
-        default=None, description="Hedra avatar ID for visual representation"
-    )
-    profile_picture_url: str | None = Field(
-        default=None, description="Profile picture URL for avatar generation"
-    )
-    idle_video_url: str | None = Field(
-        default=None, description="Video to display during idle periods"
-    )
-    voice_id: str | None = Field(
-        default=None, description="Fish Audio voice ID for TTS"
-    )
-    system_prompt: str | None = Field(
-        default=None,
-        description="Custom system prompt for the agent",
-    )
+class AgentDispatchRequest(AgentPersona):
+    """API dispatch 요청 스키마. AgentPersona를 상속하여 확장 가능."""
 
 
 # LiveRoom schemas
