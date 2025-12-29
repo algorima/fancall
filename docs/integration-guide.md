@@ -94,7 +94,7 @@ Object.entries(fancallTranslations).forEach(([lang, resources]) => {
 });
 ```
 
-지원 언어: `en`, `ko`, `ja`, `zh`, `es`, `id`
+지원 언어: `en`, `es`, `id`, `ja`, `ko`, `th`, `tl`, `vi`, `zh`
 
 ---
 

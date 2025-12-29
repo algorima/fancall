@@ -71,7 +71,7 @@
 
 ## 다국어
 
-- 모든 언어 동시 추가 (en, ko, ja, zh, es, id)
+- 모든 언어 동시 추가 (en, es, id, ja, ko, th, tl, vi, zh)
 
 ## Pull Request 작성 가이드
 
