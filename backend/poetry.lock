@@ -1238,6 +1238,7 @@ livekit = ">=1.0.12,<2"
 livekit-api = ">=1.0.5,<2"
 livekit-blingfire = ">=1.0,<2.0"
 livekit-plugins-fishaudio = {version = ">=1.2.17", optional = true, markers = "python_version >= \"3.10\" and extra == \"fishaudio\""}
+livekit-plugins-hedra = {version = ">=1.2.18", optional = true, markers = "extra == \"hedra\""}
 livekit-plugins-openai = {version = ">=1.2.18", optional = true, markers = "extra == \"openai\""}
 livekit-protocol = ">=1.0,<2.0"
 nest-asyncio = ">=1.6.0"
@@ -1373,6 +1374,21 @@ files = [
 [package.dependencies]
 fish-audio-sdk = {version = "*", markers = "python_version >= \"3.10\""}
 livekit-agents = {version = ">=1.2.18", extras = ["codecs"]}
+
+[[package]]
+name = "livekit-plugins-hedra"
+version = "1.2.18"
+description = "Agent Framework plugin for Hedra Avatar"
+optional = false
+python-versions = ">=3.9.0"
+groups = ["main"]
+files = [
+    {file = "livekit_plugins_hedra-1.2.18-py3-none-any.whl", hash = "sha256:3fe8c04c7c3ebb8a18c99f1d19d45b4cb4d90ec8d6b8c075134095a64032962e"},
+    {file = "livekit_plugins_hedra-1.2.18.tar.gz", hash = "sha256:e22a6cdb4caed0d27c90dc48b9720c2d106d1d142807c7beb70d812ea135e687"},
+]
+
+[package.dependencies]
+livekit-agents = ">=1.2.18"
 
 [[package]]
 name = "livekit-plugins-openai"
@@ -2909,6 +2925,22 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
+name = "sqlalchemy-mixins"
+version = "2.0.5"
+description = "Active Record, Django-like queries, nested eager load and beauty __repr__ for SQLAlchemy"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "sqlalchemy_mixins-2.0.5-py3-none-any.whl", hash = "sha256:9067b630744741b472aa91d92494cc5612ed2d29c66729a5a4a1d3fbbeccd448"},
+    {file = "sqlalchemy_mixins-2.0.5.tar.gz", hash = "sha256:85197fc3682c4bf9c35671fb3d10282a0973b19cd2ff2b6791d601cbfb0fb89e"},
+]
+
+[package.dependencies]
+six = "*"
+SQLAlchemy = ">=2.0"
+
+[[package]]
 name = "starlette"
 version = "0.44.0"
 description = "The little ASGI library that shines."
@@ -3422,4 +3454,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "7c662e80acf8b4fa9264999b028dde4e1f6d27d76750079220163c7d116d4dd5"
+content-hash = "99a58d1f7c1396b930f0b6db5b0100c3524f908e9d4d1a63f0323b1267a2033a"

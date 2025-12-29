@@ -18,7 +18,8 @@ alembic = "^1.13.0"
 psycopg2-binary = "^2.9.0"
 python-dotenv = "^1.0.0"
 livekit-api = "^1.0.0"
-livekit-agents = {extras = ["openai", "fishaudio"], version = "^1.0.0"}
+livekit-agents = {extras = ["openai", "fishaudio", "hedra"], version = "^1.0.0"}
+sqlalchemy-mixins = "^2.0.0"
 httpx = "^0.27.0"
 pillow = "^10.0.0"
 pyhumps = "^3.8.0"
