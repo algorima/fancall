@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@/styles/globals.css";
 
 export const metadata: Metadata = {
   title: "Fancall - AI-powered Video Call",
@@ -10,9 +11,5 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
+  return children;
 }
