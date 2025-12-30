@@ -7,6 +7,7 @@ import uuid
 from aioia_core.auth import UserInfoProvider
 from aioia_core.errors import (
     INTERNAL_SERVER_ERROR,
+    RESOURCE_CREATION_FAILED,
     RESOURCE_NOT_FOUND,
     UNAUTHORIZED,
     ErrorResponse,
@@ -14,6 +15,7 @@ from aioia_core.errors import (
 from aioia_core.fastapi import BaseCrudRouter
 from aioia_core.settings import JWTSettings
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import sessionmaker
 
 from fancall.factories import LiveRoomRepositoryFactory
@@ -44,27 +46,42 @@ class LiveRoomRouter(
         self.livekit_settings = livekit_settings
 
     def _register_routes(self) -> None:
-        """Register routes, allowing authenticated users to create rooms"""
-
-        def require_authenticated_user(
-            user_id: str | None = Depends(self.get_current_user_id_dep),
-        ) -> str:
-            """Require authenticated user for create operation."""
-            if not user_id:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail={
-                        "detail": "Authentication required to create a live room",
-                        "code": UNAUTHORIZED,
-                    },
-                )
-            return user_id
-
-        # Use base class's create route with authenticated user requirement
-        super()._register_create_route(auth_dependency=require_authenticated_user)
-
+        """Register routes for LiveRoom CRUD and LiveKit integration"""
+        self._register_public_create_route()  # POST /live-rooms (public)
         self._register_token_route()  # POST /live-rooms/{id}/token
         self._register_dispatch_route()  # POST /live-rooms/{id}/dispatch
+
+    def _register_public_create_route(self) -> None:
+        """POST /live-rooms - Public endpoint for creating live rooms"""
+
+        # Response model for single item
+        class SingleItemResponseModel(BaseModel):
+            data: LiveRoom
+
+        @self.router.post(
+            f"/{self.resource_name}",
+            response_model=SingleItemResponseModel,
+            status_code=status.HTTP_201_CREATED,
+            summary="Create Live Room",
+            description="Create a new live room. Available to all users (authenticated or anonymous).",
+            responses={
+                201: {"description": "Live room created successfully"},
+                500: {"model": ErrorResponse, "description": "Internal server error"},
+            },
+        )
+        async def create_room(
+            repository: DatabaseLiveRoomRepository = Depends(self.get_repository_dep),
+        ):
+            created_room = repository.create(LiveRoomCreate())
+            if not created_room:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "detail": "Failed to create live room",
+                        "code": RESOURCE_CREATION_FAILED,
+                    },
+                )
+            return SingleItemResponseModel(data=created_room)
 
     def _register_token_route(self) -> None:
         """POST /live-rooms/{id}/token - Generate user access token"""
