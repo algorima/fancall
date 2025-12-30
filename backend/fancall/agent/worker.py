@@ -12,6 +12,7 @@ import io
 import logging
 import os
 import re
+from functools import partial
 
 import httpx
 from livekit import agents
@@ -209,6 +210,8 @@ def create_worker_options(
     """
     Create WorkerOptions for the agent with dependency injection.
 
+    Uses functools.partial for pickle-safe DI (required by multiprocessing).
+
     Args:
         default_persona: Default persona for agent configuration
         settings: LiveKit settings with API credentials
@@ -216,13 +219,12 @@ def create_worker_options(
     Returns:
         WorkerOptions configured with the agent entrypoint
     """
-
-    async def entrypoint_with_deps(ctx: JobContext) -> None:
-        """Wrapper to inject dependencies into entrypoint."""
-        await entrypoint(ctx, default_persona, settings)
-
     return WorkerOptions(
-        entrypoint_fnc=entrypoint_with_deps,
+        entrypoint_fnc=partial(
+            entrypoint,
+            default_persona=default_persona,
+            settings=settings,
+        ),
         worker_type=agents.WorkerType.ROOM,
         agent_name=settings.agent_name,
     )
