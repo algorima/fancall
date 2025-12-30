@@ -19,7 +19,6 @@ class TestAgentDispatchRequestValidation(unittest.TestCase):
             {
                 "avatar_id": "avatar_456",
                 "profile_picture_url": "https://example.com/pic.jpg",
-                "idle_video_url": "https://example.com/idle.mp4",
                 "voice_id": "voice_789",
                 "system_prompt": "You are helpful.",
             }
@@ -29,7 +28,6 @@ class TestAgentDispatchRequestValidation(unittest.TestCase):
 
         self.assertEqual(metadata.avatar_id, "avatar_456")
         self.assertEqual(metadata.profile_picture_url, "https://example.com/pic.jpg")
-        self.assertEqual(metadata.idle_video_url, "https://example.com/idle.mp4")
         self.assertEqual(metadata.voice_id, "voice_789")
         self.assertEqual(metadata.system_prompt, "You are helpful.")
 
@@ -41,7 +39,6 @@ class TestAgentDispatchRequestValidation(unittest.TestCase):
 
         self.assertIsNone(metadata.avatar_id)
         self.assertIsNone(metadata.profile_picture_url)
-        self.assertIsNone(metadata.idle_video_url)
         self.assertIsNone(metadata.voice_id)
         self.assertIsNone(metadata.system_prompt)
 
@@ -76,7 +73,6 @@ class TestAgentDispatchRequestValidation(unittest.TestCase):
 
         self.assertIsNone(metadata.avatar_id)
         self.assertIsNone(metadata.profile_picture_url)
-        self.assertIsNone(metadata.idle_video_url)
         self.assertIsNone(metadata.voice_id)
         self.assertIsNone(metadata.system_prompt)
 
@@ -92,7 +88,6 @@ class TestAgentDispatchRequestValidation(unittest.TestCase):
 
         self.assertEqual(metadata.avatar_id, "avatar_456")
         self.assertEqual(metadata.profile_picture_url, "https://example.com/pic.jpg")
-        self.assertEqual(metadata.idle_video_url, "https://example.com/idle.mp4")
         self.assertEqual(metadata.voice_id, "voice_789")
         self.assertEqual(metadata.system_prompt, "You are helpful.")
 
