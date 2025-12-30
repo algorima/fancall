@@ -21,7 +21,7 @@ from livekit.plugins import fishaudio, hedra, openai
 from PIL import Image
 from pydantic import ValidationError
 
-from fancall.persona import DEFAULT_PERSONA, Persona
+from fancall.persona import DEFAULT_PERSONA
 from fancall.prompts import compose_instructions
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import LiveKitSettings
@@ -166,16 +166,9 @@ async def entrypoint(ctx: JobContext) -> None:
 
         await avatar_session.start(agent_session=session, room=ctx.room)
 
-    # Compose instructions from persona (Context Composer pattern)
-    persona = Persona(
-        system_prompt=metadata.system_prompt,
-        voice_id=metadata.voice_id,
-        avatar_id=metadata.avatar_id,
-        profile_picture_url=metadata.profile_picture_url,
-        idle_video_url=metadata.idle_video_url,
-    ) if metadata.system_prompt else DEFAULT_PERSONA
-
-    instructions = compose_instructions(persona, include_role_playing=True)
+    # Compose instructions from system prompt (Context Composer pattern)
+    system_prompt = metadata.system_prompt or DEFAULT_PERSONA.system_prompt
+    instructions = compose_instructions(system_prompt, include_role_playing=True)
     logger.info(
         "Using instructions: %s",
         instructions[:100] + "..." if len(instructions) > 100 else instructions,

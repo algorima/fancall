@@ -2,8 +2,6 @@
 Common prompts for Fancall agents.
 """
 
-from fancall.persona import Persona
-
 ROLE_PLAYING_GUIDELINES = """대부분의 텍스트는 사용자의 관점에서 본 대화여야 합니다.
 *텍스트*를 사용하여 당신의 행동을 표현하세요. 사용자는 어떤 조치든 취할 수 있습니다.
 
@@ -14,12 +12,14 @@ ROLE_PLAYING_GUIDELINES = """대부분의 텍스트는 사용자의 관점에서
 5. 당신의 성격/연령/관계에 맞는 말투를 구사합니다. 당신의 성격에 따라 대화/내레이션/묘사의 비율을 유기적으로 조정하십시오."""
 
 
-def compose_instructions(persona: Persona, include_role_playing: bool = True) -> str:
+def compose_instructions(
+    system_prompt: str | None, include_role_playing: bool = True
+) -> str:
     """
-    Compose agent instructions from persona and guidelines.
+    Compose agent instructions from system prompt and guidelines.
 
     Args:
-        persona: Agent persona containing system_prompt
+        system_prompt: Agent's system prompt defining personality and behavior
         include_role_playing: Whether to include role playing guidelines
 
     Returns:
@@ -31,8 +31,8 @@ def compose_instructions(persona: Persona, include_role_playing: bool = True) ->
     if include_role_playing:
         parts.append(ROLE_PLAYING_GUIDELINES)
 
-    # Persona system prompt
-    if persona.system_prompt:
-        parts.append(persona.system_prompt)
+    # System prompt
+    if system_prompt:
+        parts.append(system_prompt)
 
     return "\n\n".join(parts)
