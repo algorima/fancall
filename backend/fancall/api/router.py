@@ -32,6 +32,12 @@ from fancall.services.livekit_service import LiveKitService
 from fancall.settings import LiveKitSettings
 
 
+class LiveRoomSingleItemResponse(BaseModel):
+    """Single item response for live room"""
+
+    data: LiveRoom
+
+
 class LiveRoomRouter(
     BaseCrudRouter[LiveRoom, LiveRoomCreate, LiveRoomUpdate, DatabaseLiveRoomRepository]
 ):
@@ -54,13 +60,9 @@ class LiveRoomRouter(
     def _register_public_create_route(self) -> None:
         """POST /live-rooms - Public endpoint for creating live rooms"""
 
-        # Response model for single item
-        class SingleItemResponseModel(BaseModel):
-            data: LiveRoom
-
         @self.router.post(
             f"/{self.resource_name}",
-            response_model=SingleItemResponseModel,
+            response_model=LiveRoomSingleItemResponse,
             status_code=status.HTTP_201_CREATED,
             summary="Create Live Room",
             description="Create a new live room. Available to all users (authenticated or anonymous).",
@@ -81,7 +83,7 @@ class LiveRoomRouter(
                         "code": RESOURCE_CREATION_FAILED,
                     },
                 )
-            return SingleItemResponseModel(data=created_room)
+            return LiveRoomSingleItemResponse(data=created_room)
 
     def _register_token_route(self) -> None:
         """POST /live-rooms/{id}/token - Generate user access token"""
