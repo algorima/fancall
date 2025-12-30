@@ -17,9 +17,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import sessionmaker
 
 from fancall.factories import LiveRoomRepositoryFactory
+from fancall.persona import Persona
 from fancall.repositories.live_room_repository import DatabaseLiveRoomRepository
 from fancall.schemas import (
-    AgentDispatchRequest,
     DispatchResponse,
     LiveRoom,
     LiveRoomCreate,
@@ -162,7 +162,7 @@ class LiveRoomRouter(
         )
         async def dispatch_agent(
             room_id: str,
-            request: AgentDispatchRequest,
+            request: Persona,
             repository: DatabaseLiveRoomRepository = Depends(self.get_repository_dep),
         ):
             # Verify room exists
