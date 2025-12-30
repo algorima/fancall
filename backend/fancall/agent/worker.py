@@ -23,7 +23,6 @@ from pydantic import ValidationError
 
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import compose_instructions
-from fancall.schemas import AgentDispatchRequest
 from fancall.settings import LiveKitSettings
 
 # Basic logging configuration
@@ -81,11 +80,11 @@ async def entrypoint(  # pylint: disable=too-many-locals
     await ctx.connect()
     logger.info("Connected to LiveKit room: %s", ctx.room.name)
 
-    # Parse job metadata to get dynamic configuration
-    metadata = AgentDispatchRequest()
+    # Parse job metadata to get dynamic persona configuration
+    metadata = Persona()
     if ctx.job.metadata:
         try:
-            metadata = AgentDispatchRequest.model_validate_json(ctx.job.metadata)
+            metadata = Persona.model_validate_json(ctx.job.metadata)
         except ValidationError as e:
             logger.error("Failed to parse job metadata: %s", e)
             ctx.shutdown(reason="Invalid job metadata format")
