@@ -81,7 +81,6 @@ class TestAgentDispatchRequestValidation(unittest.TestCase):
         metadata = AgentDispatchRequest(
             avatar_id="avatar_456",
             profile_picture_url="https://example.com/pic.jpg",
-            idle_video_url="https://example.com/idle.mp4",
             voice_id="voice_789",
             system_prompt="You are helpful.",
         )
