@@ -1,0 +1,37 @@
+{
+  "entry": {
+    "title": "Fancall",
+    "subtitle": "AI-powered video call with virtual companions",
+    "startCall": "Start Call"
+  },
+  "room": {
+    "failedToLoad": "Failed to load live room",
+    "agentName": "Agent"
+  },
+  "agentCall": {
+    "state": {
+      "connecting": "Connecting...",
+      "listening": "Listening...",
+      "thinking": "Thinking...",
+      "speaking": "Speaking...",
+      "disconnected": "Disconnected"
+    },
+    "chat": {
+      "placeholder": "Type a message...",
+      "connecting": "Connecting...",
+      "waitingForAgent": "Waiting for agent...",
+      "send": "Send",
+      "sending": "Sending..."
+    },
+    "audioPermission": {
+      "title": "Audio Playback Permission Required",
+      "description": "Please allow audio playback to communicate with your companion.",
+      "button": "Enable Audio"
+    }
+  },
+  "liveRoomEntry": {
+    "loginRequired": "Please log in to start a live room.",
+    "failedToConnect": "Failed to connect to live room.",
+    "failedToLoadLiveRoom": "Failed to load live room."
+  }
+}

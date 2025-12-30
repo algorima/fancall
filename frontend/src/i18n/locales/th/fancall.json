@@ -1,0 +1,37 @@
+{
+  "entry": {
+    "title": "Fancall",
+    "subtitle": "วิดีโอคอลกับเพื่อนเสมือนที่ขับเคลื่อนด้วย AI",
+    "startCall": "เริ่มโทร"
+  },
+  "room": {
+    "failedToLoad": "ไม่สามารถโหลดห้อง Live ได้",
+    "agentName": "เอเจนต์"
+  },
+  "agentCall": {
+    "state": {
+      "connecting": "กำลังเชื่อมต่อ...",
+      "listening": "กำลังฟัง...",
+      "thinking": "กำลังคิด...",
+      "speaking": "กำลังพูด...",
+      "disconnected": "ตัดการเชื่อมต่อ"
+    },
+    "chat": {
+      "placeholder": "พิมพ์ข้อความ...",
+      "connecting": "กำลังเชื่อมต่อ...",
+      "waitingForAgent": "กำลังรอ Agent...",
+      "send": "ส่ง",
+      "sending": "กำลังส่ง..."
+    },
+    "audioPermission": {
+      "title": "ต้องการสิทธิ์เล่นเสียง",
+      "description": "กรุณาอนุญาตการเล่นเสียงเพื่อสื่อสารกับ Companion ของคุณ",
+      "button": "เปิดใช้เสียง"
+    }
+  },
+  "liveRoomEntry": {
+    "loginRequired": "กรุณาเข้าสู่ระบบเพื่อเริ่มห้อง Live",
+    "failedToConnect": "ไม่สามารถเชื่อมต่อห้อง Live ได้",
+    "failedToLoadLiveRoom": "ไม่สามารถโหลดห้อง Live ได้"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "entry": {
+    "title": "粉丝通话",
+    "subtitle": "AI驱动的虚拟伴侣视频通话",
+    "startCall": "开始通话"
+  },
+  "room": {
+    "failedToLoad": "加载直播间失败",
+    "agentName": "代理"
+  },
+  "agentCall": {
+    "state": {
+      "connecting": "连接中...",
+      "listening": "聆听中...",
+      "thinking": "思考中...",
+      "speaking": "说话中...",
+      "disconnected": "已断开连接"
+    },
+    "chat": {
+      "placeholder": "输入消息...",
+      "connecting": "连接中...",
+      "waitingForAgent": "等待代理...",
+      "send": "发送",
+      "sending": "发送中..."
+    },
+    "audioPermission": {
+      "title": "需要音频播放权限",
+      "description": "请允许音频播放以与您的伴侣进行对话。",
+      "button": "启用音频"
+    }
+  },
+  "liveRoomEntry": {
+    "loginRequired": "请登录以开始直播间。",
+    "failedToConnect": "连接直播间失败。",
+    "failedToLoadLiveRoom": "加载直播间失败。"
+  }
+}

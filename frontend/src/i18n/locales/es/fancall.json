@@ -1,0 +1,37 @@
+{
+  "entry": {
+    "title": "Fancall",
+    "subtitle": "Videollamada con compañeros virtuales impulsada por IA",
+    "startCall": "Iniciar llamada"
+  },
+  "room": {
+    "failedToLoad": "Error al cargar la sala en vivo",
+    "agentName": "Agente"
+  },
+  "agentCall": {
+    "state": {
+      "connecting": "Conectando...",
+      "listening": "Escuchando...",
+      "thinking": "Pensando...",
+      "speaking": "Hablando...",
+      "disconnected": "Desconectado"
+    },
+    "chat": {
+      "placeholder": "Escribe un mensaje...",
+      "connecting": "Conectando...",
+      "waitingForAgent": "Esperando al agente...",
+      "send": "Enviar",
+      "sending": "Enviando..."
+    },
+    "audioPermission": {
+      "title": "Se requiere permiso de reproducción de audio",
+      "description": "Por favor permita la reproducción de audio para comunicarse con su compañero.",
+      "button": "Habilitar audio"
+    }
+  },
+  "liveRoomEntry": {
+    "loginRequired": "Por favor, inicia sesión para comenzar una sala en vivo.",
+    "failedToConnect": "Error al conectar con la sala en vivo.",
+    "failedToLoadLiveRoom": "Error al cargar la sala en vivo."
+  }
+}
