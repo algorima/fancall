@@ -14,7 +14,7 @@ class Persona(BaseModel):
     """Agent의 정체성을 정의하는 도메인 모델."""
 
     model_config = ConfigDict(
-        alias_generator=camelize, populate_by_name=True, extra="ignore"
+        alias_generator=camelize, populate_by_name=True
     )
 
     avatar_id: str | None = Field(

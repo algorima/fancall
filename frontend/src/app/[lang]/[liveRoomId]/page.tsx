@@ -11,7 +11,6 @@ import { LiveRoomRepository } from "@/repositories";
 import type { TokenResponse } from "@/schemas";
 import { getApiService } from "@/services/ApiService";
 
-
 export default function FancallRoomPage() {
   const params = useParams();
   const { t } = useTranslation(FANCALL_NS);
@@ -36,7 +35,8 @@ export default function FancallRoomPage() {
 
     void (async () => {
       try {
-        const response: TokenResponse = await repository.generateToken(liveRoomId);
+        const response: TokenResponse =
+          await repository.generateToken(liveRoomId);
         setToken(response.token);
         setRoomName(response.roomName);
       } finally {

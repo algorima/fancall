@@ -9,7 +9,6 @@ import { FANCALL_NS } from "@/i18n";
 import { LiveRoomRepository } from "@/repositories";
 import { getApiService } from "@/services/ApiService";
 
-
 export default function FancallEntryPage() {
   const { i18n } = useTranslation(FANCALL_NS);
   const router = useRouter();
