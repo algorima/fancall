@@ -16,7 +16,7 @@ import Image from "next/image";
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-import { FANCALL_NS } from "@/i18n/translations";
+import { FANCALL_NS } from "@/i18n";
 
 interface AgentCallProps {
   profilePictureUrl?: string | null;
