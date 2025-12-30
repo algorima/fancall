@@ -7,11 +7,11 @@ import unittest
 
 from pydantic import ValidationError
 
-from fancall.persona import Persona
+from fancall.schemas import AgentDispatchRequest
 
 
-class TestPersonaValidation(unittest.TestCase):
-    """Tests for Persona model validation"""
+class TestAgentDispatchRequestValidation(unittest.TestCase):
+    """Tests for AgentDispatchRequest model validation"""
 
     def test_parse_valid_json_with_all_fields(self):
         """Test parsing valid JSON with all fields"""
@@ -19,15 +19,17 @@ class TestPersonaValidation(unittest.TestCase):
             {
                 "avatar_id": "avatar_456",
                 "profile_picture_url": "https://example.com/pic.jpg",
+                "idle_video_url": "https://example.com/idle.mp4",
                 "voice_id": "voice_789",
                 "system_prompt": "You are helpful.",
             }
         )
 
-        metadata = Persona.model_validate_json(metadata_json)
+        metadata = AgentDispatchRequest.model_validate_json(metadata_json)
 
         self.assertEqual(metadata.avatar_id, "avatar_456")
         self.assertEqual(metadata.profile_picture_url, "https://example.com/pic.jpg")
+        self.assertEqual(metadata.idle_video_url, "https://example.com/idle.mp4")
         self.assertEqual(metadata.voice_id, "voice_789")
         self.assertEqual(metadata.system_prompt, "You are helpful.")
 
@@ -35,10 +37,11 @@ class TestPersonaValidation(unittest.TestCase):
         """Test that empty JSON (all optional fields) parses successfully"""
         metadata_json = json.dumps({})
 
-        metadata = Persona.model_validate_json(metadata_json)
+        metadata = AgentDispatchRequest.model_validate_json(metadata_json)
 
         self.assertIsNone(metadata.avatar_id)
         self.assertIsNone(metadata.profile_picture_url)
+        self.assertIsNone(metadata.idle_video_url)
         self.assertIsNone(metadata.voice_id)
         self.assertIsNone(metadata.system_prompt)
 
@@ -47,7 +50,7 @@ class TestPersonaValidation(unittest.TestCase):
         invalid_json = "not valid json {"
 
         self.assertRaises(
-            ValidationError, Persona.model_validate_json, invalid_json
+            ValidationError, AgentDispatchRequest.model_validate_json, invalid_json
         )
 
     def test_parse_with_extra_fields_ignored(self):
@@ -60,7 +63,7 @@ class TestPersonaValidation(unittest.TestCase):
             }
         )
 
-        metadata = Persona.model_validate_json(metadata_json)
+        metadata = AgentDispatchRequest.model_validate_json(metadata_json)
 
         self.assertEqual(metadata.avatar_id, "avatar_456")
         # Extra fields should not be accessible
@@ -69,30 +72,33 @@ class TestPersonaValidation(unittest.TestCase):
 
     def test_field_defaults(self):
         """Test that optional fields default to None"""
-        metadata = Persona.model_validate({})
+        metadata = AgentDispatchRequest.model_validate({})
 
         self.assertIsNone(metadata.avatar_id)
         self.assertIsNone(metadata.profile_picture_url)
+        self.assertIsNone(metadata.idle_video_url)
         self.assertIsNone(metadata.voice_id)
         self.assertIsNone(metadata.system_prompt)
 
     def test_construct_with_all_fields(self):
         """Test constructing model instance with all fields"""
-        metadata = Persona(
+        metadata = AgentDispatchRequest(
             avatar_id="avatar_456",
             profile_picture_url="https://example.com/pic.jpg",
+            idle_video_url="https://example.com/idle.mp4",
             voice_id="voice_789",
             system_prompt="You are helpful.",
         )
 
         self.assertEqual(metadata.avatar_id, "avatar_456")
         self.assertEqual(metadata.profile_picture_url, "https://example.com/pic.jpg")
+        self.assertEqual(metadata.idle_video_url, "https://example.com/idle.mp4")
         self.assertEqual(metadata.voice_id, "voice_789")
         self.assertEqual(metadata.system_prompt, "You are helpful.")
 
     def test_empty_optional_strings_are_preserved(self):
         """Test that empty strings for optional fields are preserved (not converted to None)"""
-        metadata = Persona.model_validate(
+        metadata = AgentDispatchRequest.model_validate(
             {
                 "avatar_id": "",
                 "voice_id": "",
