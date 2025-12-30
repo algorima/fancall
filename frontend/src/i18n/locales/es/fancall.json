@@ -1,4 +1,13 @@
 {
+  "entry": {
+    "title": "Fancall",
+    "subtitle": "Videollamada con compañeros virtuales impulsada por IA",
+    "startCall": "Iniciar llamada"
+  },
+  "room": {
+    "failedToLoad": "Error al cargar la sala en vivo",
+    "agentName": "Agente"
+  },
   "agentCall": {
     "state": {
       "connecting": "Conectando...",

@@ -1,4 +1,13 @@
 {
+  "entry": {
+    "title": "粉丝通话",
+    "subtitle": "AI驱动的虚拟伴侣视频通话",
+    "startCall": "开始通话"
+  },
+  "room": {
+    "failedToLoad": "加载直播间失败",
+    "agentName": "代理"
+  },
   "agentCall": {
     "state": {
       "connecting": "连接中...",

@@ -1,4 +1,13 @@
 {
+  "entry": {
+    "title": "Fancall",
+    "subtitle": "วิดีโอคอลกับเพื่อนเสมือนที่ขับเคลื่อนด้วย AI",
+    "startCall": "เริ่มโทร"
+  },
+  "room": {
+    "failedToLoad": "ไม่สามารถโหลดห้อง Live ได้",
+    "agentName": "เอเจนต์"
+  },
   "agentCall": {
     "state": {
       "connecting": "กำลังเชื่อมต่อ...",

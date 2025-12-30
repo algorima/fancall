@@ -1,4 +1,13 @@
 {
+  "entry": {
+    "title": "Fancall",
+    "subtitle": "AI-powered video call with virtual companions",
+    "startCall": "Start Call"
+  },
+  "room": {
+    "failedToLoad": "Failed to load live room",
+    "agentName": "Agent"
+  },
   "agentCall": {
     "state": {
       "connecting": "Connecting...",

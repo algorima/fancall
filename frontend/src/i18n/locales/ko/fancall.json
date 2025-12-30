@@ -1,4 +1,13 @@
 {
+  "entry": {
+    "title": "팬콜",
+    "subtitle": "AI 기반 가상 컴패니언과의 영상 통화",
+    "startCall": "통화 시작"
+  },
+  "room": {
+    "failedToLoad": "라이브룸을 불러오지 못했습니다",
+    "agentName": "에이전트"
+  },
   "agentCall": {
     "state": {
       "connecting": "연결 중...",

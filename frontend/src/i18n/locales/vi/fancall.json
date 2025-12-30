@@ -1,4 +1,13 @@
 {
+  "entry": {
+    "title": "Fancall",
+    "subtitle": "Cuộc gọi video với người bạn đồng hành ảo được hỗ trợ bởi AI",
+    "startCall": "Bắt đầu cuộc gọi"
+  },
+  "room": {
+    "failedToLoad": "Không thể tải phòng live",
+    "agentName": "Agent"
+  },
   "agentCall": {
     "state": {
       "connecting": "Đang kết nối...",

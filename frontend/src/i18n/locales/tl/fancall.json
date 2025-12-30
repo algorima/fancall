@@ -1,4 +1,13 @@
 {
+  "entry": {
+    "title": "Fancall",
+    "subtitle": "AI-powered video call sa virtual companions",
+    "startCall": "Simulan ang Tawag"
+  },
+  "room": {
+    "failedToLoad": "Hindi na-load ang live room",
+    "agentName": "Agent"
+  },
   "agentCall": {
     "state": {
       "connecting": "Kumokonekta...",

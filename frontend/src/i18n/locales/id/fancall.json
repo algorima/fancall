@@ -1,4 +1,13 @@
 {
+  "entry": {
+    "title": "Fancall",
+    "subtitle": "Panggilan video dengan pendamping virtual bertenaga AI",
+    "startCall": "Mulai Panggilan"
+  },
+  "room": {
+    "failedToLoad": "Gagal memuat ruang langsung",
+    "agentName": "Agen"
+  },
   "agentCall": {
     "state": {
       "connecting": "Menghubungkan...",

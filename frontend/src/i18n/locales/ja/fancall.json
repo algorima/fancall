@@ -1,4 +1,13 @@
 {
+  "entry": {
+    "title": "ファンコール",
+    "subtitle": "AIを活用したバーチャルコンパニオンとのビデオ通話",
+    "startCall": "通話を開始"
+  },
+  "room": {
+    "failedToLoad": "ライブルームの読み込みに失敗しました",
+    "agentName": "エージェント"
+  },
   "agentCall": {
     "state": {
       "connecting": "接続中...",
