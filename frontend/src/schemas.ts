@@ -45,7 +45,6 @@ export type DispatchResponse = z.infer<typeof dispatchResponseSchema>;
 export interface AgentDispatchRequest {
   avatarId?: string | null;
   profilePictureUrl?: string | null;
-  idleVideoUrl?: string | null;
   voiceId?: string | null;
   systemPrompt?: string | null;
 }
