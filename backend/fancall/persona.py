@@ -23,9 +23,6 @@ class Persona(BaseModel):
     profile_picture_url: str | None = Field(
         default=None, description="Profile picture URL for avatar generation"
     )
-    idle_video_url: str | None = Field(
-        default=None, description="Video to display during idle periods"
-    )
     voice_id: str | None = Field(
         default=None, description="Fish Audio voice ID for TTS"
     )
@@ -94,6 +91,5 @@ Signature color/number: Rose gold · Charcoal / 11."""
 DEFAULT_PERSONA = Persona(
     voice_id="c5274be32cac4aa4bd7b69f51a8a4b83",
     profile_picture_url="https://storage.googleapis.com/buppy/profile-pictures/017433aa-748f-400a-9f16-e326b0e5b02d.png",
-    idle_video_url="https://storage.googleapis.com/buppy/companion-idle-video/20cda14b-262a-4e13-bb41-533a2b81981d.mov",
     system_prompt=EUNWOO_SYSTEM_PROMPT,
 )
