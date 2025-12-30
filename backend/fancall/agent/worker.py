@@ -51,7 +51,9 @@ class CompanionAgent(Agent):
 
 
 async def entrypoint(  # pylint: disable=too-many-locals
-    ctx: JobContext, default_persona: Persona, settings: LiveKitSettings  # pylint: disable=unused-argument
+    ctx: JobContext,
+    default_persona: Persona,
+    settings: LiveKitSettings,  # pylint: disable=unused-argument
 ) -> None:
     """
     Agent entrypoint. Initializes AgentSession for text-to-speech tasks.
@@ -93,7 +95,9 @@ async def entrypoint(  # pylint: disable=too-many-locals
 
     # Merge metadata with default_persona (metadata takes precedence)
     avatar_id = metadata.avatar_id or default_persona.avatar_id
-    profile_picture_url = metadata.profile_picture_url or default_persona.profile_picture_url
+    profile_picture_url = (
+        metadata.profile_picture_url or default_persona.profile_picture_url
+    )
     voice_id = metadata.voice_id or default_persona.voice_id
     system_prompt = metadata.system_prompt or default_persona.system_prompt
 

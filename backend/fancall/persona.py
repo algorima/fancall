@@ -13,9 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class Persona(BaseModel):
     """Agent의 정체성을 정의하는 도메인 모델."""
 
-    model_config = ConfigDict(
-        alias_generator=camelize, populate_by_name=True
-    )
+    model_config = ConfigDict(alias_generator=camelize, populate_by_name=True)
 
     avatar_id: str | None = Field(
         default=None, description="Hedra avatar ID for visual representation"
