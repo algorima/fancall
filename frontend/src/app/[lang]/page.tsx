@@ -5,14 +5,10 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { StartCallSection } from "@/components/StartCallSection";
-
 import { FANCALL_NS } from "@/i18n";
-
 import { LiveRoomRepository } from "@/repositories";
-
-import type { LiveRoom } from "@/schemas";
-
 import { getApiService } from "@/services/ApiService";
+
 
 export default function FancallEntryPage() {
   const { i18n } = useTranslation(FANCALL_NS);
@@ -30,7 +26,8 @@ export default function FancallEntryPage() {
 
     setIsLoading(true);
 
-    const { data: liveRoom } = await repository.create<LiveRoom>({ variables: {} });
+    const response = await repository.create({ variables: {} });
+    const liveRoom = response.data;
     await repository.dispatchAgent(liveRoom.id, {});
 
     router.push(`/${i18n.language}/${liveRoom.id}`);
