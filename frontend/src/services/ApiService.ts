@@ -22,22 +22,8 @@ export class ApiService extends BaseApiService {
    * Handle API errors
    */
   protected async handleError(response: Response): Promise<never> {
-    const text = await response.text();
-    let message = `API Error: ${response.status}`;
-
-    try {
-      const json = JSON.parse(text) as { detail?: string };
-      if (json.detail) {
-        message = json.detail;
-      }
-    } catch {
-      // Use status text if JSON parsing fails
-      if (text) {
-        message = text;
-      }
-    }
-
-    throw new Error(message);
+    const errorData = (await response.json()) as { detail?: string };
+    throw new Error(errorData.detail || `API Error: ${response.status}`);
   }
 }
 
