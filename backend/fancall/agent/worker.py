@@ -21,7 +21,7 @@ from livekit.plugins import fishaudio, hedra, openai
 from PIL import Image
 from pydantic import ValidationError
 
-from fancall.persona import Persona
+from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import compose_instructions
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import LiveKitSettings
@@ -50,8 +50,8 @@ class CompanionAgent(Agent):
         # Initial greeting could be generated here if needed
 
 
-async def entrypoint(
-    ctx: JobContext, default_persona: Persona, settings: LiveKitSettings
+async def entrypoint(  # pylint: disable=too-many-locals
+    ctx: JobContext, default_persona: Persona, settings: LiveKitSettings  # pylint: disable=unused-argument
 ) -> None:
     """
     Agent entrypoint. Initializes AgentSession for text-to-speech tasks.
@@ -59,7 +59,7 @@ async def entrypoint(
     Args:
         ctx: LiveKit job context
         default_persona: Default persona for fallback configuration
-        settings: LiveKit settings with API credentials
+        settings: LiveKit settings with API credentials (reserved for future use)
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
@@ -94,7 +94,6 @@ async def entrypoint(
     # Merge metadata with default_persona (metadata takes precedence)
     avatar_id = metadata.avatar_id or default_persona.avatar_id
     profile_picture_url = metadata.profile_picture_url or default_persona.profile_picture_url
-    idle_video_url = metadata.idle_video_url or default_persona.idle_video_url
     voice_id = metadata.voice_id or default_persona.voice_id
     system_prompt = metadata.system_prompt or default_persona.system_prompt
 
@@ -227,8 +226,6 @@ def create_worker_options(
 
 def main() -> None:
     """Main function to run the agent worker."""
-    from fancall.persona import DEFAULT_PERSONA
-
     settings = LiveKitSettings()
     cli.run_app(create_worker_options(DEFAULT_PERSONA, settings))
 
