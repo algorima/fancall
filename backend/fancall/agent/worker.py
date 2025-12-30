@@ -21,6 +21,8 @@ from livekit.plugins import fishaudio, hedra, openai
 from PIL import Image
 from pydantic import ValidationError
 
+from fancall.persona import DEFAULT_PERSONA, Persona
+from fancall.prompts import compose_instructions
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import LiveKitSettings
 
@@ -164,14 +166,22 @@ async def entrypoint(ctx: JobContext) -> None:
 
         await avatar_session.start(agent_session=session, room=ctx.room)
 
-    # Get system prompt from metadata or use default
-    system_prompt = metadata.system_prompt or DEFAULT_SYSTEM_PROMPT
+    # Compose instructions from persona (Context Composer pattern)
+    persona = Persona(
+        system_prompt=metadata.system_prompt,
+        voice_id=metadata.voice_id,
+        avatar_id=metadata.avatar_id,
+        profile_picture_url=metadata.profile_picture_url,
+        idle_video_url=metadata.idle_video_url,
+    ) if metadata.system_prompt else DEFAULT_PERSONA
+
+    instructions = compose_instructions(persona, include_role_playing=True)
     logger.info(
-        "Using system prompt: %s",
-        system_prompt[:100] + "..." if len(system_prompt) > 100 else system_prompt,
+        "Using instructions: %s",
+        instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
 
-    agent = CompanionAgent(instructions=system_prompt)
+    agent = CompanionAgent(instructions=instructions)
     await session.start(agent=agent, room=ctx.room)
     logger.info("Agent session started.")
 
