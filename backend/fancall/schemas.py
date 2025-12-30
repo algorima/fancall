@@ -7,6 +7,13 @@ from datetime import datetime
 from humps import camelize
 from pydantic import BaseModel, ConfigDict
 
+from fancall.persona import Persona
+
+
+class AgentDispatchRequest(Persona):
+    """API dispatch 요청 스키마. Persona를 상속하여 확장 가능."""
+
+
 # LiveRoom schemas
 class LiveRoomBase(BaseModel):
     """LiveRoom base model with common fields"""

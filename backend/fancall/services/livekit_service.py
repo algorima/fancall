@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from livekit import api
 from livekit.protocol.agent_dispatch import CreateAgentDispatchRequest
 
-from fancall.persona import Persona
+from fancall.schemas import AgentDispatchRequest
 from fancall.settings import LiveKitSettings
 
 logger = logging.getLogger(__name__)
@@ -116,13 +116,13 @@ class LiveKitService:
             raise
 
     async def dispatch_agent(
-        self, request: Persona, room_name: str
+        self, request: AgentDispatchRequest, room_name: str
     ) -> LiveKitDispatchResponse | None:
         """
-        Dispatch an agent with the given persona configuration to a LiveKit room.
+        Dispatch an agent with the given specification to a LiveKit room.
 
         Args:
-            request: Persona containing agent identity configuration.
+            request: AgentDispatchRequest containing agent configuration.
             room_name: Name of the room to dispatch the agent to
 
         Returns:
