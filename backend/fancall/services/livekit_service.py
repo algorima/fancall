@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from livekit import api
 from livekit.protocol.agent_dispatch import CreateAgentDispatchRequest
 
-from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import LiveKitSettings
 
@@ -36,21 +35,14 @@ class LiveKitDispatchResponse:
 class LiveKitService:
     """Service for LiveKit operations including token generation and agent dispatch"""
 
-    def __init__(
-        self,
-        livekit_settings: LiveKitSettings,
-        default_persona: Persona | None = None,
-    ):
+    def __init__(self, livekit_settings: LiveKitSettings):
         """
         Initialize the LiveKit service with LiveKit settings.
 
         Args:
             livekit_settings: LiveKit settings containing required credentials
-            default_persona: Default persona to use when dispatch request is empty.
-                            Host applications can inject their own persona.
         """
         self.settings = livekit_settings
-        self.default_persona = default_persona or DEFAULT_PERSONA
 
     def generate_token(
         self, user_id: str, name: str, room_name: str
@@ -131,7 +123,6 @@ class LiveKitService:
 
         Args:
             request: AgentDispatchRequest containing agent configuration.
-                    Empty fields will be filled from default_persona.
             room_name: Name of the room to dispatch the agent to
 
         Returns:
@@ -148,17 +139,6 @@ class LiveKitService:
             logger.error("LiveKit credentials are not configured")
             return None
 
-        # Merge request with default_persona (request takes precedence)
-        merged_request = AgentDispatchRequest(
-            avatar_id=request.avatar_id or self.default_persona.avatar_id,
-            profile_picture_url=request.profile_picture_url
-            or self.default_persona.profile_picture_url,
-            idle_video_url=request.idle_video_url
-            or self.default_persona.idle_video_url,
-            voice_id=request.voice_id or self.default_persona.voice_id,
-            system_prompt=request.system_prompt or self.default_persona.system_prompt,
-        )
-
         # Create client for this request
         async with api.LiveKitAPI(
             url=self.settings.url,
@@ -166,8 +146,8 @@ class LiveKitService:
             api_secret=self.settings.api_secret,
         ) as livekit_client:
             try:
-                # Prepare metadata for the agent
-                metadata_json = merged_request.model_dump_json(exclude_none=True)
+                # Prepare metadata for the agent (passed as-is)
+                metadata_json = request.model_dump_json(exclude_none=True)
 
                 logger.info(
                     "Dispatching agent '%s' to room '%s' with metadata: %s",
