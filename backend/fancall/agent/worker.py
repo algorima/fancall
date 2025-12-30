@@ -227,7 +227,10 @@ def create_worker_options(
 
 def main() -> None:
     """Main function to run the agent worker."""
-    cli.run_app(create_worker_options())
+    from fancall.persona import DEFAULT_PERSONA
+
+    settings = LiveKitSettings()
+    cli.run_app(create_worker_options(DEFAULT_PERSONA, settings))
 
 
 if __name__ == "__main__":
