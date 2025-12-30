@@ -21,7 +21,7 @@ from livekit.plugins import fishaudio, hedra, openai
 from PIL import Image
 from pydantic import ValidationError
 
-from fancall.persona import DEFAULT_PERSONA
+from fancall.persona import Persona
 from fancall.prompts import compose_instructions
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import LiveKitSettings
@@ -50,9 +50,16 @@ class CompanionAgent(Agent):
         # Initial greeting could be generated here if needed
 
 
-async def entrypoint(ctx: JobContext) -> None:
+async def entrypoint(
+    ctx: JobContext, default_persona: Persona, settings: LiveKitSettings
+) -> None:
     """
     Agent entrypoint. Initializes AgentSession for text-to-speech tasks.
+
+    Args:
+        ctx: LiveKit job context
+        default_persona: Default persona for fallback configuration
+        settings: LiveKit settings with API credentials
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
@@ -84,11 +91,21 @@ async def entrypoint(ctx: JobContext) -> None:
             ctx.shutdown(reason="Invalid job metadata format")
             return
 
+    # Merge metadata with default_persona (metadata takes precedence)
+    avatar_id = metadata.avatar_id or default_persona.avatar_id
+    profile_picture_url = metadata.profile_picture_url or default_persona.profile_picture_url
+    idle_video_url = metadata.idle_video_url or default_persona.idle_video_url
+    voice_id = metadata.voice_id or default_persona.voice_id
+    system_prompt = metadata.system_prompt or default_persona.system_prompt
+
+    logger.info(
+        "Agent configuration: avatar_id=%s, voice_id=%s",
+        avatar_id,
+        voice_id,
+    )
+
     # Initialize components
     llm = openai.LLM(model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
-
-    # Fallback priority for voice_id: metadata > env var
-    voice_id = metadata.voice_id or os.getenv("FISH_AUDIO_REFERENCE_ID")
     if voice_id:
         logger.info("Using Fish Audio voice_id: %s", voice_id)
 
@@ -111,18 +128,15 @@ async def entrypoint(ctx: JobContext) -> None:
             ctx.shutdown(reason="HEDRA_API_KEY is required when HEDRA_ENABLED=true")
             return
 
-        # Fallback priority: avatar_id > env > profile_picture_url
-        avatar_id = metadata.avatar_id or os.getenv("HEDRA_AVATAR_ID")
-
         if avatar_id:
             logger.info("Hedra avatar is enabled with avatar_id: %s", avatar_id)
             avatar_session = hedra.AvatarSession(
                 avatar_id=avatar_id,
                 api_key=hedra_api_key,
             )
-        elif metadata.profile_picture_url:
-            # At this point, metadata.profile_picture_url is guaranteed to be str
-            url = metadata.profile_picture_url
+        elif profile_picture_url:
+            # At this point, profile_picture_url is guaranteed to be str
+            url = profile_picture_url
             logger.info(
                 "Hedra avatar is enabled with profile_picture_url: %s",
                 url[:100] + "..." if len(url) > 100 else url,
@@ -166,8 +180,7 @@ async def entrypoint(ctx: JobContext) -> None:
 
         await avatar_session.start(agent_session=session, room=ctx.room)
 
-    # Compose instructions from system prompt (Context Composer pattern)
-    system_prompt = metadata.system_prompt or DEFAULT_PERSONA.system_prompt
+    # Compose instructions from merged system prompt (Context Composer pattern)
     instructions = compose_instructions(system_prompt, include_role_playing=True)
     logger.info(
         "Using instructions: %s",
@@ -187,11 +200,26 @@ async def entrypoint(ctx: JobContext) -> None:
         logger.info("Agent session cancelled before trial limit.")
 
 
-def create_worker_options() -> WorkerOptions:
-    """Create WorkerOptions for the agent."""
-    settings = LiveKitSettings()
+def create_worker_options(
+    default_persona: Persona, settings: LiveKitSettings
+) -> WorkerOptions:
+    """
+    Create WorkerOptions for the agent with dependency injection.
+
+    Args:
+        default_persona: Default persona for agent configuration
+        settings: LiveKit settings with API credentials
+
+    Returns:
+        WorkerOptions configured with the agent entrypoint
+    """
+
+    async def entrypoint_with_deps(ctx: JobContext) -> None:
+        """Wrapper to inject dependencies into entrypoint."""
+        await entrypoint(ctx, default_persona, settings)
+
     return WorkerOptions(
-        entrypoint_fnc=entrypoint,
+        entrypoint_fnc=entrypoint_with_deps,
         worker_type=agents.WorkerType.ROOM,
         agent_name=settings.agent_name,
     )
