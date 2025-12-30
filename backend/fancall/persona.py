@@ -1,7 +1,7 @@
 """
 Agent persona for Fancall.
 
-This module defines the AgentPersona domain model and the default persona
+This module defines the Persona domain model and the default persona
 used when no custom configuration is provided during dispatch.
 Host applications can inject their own persona via LiveKitService constructor.
 """
@@ -10,7 +10,7 @@ from humps import camelize
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class AgentPersona(BaseModel):
+class Persona(BaseModel):
     """Agent의 정체성을 정의하는 도메인 모델."""
 
     model_config = ConfigDict(
@@ -91,7 +91,7 @@ Element tip: reinforce Wood to boost creativity & concept interpretation.
 
 Signature color/number: Rose gold · Charcoal / 11."""
 
-DEFAULT_PERSONA = AgentPersona(
+DEFAULT_PERSONA = Persona(
     voice_id="c5274be32cac4aa4bd7b69f51a8a4b83",
     profile_picture_url="https://storage.googleapis.com/buppy/profile-pictures/017433aa-748f-400a-9f16-e326b0e5b02d.png",
     idle_video_url="https://storage.googleapis.com/buppy/companion-idle-video/20cda14b-262a-4e13-bb41-533a2b81981d.mov",

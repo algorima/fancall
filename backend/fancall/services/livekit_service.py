@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from livekit import api
 from livekit.protocol.agent_dispatch import CreateAgentDispatchRequest
 
-from fancall.persona import DEFAULT_PERSONA, AgentPersona
+from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import LiveKitSettings
 
@@ -39,7 +39,7 @@ class LiveKitService:
     def __init__(
         self,
         livekit_settings: LiveKitSettings,
-        default_persona: AgentPersona | None = None,
+        default_persona: Persona | None = None,
     ):
         """
         Initialize the LiveKit service with LiveKit settings.
