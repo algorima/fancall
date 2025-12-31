@@ -25,7 +25,7 @@ from pydantic import ValidationError
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import compose_instructions
 from fancall.schemas import AgentDispatchRequest
-from fancall.settings import LiveKitSettings
+from fancall.settings import FancallModelSettings, LiveKitSettings
 
 # Basic logging configuration
 logging.basicConfig(
@@ -55,9 +55,10 @@ async def entrypoint(  # pylint: disable=too-many-locals
     ctx: JobContext,
     default_persona: Persona,
     livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
-    openai_settings: OpenAIAPISettings,
+    openai_settings: OpenAIAPISettings,  # pylint: disable=unused-argument
     fish_settings: FishAudioSettings,
     hedra_settings: HedraSettings,
+    model_settings: FancallModelSettings,
 ) -> None:
     """
     Agent entrypoint. Initializes AgentSession for text-to-speech tasks.
@@ -66,9 +67,10 @@ async def entrypoint(  # pylint: disable=too-many-locals
         ctx: LiveKit job context
         default_persona: Default persona for fallback configuration
         livekit_settings: LiveKit settings with API credentials (reserved for future use)
-        openai_settings: OpenAI API settings
+        openai_settings: OpenAI API settings (reserved for future use)
         fish_settings: Fish Audio TTS settings
         hedra_settings: Hedra avatar settings
+        model_settings: Fancall LLM model settings
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
