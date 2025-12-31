@@ -79,36 +79,22 @@ make format
 
 ## 환경 변수
 
-### LiveKit
+### 필수 (Agent 실행 시)
 
-| 변수명 | 기본값 | 설명 |
-|--------|--------|------|
-| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit 서버 URL |
-| `LIVEKIT_API_KEY` | `devkey` | LiveKit API 키 |
-| `LIVEKIT_API_SECRET` | `secret` | LiveKit API 시크릿 |
+| 변수 | 설명 |
+|------|------|
+| `OPENAI_API_KEY` | OpenAI API 키 |
+| `FISH_API_KEY` | Fish Audio TTS API 키 |
 
-### 외부 서비스 (aioia-core)
+### 선택 (기능 활성화)
 
-| 변수명 | 기본값 | 설명 |
-|--------|--------|------|
-| `OPENAI_API_KEY` | - | OpenAI API 키 (Agent 실행 시 필수) |
-| `OPENAI_ORGANIZATION` | - | OpenAI organization ID (선택) |
-| `FISH_ENABLED` | `false` | Fish Audio 활성화 |
-| `FISH_API_KEY` | - | Fish Audio API 키 (FISH_ENABLED=true일 때 필수) |
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
 | `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
-| `HEDRA_API_KEY` | - | Hedra API 키 (HEDRA_ENABLED=true일 때 필수) |
+| `HEDRA_API_KEY` | - | Hedra API 키 (enabled=true일 때 필수) |
 
-### Fancall 설정
-
-| 변수명 | 기본값 | 설명 |
-|--------|--------|------|
-| `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI 모델 |
-
-### 데이터베이스
-
-| 변수명 | 기본값 | 설명 |
-|--------|--------|------|
-| `DATABASE_URL` | `sqlite:///./local_database.db` | DB URL |
+> **참고**: LiveKit, 데이터베이스, 모델 등 추가 설정은 기본값으로 로컬 개발 가능합니다.
+> 변경이 필요한 경우 `fancall/settings.py`의 Settings 클래스를 참고하세요.
 
 ## 의존성
 
