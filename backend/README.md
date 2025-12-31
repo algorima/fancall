@@ -90,6 +90,7 @@ make format
 
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
+| `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI LLM 모델 |
 | `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
 | `HEDRA_API_KEY` | - | Hedra API 키 (enabled=true일 때 필수) |
 
