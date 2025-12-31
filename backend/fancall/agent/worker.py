@@ -14,6 +14,7 @@ import re
 from functools import partial
 
 import httpx
+from aioia_core.settings import FishAudioSettings, HedraSettings, OpenAIAPISettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.agents.types import NOT_GIVEN
@@ -21,7 +22,6 @@ from livekit.plugins import fishaudio, hedra, openai
 from PIL import Image
 from pydantic import ValidationError
 
-from aioia_core.settings import FishAudioSettings, HedraSettings, OpenAIAPISettings
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import compose_instructions
 from fancall.schemas import AgentDispatchRequest
@@ -100,9 +100,7 @@ async def entrypoint(  # pylint: disable=too-many-locals
     )
 
     # Initialize components
-    llm = openai.LLM(
-        model=getattr(openai_settings, "model", None) or "gpt-4o-mini"
-    )
+    llm = openai.LLM(model=getattr(openai_settings, "model", None) or "gpt-4o-mini")
     if voice_id:
         logger.info("Using Fish Audio voice_id: %s", voice_id)
 
