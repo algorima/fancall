@@ -116,24 +116,24 @@ async def entrypoint(  # pylint: disable=too-many-locals
     )
 
     # Initialize components
-    llm = openai.LLM(model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
+    llm = openai.LLM(
+        model=getattr(openai_settings, "model", None) or "gpt-4o-mini"
+    )
     if voice_id:
         logger.info("Using Fish Audio voice_id: %s", voice_id)
 
     tts = fishaudio.TTS(
-        api_key=os.getenv("FISH_API_KEY") or NOT_GIVEN,
+        api_key=fish_settings.api_key or NOT_GIVEN,
         reference_id=voice_id or NOT_GIVEN,
     )
 
     session: AgentSession = AgentSession(llm=llm, tts=tts)
 
     # Initialize Hedra avatar if enabled
-    hedra_enabled = os.getenv("HEDRA_ENABLED", "false").lower() == "true"
     avatar_session = None
 
-    if hedra_enabled:
-        # Get Hedra API key
-        hedra_api_key = os.getenv("HEDRA_API_KEY")
+    if hedra_settings.enabled:
+        hedra_api_key = hedra_settings.api_key
         if not hedra_api_key:
             logger.error("HEDRA_API_KEY is required when HEDRA_ENABLED=true")
             ctx.shutdown(reason="HEDRA_API_KEY is required when HEDRA_ENABLED=true")
