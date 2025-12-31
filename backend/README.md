@@ -79,14 +79,23 @@ make format
 
 ## 환경 변수
 
-| 변수명 | 필수 | 설명 |
-|--------|------|------|
-| `LIVEKIT_URL` | O | LiveKit 서버 URL |
-| `LIVEKIT_API_KEY` | O | LiveKit API 키 |
-| `LIVEKIT_API_SECRET` | O | LiveKit API 시크릿 |
-| `OPENAI_API_KEY` | O | OpenAI API 키 |
-| `FISH_API_KEY` | O | Fish Audio API 키 |
-| `DATABASE_URL` | O | PostgreSQL/SQLite URL |
+### 필수 (Agent 실행 시)
+
+| 변수 | 설명 |
+|------|------|
+| `OPENAI_API_KEY` | OpenAI API 키 |
+| `FISH_API_KEY` | Fish Audio TTS API 키 |
+
+### 선택 (기능 활성화)
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI LLM 모델 |
+| `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
+| `HEDRA_API_KEY` | - | Hedra API 키 (enabled=true일 때 필수) |
+
+> **참고**: LiveKit, 데이터베이스, 모델 등 추가 설정은 기본값으로 로컬 개발 가능합니다.
+> 변경이 필요한 경우 `fancall/settings.py`의 Settings 클래스를 참고하세요.
 
 ## 의존성
 

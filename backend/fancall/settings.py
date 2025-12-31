@@ -2,8 +2,17 @@
 Fancall settings
 """
 
-from pydantic import root_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
+
+
+class FancallModelSettings(BaseSettings):
+    """Fancall LLM model settings."""
+
+    openai_model: str = "gpt-4o-mini"
+
+    class Config:
+        env_prefix = "FANCALL_"
 
 
 class LiveKitSettings(BaseSettings):
@@ -24,18 +33,16 @@ class LiveKitSettings(BaseSettings):
     class Config:
         env_prefix = "LIVEKIT_"
 
-    @root_validator(skip_on_failure=True)
-    def check_credentials(cls, values):  # pylint: disable=no-self-argument
-        """Validate that all credentials are present together."""
-        url = values.get("url")
-        api_key = values.get("api_key")
-        api_secret = values.get("api_secret")
+    @model_validator(mode="after")
+    def check_credentials(self) -> "LiveKitSettings":
+        """Validate that all credentials are provided together when overriding defaults."""
+        credential_fields = {"url", "api_key", "api_secret"}
+        provided_credential_fields = self.model_fields_set.intersection(
+            credential_fields
+        )
 
-        # All or none should be present
-        provided = [url, api_key, api_secret]
-        if any(provided) and not all(provided):
+        if 0 < len(provided_credential_fields) < len(credential_fields):
             raise ValueError(
-                "All LiveKit credentials (URL, API key, and API secret) must be provided together."
+                "All LiveKit credentials (URL, API key, and API secret) must be provided together when overriding defaults."
             )
-
-        return values
+        return self

@@ -10,11 +10,11 @@ import asyncio
 import base64
 import io
 import logging
-import os
 import re
 from functools import partial
 
 import httpx
+from aioia_core.settings import FishAudioSettings, HedraSettings, OpenAIAPISettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.agents.types import NOT_GIVEN
@@ -25,7 +25,7 @@ from pydantic import ValidationError
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import compose_instructions
 from fancall.schemas import AgentDispatchRequest
-from fancall.settings import LiveKitSettings
+from fancall.settings import FancallModelSettings, LiveKitSettings
 
 # Basic logging configuration
 logging.basicConfig(
@@ -54,7 +54,11 @@ class CompanionAgent(Agent):
 async def entrypoint(  # pylint: disable=too-many-locals
     ctx: JobContext,
     default_persona: Persona,
-    settings: LiveKitSettings,  # pylint: disable=unused-argument
+    livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
+    openai_settings: OpenAIAPISettings,  # pylint: disable=unused-argument
+    fish_settings: FishAudioSettings,
+    hedra_settings: HedraSettings,
+    model_settings: FancallModelSettings,
 ) -> None:
     """
     Agent entrypoint. Initializes AgentSession for text-to-speech tasks.
@@ -62,24 +66,13 @@ async def entrypoint(  # pylint: disable=too-many-locals
     Args:
         ctx: LiveKit job context
         default_persona: Default persona for fallback configuration
-        settings: LiveKit settings with API credentials (reserved for future use)
+        livekit_settings: LiveKit settings with API credentials (reserved for future use)
+        openai_settings: OpenAI API settings (현재 미사용: livekit.plugins.openai가 환경변수 직접 사용)
+        fish_settings: Fish Audio TTS settings
+        hedra_settings: Hedra avatar settings
+        model_settings: Fancall LLM model settings
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
-
-    # Check required environment variables before connecting
-    required_env_vars = [
-        "FISH_API_KEY",
-        "OPENAI_API_KEY",
-        "LIVEKIT_URL",
-        "LIVEKIT_API_KEY",
-        "LIVEKIT_API_SECRET",
-    ]
-    missing_vars = [v for v in required_env_vars if not os.getenv(v)]
-    if missing_vars:
-        logger.error(
-            "Missing required environment variables: %s", ", ".join(missing_vars)
-        )
-        raise RuntimeError(f"Missing environment variables: {', '.join(missing_vars)}")
 
     await ctx.connect()
     logger.info("Connected to LiveKit room: %s", ctx.room.name)
@@ -109,24 +102,22 @@ async def entrypoint(  # pylint: disable=too-many-locals
     )
 
     # Initialize components
-    llm = openai.LLM(model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
+    llm = openai.LLM(model=model_settings.openai_model)
     if voice_id:
         logger.info("Using Fish Audio voice_id: %s", voice_id)
 
     tts = fishaudio.TTS(
-        api_key=os.getenv("FISH_API_KEY") or NOT_GIVEN,
+        api_key=fish_settings.api_key or NOT_GIVEN,
         reference_id=voice_id or NOT_GIVEN,
     )
 
     session: AgentSession = AgentSession(llm=llm, tts=tts)
 
     # Initialize Hedra avatar if enabled
-    hedra_enabled = os.getenv("HEDRA_ENABLED", "false").lower() == "true"
     avatar_session = None
 
-    if hedra_enabled:
-        # Get Hedra API key
-        hedra_api_key = os.getenv("HEDRA_API_KEY")
+    if hedra_settings.enabled:
+        hedra_api_key = hedra_settings.api_key
         if not hedra_api_key:
             logger.error("HEDRA_API_KEY is required when HEDRA_ENABLED=true")
             ctx.shutdown(reason="HEDRA_API_KEY is required when HEDRA_ENABLED=true")
@@ -205,7 +196,12 @@ async def entrypoint(  # pylint: disable=too-many-locals
 
 
 def create_worker_options(
-    default_persona: Persona, settings: LiveKitSettings
+    default_persona: Persona,
+    livekit_settings: LiveKitSettings,
+    openai_settings: OpenAIAPISettings,
+    fish_settings: FishAudioSettings,
+    hedra_settings: HedraSettings,
+    model_settings: FancallModelSettings,
 ) -> WorkerOptions:
     """
     Create WorkerOptions for the agent with dependency injection.
@@ -214,7 +210,11 @@ def create_worker_options(
 
     Args:
         default_persona: Default persona for agent configuration
-        settings: LiveKit settings with API credentials
+        livekit_settings: LiveKit settings with API credentials
+        openai_settings: OpenAI API settings
+        fish_settings: Fish Audio TTS settings
+        hedra_settings: Hedra avatar settings
+        model_settings: Fancall LLM model settings
 
     Returns:
         WorkerOptions configured with the agent entrypoint
@@ -223,17 +223,34 @@ def create_worker_options(
         entrypoint_fnc=partial(
             entrypoint,
             default_persona=default_persona,
-            settings=settings,
+            livekit_settings=livekit_settings,
+            openai_settings=openai_settings,
+            fish_settings=fish_settings,
+            hedra_settings=hedra_settings,
+            model_settings=model_settings,
         ),
         worker_type=agents.WorkerType.ROOM,
-        agent_name=settings.agent_name,
+        agent_name=livekit_settings.agent_name,
     )
 
 
 def main() -> None:
     """Main function to run the agent worker."""
-    settings = LiveKitSettings()
-    cli.run_app(create_worker_options(DEFAULT_PERSONA, settings))
+    livekit_settings = LiveKitSettings()
+    openai_settings = OpenAIAPISettings()
+    fish_settings = FishAudioSettings()
+    hedra_settings = HedraSettings()
+    model_settings = FancallModelSettings()
+    cli.run_app(
+        create_worker_options(
+            DEFAULT_PERSONA,
+            livekit_settings,
+            openai_settings,
+            fish_settings,
+            hedra_settings,
+            model_settings,
+        )
+    )
 
 
 if __name__ == "__main__":
