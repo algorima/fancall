@@ -86,15 +86,15 @@ await repository.create({ agent_name: "idol-agent" });
 ### i18n 통합
 
 ```tsx
-// SSR/RSC 환경: locale 엔트리포인트 사용 (필수)
+// SSR/RSC 환경: locale 엔트리포인트 (권장)
 import { fancallTranslations, FANCALL_NS } from "fancall/locale";
 
-// 클라이언트 전용: 메인 엔트리포인트도 가능
+// 클라이언트 환경: 메인 엔트리포인트도 가능
 import { fancallTranslations, FANCALL_NS } from "fancall";
 ```
 
-> **주의**: Next.js 서버 컴포넌트(RSC)에서는 반드시 `fancall/locale`을 사용하세요.
-> 메인 엔트리포인트는 React context 의존성으로 인해 SSR에서 오류가 발생합니다.
+> **SSR/RSC 환경**: `fancall/locale`은 i18n 리소스만 포함하도록 최적화된 엔트리포인트입니다.
+> 메인 엔트리포인트는 클라이언트 컴포넌트(`AgentCall`, `StartCallSection`)도 export하므로, 서버 환경에서는 `/locale` 사용을 권장합니다.
 
 ```tsx
 // 호스트 앱의 i18n 인스턴스에 번역 리소스 추가
