@@ -22,6 +22,7 @@ from livekit.plugins import fishaudio, hedra, openai
 from PIL import Image
 from pydantic import ValidationError
 
+from aioia_core.settings import FishAudioSettings, HedraSettings, OpenAIAPISettings
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import compose_instructions
 from fancall.schemas import AgentDispatchRequest
