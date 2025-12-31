@@ -2,7 +2,7 @@
 Fancall settings
 """
 
-from pydantic import model_validator
+from pydantic import root_validator
 from pydantic_settings import BaseSettings
 
 
@@ -33,12 +33,15 @@ class LiveKitSettings(BaseSettings):
     class Config:
         env_prefix = "LIVEKIT_"
 
-    @model_validator(mode="after")
-    def check_credentials(self) -> "LiveKitSettings":
+    @root_validator(skip_on_failure=True)
+    def check_credentials(cls, values):  # pylint: disable=no-self-argument
         """Validate that all credentials are present together."""
-        provided = [self.url, self.api_key, self.api_secret]
-        if any(provided) and not all(provided):
+        url = values.get("url")
+        api_key = values.get("api_key")
+        api_secret = values.get("api_secret")
+
+        if any([url, api_key, api_secret]) and not all([url, api_key, api_secret]):
             raise ValueError(
                 "All LiveKit credentials (URL, API key, and API secret) must be provided together."
             )
-        return self
+        return values
