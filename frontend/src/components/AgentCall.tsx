@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 
 import { FANCALL_NS } from "@/i18n";
 
-interface AgentCallProps {
+export interface AgentCallProps {
   profilePictureUrl?: string | null;
   displayName: string;
   biography?: string | null;
