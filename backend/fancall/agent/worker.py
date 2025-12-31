@@ -212,7 +212,11 @@ async def entrypoint(  # pylint: disable=too-many-locals
 
 
 def create_worker_options(
-    default_persona: Persona, settings: LiveKitSettings
+    default_persona: Persona,
+    livekit_settings: LiveKitSettings,
+    openai_settings: OpenAIAPISettings,
+    fish_settings: FishAudioSettings,
+    hedra_settings: HedraSettings,
 ) -> WorkerOptions:
     """
     Create WorkerOptions for the agent with dependency injection.
@@ -221,7 +225,10 @@ def create_worker_options(
 
     Args:
         default_persona: Default persona for agent configuration
-        settings: LiveKit settings with API credentials
+        livekit_settings: LiveKit settings with API credentials
+        openai_settings: OpenAI API settings
+        fish_settings: Fish Audio TTS settings
+        hedra_settings: Hedra avatar settings
 
     Returns:
         WorkerOptions configured with the agent entrypoint
@@ -230,17 +237,31 @@ def create_worker_options(
         entrypoint_fnc=partial(
             entrypoint,
             default_persona=default_persona,
-            settings=settings,
+            livekit_settings=livekit_settings,
+            openai_settings=openai_settings,
+            fish_settings=fish_settings,
+            hedra_settings=hedra_settings,
         ),
         worker_type=agents.WorkerType.ROOM,
-        agent_name=settings.agent_name,
+        agent_name=livekit_settings.agent_name,
     )
 
 
 def main() -> None:
     """Main function to run the agent worker."""
-    settings = LiveKitSettings()
-    cli.run_app(create_worker_options(DEFAULT_PERSONA, settings))
+    livekit_settings = LiveKitSettings()
+    openai_settings = OpenAIAPISettings()
+    fish_settings = FishAudioSettings()
+    hedra_settings = HedraSettings()
+    cli.run_app(
+        create_worker_options(
+            DEFAULT_PERSONA,
+            livekit_settings,
+            openai_settings,
+            fish_settings,
+            hedra_settings,
+        )
+    )
 
 
 if __name__ == "__main__":
