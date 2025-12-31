@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 
 import { FANCALL_NS } from "@/i18n";
 
-interface StartCallSectionProps {
+export interface StartCallSectionProps {
   onStart: () => void;
   isLoading: boolean;
 }
