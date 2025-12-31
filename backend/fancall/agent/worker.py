@@ -55,7 +55,10 @@ class CompanionAgent(Agent):
 async def entrypoint(  # pylint: disable=too-many-locals
     ctx: JobContext,
     default_persona: Persona,
-    settings: LiveKitSettings,  # pylint: disable=unused-argument
+    livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
+    openai_settings: OpenAIAPISettings,
+    fish_settings: FishAudioSettings,
+    hedra_settings: HedraSettings,
 ) -> None:
     """
     Agent entrypoint. Initializes AgentSession for text-to-speech tasks.
@@ -63,7 +66,10 @@ async def entrypoint(  # pylint: disable=too-many-locals
     Args:
         ctx: LiveKit job context
         default_persona: Default persona for fallback configuration
-        settings: LiveKit settings with API credentials (reserved for future use)
+        livekit_settings: LiveKit settings with API credentials (reserved for future use)
+        openai_settings: OpenAI API settings
+        fish_settings: Fish Audio TTS settings
+        hedra_settings: Hedra avatar settings
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
