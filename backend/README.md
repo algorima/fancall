@@ -79,14 +79,35 @@ make format
 
 ## 환경 변수
 
-| 변수명 | 필수 | 설명 |
-|--------|------|------|
-| `LIVEKIT_URL` | O | LiveKit 서버 URL |
-| `LIVEKIT_API_KEY` | O | LiveKit API 키 |
-| `LIVEKIT_API_SECRET` | O | LiveKit API 시크릿 |
-| `OPENAI_API_KEY` | O | OpenAI API 키 |
-| `FISH_API_KEY` | O | Fish Audio API 키 |
-| `DATABASE_URL` | O | PostgreSQL/SQLite URL |
+### LiveKit (필수)
+
+| 변수명 | 기본값 | 설명 |
+|--------|--------|------|
+| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit 서버 URL |
+| `LIVEKIT_API_KEY` | `devkey` | LiveKit API 키 |
+| `LIVEKIT_API_SECRET` | `secret` | LiveKit API 시크릿 |
+
+### 외부 서비스 (aioia-core)
+
+| 변수명 | 기본값 | 설명 |
+|--------|--------|------|
+| `OPENAI_API_KEY` | - | OpenAI API 키 (필수) |
+| `FISH_ENABLED` | `false` | Fish Audio 활성화 |
+| `FISH_API_KEY` | - | Fish Audio API 키 |
+| `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
+| `HEDRA_API_KEY` | - | Hedra API 키 |
+
+### Fancall 설정
+
+| 변수명 | 기본값 | 설명 |
+|--------|--------|------|
+| `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI 모델 |
+
+### 데이터베이스
+
+| 변수명 | 기본값 | 설명 |
+|--------|--------|------|
+| `DATABASE_URL` | `sqlite:///./local_database.db` | DB URL |
 
 ## 의존성
 
