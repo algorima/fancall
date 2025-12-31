@@ -102,7 +102,7 @@ async def entrypoint(  # pylint: disable=too-many-locals
     )
 
     # Initialize components
-    llm = openai.LLM(model=getattr(openai_settings, "model", None) or "gpt-4o-mini")
+    llm = openai.LLM(model=model_settings.openai_model)
     if voice_id:
         logger.info("Using Fish Audio voice_id: %s", voice_id)
 
