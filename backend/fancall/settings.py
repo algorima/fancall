@@ -35,11 +35,14 @@ class LiveKitSettings(BaseSettings):
 
     @model_validator(mode="after")
     def check_credentials(self) -> "LiveKitSettings":
-        """Validate that all credentials are present together."""
-        # All or none should be present
-        provided = [self.url, self.api_key, self.api_secret]
-        if any(provided) and not all(provided):
+        """Validate that all credentials are provided together when overriding defaults."""
+        credential_fields = {"url", "api_key", "api_secret"}
+        provided_credential_fields = self.model_fields_set.intersection(
+            credential_fields
+        )
+
+        if 0 < len(provided_credential_fields) < len(credential_fields):
             raise ValueError(
-                "All LiveKit credentials (URL, API key, and API secret) must be provided together."
+                "All LiveKit credentials (URL, API key, and API secret) must be provided together when overriding defaults."
             )
         return self
