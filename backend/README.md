@@ -79,7 +79,7 @@ make format
 
 ## 환경 변수
 
-### LiveKit (필수)
+### LiveKit
 
 | 변수명 | 기본값 | 설명 |
 |--------|--------|------|
@@ -91,11 +91,12 @@ make format
 
 | 변수명 | 기본값 | 설명 |
 |--------|--------|------|
-| `OPENAI_API_KEY` | - | OpenAI API 키 (필수) |
+| `OPENAI_API_KEY` | - | OpenAI API 키 (Agent 실행 시 필수) |
+| `OPENAI_ORGANIZATION` | - | OpenAI organization ID (선택) |
 | `FISH_ENABLED` | `false` | Fish Audio 활성화 |
-| `FISH_API_KEY` | - | Fish Audio API 키 |
+| `FISH_API_KEY` | - | Fish Audio API 키 (FISH_ENABLED=true일 때 필수) |
 | `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
-| `HEDRA_API_KEY` | - | Hedra API 키 |
+| `HEDRA_API_KEY` | - | Hedra API 키 (HEDRA_ENABLED=true일 때 필수) |
 
 ### Fancall 설정
 

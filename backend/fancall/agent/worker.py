@@ -14,7 +14,7 @@ import re
 from functools import partial
 
 import httpx
-from aioia_core.settings import FishAudioSettings, HedraSettings, OpenAIAPISettings
+from aioia_core.settings import FishAudioSettings, HedraSettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.agents.types import NOT_GIVEN
@@ -55,7 +55,6 @@ async def entrypoint(  # pylint: disable=too-many-locals
     ctx: JobContext,
     default_persona: Persona,
     livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
-    openai_settings: OpenAIAPISettings,  # pylint: disable=unused-argument
     fish_settings: FishAudioSettings,
     hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
@@ -67,7 +66,6 @@ async def entrypoint(  # pylint: disable=too-many-locals
         ctx: LiveKit job context
         default_persona: Default persona for fallback configuration
         livekit_settings: LiveKit settings with API credentials (reserved for future use)
-        openai_settings: OpenAI API settings (reserved for future use)
         fish_settings: Fish Audio TTS settings
         hedra_settings: Hedra avatar settings
         model_settings: Fancall LLM model settings
@@ -198,7 +196,6 @@ async def entrypoint(  # pylint: disable=too-many-locals
 def create_worker_options(
     default_persona: Persona,
     livekit_settings: LiveKitSettings,
-    openai_settings: OpenAIAPISettings,
     fish_settings: FishAudioSettings,
     hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
@@ -211,7 +208,6 @@ def create_worker_options(
     Args:
         default_persona: Default persona for agent configuration
         livekit_settings: LiveKit settings with API credentials
-        openai_settings: OpenAI API settings
         fish_settings: Fish Audio TTS settings
         hedra_settings: Hedra avatar settings
         model_settings: Fancall LLM model settings
@@ -224,7 +220,6 @@ def create_worker_options(
             entrypoint,
             default_persona=default_persona,
             livekit_settings=livekit_settings,
-            openai_settings=openai_settings,
             fish_settings=fish_settings,
             hedra_settings=hedra_settings,
             model_settings=model_settings,
@@ -237,7 +232,6 @@ def create_worker_options(
 def main() -> None:
     """Main function to run the agent worker."""
     livekit_settings = LiveKitSettings()
-    openai_settings = OpenAIAPISettings()
     fish_settings = FishAudioSettings()
     hedra_settings = HedraSettings()
     model_settings = FancallModelSettings()
@@ -245,7 +239,6 @@ def main() -> None:
         create_worker_options(
             DEFAULT_PERSONA,
             livekit_settings,
-            openai_settings,
             fish_settings,
             hedra_settings,
             model_settings,
