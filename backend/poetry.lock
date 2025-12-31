@@ -135,14 +135,14 @@ speedups = ["Brotli ; platform_python_implementation == \"CPython\"", "aiodns (>
 
 [[package]]
 name = "aioia-core"
-version = "2.0.0"
+version = "2.2.0"
 description = "Core infrastructure for AIoIA projects"
 optional = false
 python-versions = "<3.13,>=3.10"
 groups = ["main"]
 files = [
-    {file = "aioia_core-2.0.0-py3-none-any.whl", hash = "sha256:e198b7d3312729b02b2871fd78f8380d987bdb149643cfa5fd5106292d7707bc"},
-    {file = "aioia_core-2.0.0.tar.gz", hash = "sha256:2cc7cc49f9853ee54e38702fb1e0e60ed6e9f56edb17c36ca30ec6e40fa4afee"},
+    {file = "aioia_core-2.2.0-py3-none-any.whl", hash = "sha256:7d3a7054172bcb57902117bcb7d59ea02185e7e4d22e91e727986a22b83851be"},
+    {file = "aioia_core-2.2.0.tar.gz", hash = "sha256:61dfd84d781b13acdbc22c015b435658eff5af2a13e2a5c772f5975d9df0c8a9"},
 ]
 
 [package.dependencies]
@@ -3454,4 +3454,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "99a58d1f7c1396b930f0b6db5b0100c3524f908e9d4d1a63f0323b1267a2033a"
+content-hash = "ff60b409e29a2816f8719cf6d6b147957b62c6cfccbec9591afa944cc64686ca"
