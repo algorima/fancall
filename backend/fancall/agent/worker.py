@@ -201,6 +201,7 @@ def create_worker_options(
     openai_settings: OpenAIAPISettings,
     fish_settings: FishAudioSettings,
     hedra_settings: HedraSettings,
+    model_settings: FancallModelSettings,
 ) -> WorkerOptions:
     """
     Create WorkerOptions for the agent with dependency injection.
@@ -213,6 +214,7 @@ def create_worker_options(
         openai_settings: OpenAI API settings
         fish_settings: Fish Audio TTS settings
         hedra_settings: Hedra avatar settings
+        model_settings: Fancall LLM model settings
 
     Returns:
         WorkerOptions configured with the agent entrypoint
@@ -225,6 +227,7 @@ def create_worker_options(
             openai_settings=openai_settings,
             fish_settings=fish_settings,
             hedra_settings=hedra_settings,
+            model_settings=model_settings,
         ),
         worker_type=agents.WorkerType.ROOM,
         agent_name=livekit_settings.agent_name,
@@ -237,6 +240,7 @@ def main() -> None:
     openai_settings = OpenAIAPISettings()
     fish_settings = FishAudioSettings()
     hedra_settings = HedraSettings()
+    model_settings = FancallModelSettings()
     cli.run_app(
         create_worker_options(
             DEFAULT_PERSONA,
@@ -244,6 +248,7 @@ def main() -> None:
             openai_settings,
             fish_settings,
             hedra_settings,
+            model_settings,
         )
     )
 
