@@ -10,17 +10,17 @@ keywords = ["kpop", "idol", "fancall", "livekit", "ai-companion", "video-call"]
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
 aioia-core = "^2.2.0"
-fastapi = "^0.115.0"
-pydantic = "^2.5.0"
+fastapi = "^0.115.12"
+pydantic = {extras = ["email"], version = "^2.5.3"}
 pydantic-settings = "^2.1.0"
-sqlalchemy = "^2.0.0"
-alembic = "^1.13.0"
-psycopg2-binary = "^2.9.0"
+sqlalchemy = "^2.0.25"
+alembic = "^1.13.1"
+psycopg2-binary = "^2.9.9"
 python-dotenv = "^1.0.0"
-livekit-api = "^1.0.0"
-livekit-agents = {extras = ["openai", "fishaudio", "hedra"], version = "^1.0.0"}
-sqlalchemy-mixins = "^2.0.0"
-httpx = "^0.27.0"
+livekit-api = "^1.0.7"
+livekit-agents = {extras = ["openai", "fishaudio", "hedra", "images"], version = "^1.2.17"}
+sqlalchemy-mixins = "^2.0.5"
+httpx = "^0.28.1"
 pillow = "^10.0.0"
 pyhumps = "^3.8.0"
 openai = ">=1.0.0"
