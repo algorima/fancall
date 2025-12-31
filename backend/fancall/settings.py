@@ -6,6 +6,15 @@ from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
+class FancallModelSettings(BaseSettings):
+    """Fancall LLM model settings."""
+
+    openai_model: str = "gpt-4o-mini"
+
+    class Config:
+        env_prefix = "FANCALL_"
+
+
 class LiveKitSettings(BaseSettings):
     """Settings for LiveKit API integration
 
