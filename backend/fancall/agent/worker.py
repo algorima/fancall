@@ -10,7 +10,6 @@ import asyncio
 import base64
 import io
 import logging
-import os
 import re
 from functools import partial
 
@@ -72,21 +71,6 @@ async def entrypoint(  # pylint: disable=too-many-locals
         hedra_settings: Hedra avatar settings
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
-
-    # Check required environment variables before connecting
-    required_env_vars = [
-        "FISH_API_KEY",
-        "OPENAI_API_KEY",
-        "LIVEKIT_URL",
-        "LIVEKIT_API_KEY",
-        "LIVEKIT_API_SECRET",
-    ]
-    missing_vars = [v for v in required_env_vars if not os.getenv(v)]
-    if missing_vars:
-        logger.error(
-            "Missing required environment variables: %s", ", ".join(missing_vars)
-        )
-        raise RuntimeError(f"Missing environment variables: {', '.join(missing_vars)}")
 
     await ctx.connect()
     logger.info("Connected to LiveKit room: %s", ctx.room.name)
