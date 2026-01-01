@@ -23,12 +23,20 @@ export default function FancallEntryPage() {
     if (isLoading) return;
 
     setIsLoading(true);
+    try {
+      const response = await repository.create({ variables: {} });
+      const liveRoom = response.data;
+      await repository.dispatchAgent(liveRoom.id, {});
 
-    const response = await repository.create({ variables: {} });
-    const liveRoom = response.data;
-    await repository.dispatchAgent(liveRoom.id, {});
-
-    router.push(`/${i18n.language}/${liveRoom.id}`);
+      router.push(`/${i18n.language}/${liveRoom.id}`);
+      // 리디렉션 후에는 로딩 상태를 유지 (버튼 비활성화 유지)
+    } catch (error) {
+      console.error("Failed to start fancall:", error);
+      // 오류 발생 시에만 로딩 상태 해제
+      setIsLoading(false);
+      // 오류를 다시 throw하여 Sentry에 자동 보고되도록 함
+      throw error;
+    }
   };
 
   return (
