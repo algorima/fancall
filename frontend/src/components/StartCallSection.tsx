@@ -11,15 +11,15 @@ export function StartCallSection({
   onStart,
   isLoading,
 }: StartCallSectionProps) {
-  const { t } = useTranslation(FANCALL_NS);
+  const { t } = useTranslation();
 
   return (
     <div className="w-full lg:max-w-[720px]">
       <h1 className="mb-2 text-left text-3xl font-bold text-base-content sm:mb-8 sm:text-center sm:text-4xl md:mb-8">
-        {t("entry.title")}
+        {t("entry.title", { ns: FANCALL_NS })}
       </h1>
       <p className="mb-4 text-left text-sm text-base-content/70 sm:mb-8 sm:text-center sm:text-base md:mb-16">
-        {t("entry.subtitle")}
+        {t("entry.subtitle", { ns: FANCALL_NS })}
       </p>
 
       <div className="flex justify-center">
@@ -31,7 +31,7 @@ export function StartCallSection({
           {isLoading ? (
             <span className="loading loading-spinner loading-sm" />
           ) : (
-            t("entry.startCall")
+            t("entry.startCall", { ns: FANCALL_NS })
           )}
         </button>
       </div>

@@ -13,7 +13,7 @@ import { getApiService } from "@/services/ApiService";
 
 export default function FancallRoomPage() {
   const params = useParams();
-  const { t } = useTranslation(FANCALL_NS);
+  const { t } = useTranslation();
   const liveRoomId = Array.isArray(params.liveRoomId)
     ? params.liveRoomId[0]
     : params.liveRoomId;
@@ -57,7 +57,7 @@ export default function FancallRoomPage() {
     return (
       <div className="flex h-full items-center justify-center bg-black">
         <div className="alert alert-error max-w-md">
-          <span>{t("room.failedToLoad")}</span>
+          <span>{t("room.failedToLoad", { ns: FANCALL_NS })}</span>
         </div>
       </div>
     );
@@ -74,7 +74,7 @@ export default function FancallRoomPage() {
         audio={false}
         video={false}
       >
-        <AgentCall displayName={t("room.agentName")} />
+        <AgentCall displayName={t("room.agentName", { ns: FANCALL_NS })} />
       </LiveKitRoom>
     </div>
   );

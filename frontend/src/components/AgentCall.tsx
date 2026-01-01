@@ -34,7 +34,7 @@ export function AgentCall({
   biography,
 }: AgentCallProps) {
   const { state, audioTrack, agent } = useVoiceAssistant();
-  const { t } = useTranslation(FANCALL_NS);
+  const { t } = useTranslation();
   const tracks = useTracks();
   const room = useRoomContext();
   const [message, setMessage] = useState("");
@@ -111,17 +111,17 @@ export function AgentCall({
           <div className="mx-4 max-w-md rounded-2xl bg-base-100 p-6 text-center shadow-2xl">
             <SpeakerWaveIcon className="mx-auto mb-4 size-12 text-warning" />
             <h3 className="mb-2 text-lg font-semibold text-base-content">
-              {t("agentCall.audioPermission.title")}
+              {t("agentCall.audioPermission.title", { ns: FANCALL_NS })}
             </h3>
             <p className="mb-4 text-sm text-neutral-content">
-              {t("agentCall.audioPermission.description")}
+              {t("agentCall.audioPermission.description", { ns: FANCALL_NS })}
             </p>
             <button
               onClick={handleStartAudio}
               className="btn btn-primary btn-block"
             >
               <SpeakerWaveIcon className="size-5" />
-              {t("agentCall.audioPermission.button")}
+              {t("agentCall.audioPermission.button", { ns: FANCALL_NS })}
             </button>
           </div>
         </div>
@@ -184,11 +184,16 @@ export function AgentCall({
               "text-neutral-content",
           )}
         >
-          {state === "connecting" && t("agentCall.state.connecting")}
-          {state === "listening" && t("agentCall.state.listening")}
-          {state === "thinking" && t("agentCall.state.thinking")}
-          {state === "speaking" && t("agentCall.state.speaking")}
-          {state === "disconnected" && t("agentCall.state.disconnected")}
+          {state === "connecting" &&
+            t("agentCall.state.connecting", { ns: FANCALL_NS })}
+          {state === "listening" &&
+            t("agentCall.state.listening", { ns: FANCALL_NS })}
+          {state === "thinking" &&
+            t("agentCall.state.thinking", { ns: FANCALL_NS })}
+          {state === "speaking" &&
+            t("agentCall.state.speaking", { ns: FANCALL_NS })}
+          {state === "disconnected" &&
+            t("agentCall.state.disconnected", { ns: FANCALL_NS })}
         </div>
       </div>
 
@@ -205,10 +210,10 @@ export function AgentCall({
             disabled={!isConnected || !isAgentAvailable || isSending}
             placeholder={
               !isConnected
-                ? t("agentCall.chat.connecting")
+                ? t("agentCall.chat.connecting", { ns: FANCALL_NS })
                 : !isAgentAvailable
-                  ? t("agentCall.chat.waitingForAgent")
-                  : t("agentCall.chat.placeholder")
+                  ? t("agentCall.chat.waitingForAgent", { ns: FANCALL_NS })
+                  : t("agentCall.chat.placeholder", { ns: FANCALL_NS })
             }
             className="input input-bordered flex-1 focus:input-primary disabled:cursor-not-allowed disabled:opacity-50"
           />
@@ -220,7 +225,9 @@ export function AgentCall({
             className="btn btn-primary"
           >
             <PaperAirplaneIcon className="size-5" />
-            {isSending ? t("agentCall.chat.sending") : t("agentCall.chat.send")}
+            {isSending
+              ? t("agentCall.chat.sending", { ns: FANCALL_NS })
+              : t("agentCall.chat.send", { ns: FANCALL_NS })}
           </button>
         </form>
       </div>
