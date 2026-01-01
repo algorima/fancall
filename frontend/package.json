@@ -11,6 +11,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./schemas": {
+      "types": "./dist/schemas.d.ts",
+      "import": "./dist/schemas.mjs",
+      "require": "./dist/schemas.js"
+    },
     "./locale": {
       "types": "./dist/i18n/translations.d.ts",
       "import": "./dist/locale.mjs",
