@@ -18,6 +18,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, "src/index.ts"),
+        schemas: resolve(__dirname, "src/schemas.ts"),
         locale: resolve(__dirname, "src/i18n/translations.ts"),
       },
       formats: ["es", "cjs"],
