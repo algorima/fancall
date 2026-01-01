@@ -66,7 +66,15 @@ content: [
 ]
 ```
 
-### 컴포넌트
+### Entry Points
+
+| 엔트리 | 용도 | 환경 |
+|--------|------|------|
+| `fancall` | 컴포넌트, Repository | 클라이언트 |
+| `fancall/schemas` | 타입, Zod 스키마 | 서버/클라이언트 |
+| `fancall/locale` | i18n 리소스 | 서버/클라이언트 |
+
+### 컴포넌트 (클라이언트)
 
 ```tsx
 import { AgentCall } from "fancall";
@@ -74,13 +82,21 @@ import { AgentCall } from "fancall";
 <AgentCall roomName={roomName} token={token} />
 ```
 
-### Repository
+### Repository (클라이언트)
 
 ```tsx
 import { LiveRoomRepository } from "fancall";
 
 const repository = new LiveRoomRepository(apiService);
 await repository.create({ agent_name: "idol-agent" });
+```
+
+### 타입 및 스키마 (서버/클라이언트)
+
+```tsx
+// 서버 컴포넌트에서 타입 사용
+import type { DispatchResponse, LiveRoom } from "fancall/schemas";
+import { dispatchResponseSchema } from "fancall/schemas";
 ```
 
 ### i18n 통합
