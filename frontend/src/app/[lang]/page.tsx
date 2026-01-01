@@ -5,12 +5,11 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { StartCallSection } from "@/components/StartCallSection";
-import { FANCALL_NS } from "@/i18n";
 import { LiveRoomRepository } from "@/repositories";
 import { getApiService } from "@/services/ApiService";
 
 export default function FancallEntryPage() {
-  const { i18n } = useTranslation(FANCALL_NS);
+  const { i18n } = useTranslation();
   const router = useRouter();
 
   const repository = useMemo<LiveRoomRepository>(
