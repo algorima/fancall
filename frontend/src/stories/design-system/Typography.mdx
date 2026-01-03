@@ -1,0 +1,141 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Design System/03-Typography/Overview" />
+
+# Typography
+
+Material Design 3 기반 명명된 타입 스케일 시스템으로 일관된 텍스트 계층을 유지합니다.
+
+---
+
+## Type Scales (MD3 기반)
+
+### Display
+
+```
+text-display-l  72px / 100% / 700 / 0      - 히어로 섹션 (데스크톱)
+text-display-m  48px / 100% / 700 / 0      - 히어로 섹션 (모바일), 주요 섹션 제목 (데스크톱)
+text-display-s  36px / 111.1% / 700 / 0    - 주요 섹션 제목 (모바일)
+```
+
+### Headline
+
+```
+text-headline-l  30px / 120% / 700 / 0     - 서브섹션 제목
+text-headline-m  24px / 133.3% / 700 / 0   - 카드/모달 제목
+text-headline-s  20px / 140% / 700 / 0     - 본문 내 주요 제목
+```
+
+### Title
+
+```
+text-title-l  24px / 133.3% / 500 / 0      - 큰 제목 (FAQ, 인터랙티브)
+text-title-m  20px / 140% / 600 / 0        - 중간 제목
+text-title-s  18px / 155.6% / 600 / 0      - 소제목
+```
+
+### Body
+
+```
+text-body-l  20px / 140% / 400 / 0         - 인트로 텍스트, 강조 본문
+text-body-m  18px / 155.6% / 400 / 0       - 기본 본문
+text-body-s  14px / 142.9% / 400 / 0.1px   - 보조 텍스트, Footer
+```
+
+### Label
+
+```
+text-label-l  14px / 142.9% / 500 / 0      - 버튼, 폼 라벨
+text-label-m  12px / 133.3% / 500 / 0.1px  - 캡션, 메타 정보
+text-label-s  11px / 145.5% / 500 / 0.1px  - 가장 작은 라벨
+```
+
+---
+
+## 반응형 적용
+
+브레이크포인트 variant로 반응형 타이포그래피를 적용합니다.
+
+```tsx
+{
+  /* Hero: 모바일 48px → 데스크톱 72px */
+}
+<h1 className="text-display-m md:text-display-l">Welcome to Fancall</h1>;
+
+{
+  /* Section: 모바일 36px → 데스크톱 48px */
+}
+<h2 className="text-display-s md:text-display-m">Features</h2>;
+```
+
+---
+
+## 페이지 구조 예시
+
+```tsx
+<div className="space-y-8">
+  {/* Hero Section - 반응형 */}
+  <h1 className="text-display-m md:text-display-l">Welcome to Fancall</h1>
+
+  {/* Main Section - 반응형 */}
+  <section>
+    <h2 className="text-display-s md:text-display-m">Features</h2>
+    <p className="text-body-l">Connect with your favorite K-pop artists</p>
+  </section>
+
+  {/* Subsection */}
+  <section>
+    <h3 className="text-headline-l">Call Experience</h3>
+    <h4 className="text-headline-s">Natural Conversations</h4>
+    <p className="text-body-m">Talk with your favorite artists naturally.</p>
+    <p className="text-label-m">Powered by advanced AI technology</p>
+  </section>
+
+  {/* Card */}
+  <div className="card">
+    <h4 className="text-headline-m">Subscription Plans</h4>
+    <div className="text-label-m uppercase">Premium</div>
+    <p className="text-body-s">Unlimited calls and exclusive features</p>
+  </div>
+</div>
+```
+
+---
+
+## ✅ Do's
+
+- **MD3 명명 규칙**: `text-{role}-{size}` 형식 사용 (예: `text-display-l`, `text-body-m`)
+- **계층 유지**: Display > Headline > Title > Body > Label 순서 준수
+- **반응형**: 브레이크포인트로 크기 변경 (예: `text-display-m md:text-display-l`)
+
+```tsx
+// ✅ Good
+<h1 className="text-display-m md:text-display-l">Main Title</h1>
+<h2 className="text-display-s md:text-display-m">Section Title</h2>
+<p className="text-body-m">Content text</p>
+```
+
+---
+
+## ❌ Don'ts
+
+- **임의의 조합 금지**: `text-4xl font-bold` 같은 개별 클래스 조합 지양
+- **계층 건너뛰기**: Display 다음에 바로 Body 사용 지양
+- **중복 정의**: 컴포넌트마다 custom fontSize 재정의 금지
+
+```tsx
+// ❌ Bad - 임의의 조합
+<h1 className="text-5xl font-extrabold">Title</h1>
+<p className="text-lg font-medium">Body</p>
+
+// ✅ Good - 명명된 스케일
+<h1 className="text-display-l">Title</h1>
+<p className="text-body-l">Body</p>
+```
+
+---
+
+## References
+
+- [Material Design 3 Typography](https://m3.material.io/styles/typography/type-scale-tokens)
+- [Tailwind CSS Font Size](https://tailwindcss.com/docs/font-size)
