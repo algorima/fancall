@@ -4,6 +4,7 @@ const config: Config = {
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
     "./node_modules/@aioia/core/dist/**/*.{js,jsx,ts,tsx}",
+    "./src/stories/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
