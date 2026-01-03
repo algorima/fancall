@@ -7,6 +7,11 @@ import { allModes } from "../.storybook/modes";
 import { createClientI18nInstance, FANCALL_NS } from "../src/i18n";
 import { fancallTranslations } from "../src/i18n/translations";
 import { fallbackLng, languages, languageNames } from "../src/i18n/config";
+import { MotionGlobalConfig } from "framer-motion";
+import isChromatic from "chromatic/isChromatic";
+
+// Disable animations in Chromatic
+MotionGlobalConfig.skipAnimations = isChromatic();
 
 const withI18next: Decorator = (Story, context) => {
   const lang = context.globals.locale as string;
@@ -43,6 +48,12 @@ const preview: Preview = {
     },
   },
   parameters: {
+    options: {
+      storySort: {
+        method: "alphabetical",
+        order: ["Design System", "*"],
+      },
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,
