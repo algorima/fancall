@@ -65,6 +65,19 @@ When performing a code review, respond in Korean.
 - CSS 프레임워크: Tailwind CSS + DaisyUI
 - 아이콘: Heroicons v2 (`@heroicons/react`)
 
+### 색상 규칙
+
+- **DaisyUI semantic token만 사용**: `text-base-content`, `bg-base-200`, `text-primary`, `bg-secondary` 등
+- **Tailwind 기본 색상 팔레트 사용 금지**: `text-gray-900`, `bg-blue-500` 등
+- **이유**: 라이트/다크 모드 자동 전환, 일관성 유지
+
+### 타이포그래피 규칙
+
+- **명명된 MD3 타입 스케일만 사용**: `text-display-l`, `text-headline-m`, `text-body-s`, `text-label-l` 등
+- **Tailwind 기본 유틸리티 사용 금지**: `text-3xl`, `text-lg`, `text-sm` 등
+- **MD3 스케일 종류**: Display (3), Headline (3), Title (3), Body (3), Label (3) - 총 15개
+- **참조**: `tailwind.config.ts`의 `theme.extend.fontSize` 참고
+
 ## 컴포넌트 정의
 
 - 컴포넌트는 Named Exports 사용, 함수 선언 방식으로 정의
