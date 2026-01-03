@@ -110,10 +110,10 @@ export function AgentCall({
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral/75 backdrop-blur-sm">
           <div className="mx-4 max-w-md rounded-2xl bg-base-100 p-6 text-center shadow-2xl">
             <SpeakerWaveIcon className="mx-auto mb-4 size-12 text-warning" />
-            <h3 className="mb-2 text-lg font-semibold text-base-content">
+            <h3 className="mb-2 text-title-m font-semibold text-base-content">
               {t("agentCall.audioPermission.title", { ns: FANCALL_NS })}
             </h3>
-            <p className="mb-4 text-sm text-neutral-content">
+            <p className="mb-4 text-body-s text-neutral-content">
               {t("agentCall.audioPermission.description", { ns: FANCALL_NS })}
             </p>
             <button
@@ -150,11 +150,11 @@ export function AgentCall({
                 />
               </div>
             )}
-            <h1 className="text-3xl font-bold text-base-content">
+            <h1 className="text-headline-l font-bold text-base-content">
               {displayName}
             </h1>
             {biography && (
-              <p className="mt-2 max-w-md text-center text-sm text-neutral-content">
+              <p className="mt-2 max-w-md text-center text-body-s text-neutral-content">
                 {biography}
               </p>
             )}
@@ -176,7 +176,7 @@ export function AgentCall({
         {/* Agent state indicator */}
         <div
           className={clsx(
-            "mb-6 text-lg font-medium transition-colors",
+            "mb-6 text-body-m font-medium transition-colors",
             state === "speaking" && "text-secondary",
             state === "listening" && "text-primary",
             state === "thinking" && "text-accent",
