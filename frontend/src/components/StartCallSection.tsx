@@ -15,10 +15,10 @@ export function StartCallSection({
 
   return (
     <div className="w-full lg:max-w-[720px]">
-      <h1 className="mb-2 text-left text-3xl font-bold text-base-content sm:mb-8 sm:text-center sm:text-4xl md:mb-8">
+      <h1 className="mb-2 text-left text-headline-s font-bold text-base-content sm:mb-8 sm:text-center sm:text-display-s md:mb-8">
         {t("entry.title", { ns: FANCALL_NS })}
       </h1>
-      <p className="mb-4 text-left text-sm text-base-content/70 sm:mb-8 sm:text-center sm:text-base md:mb-16">
+      <p className="mb-4 text-left text-label-l text-base-content/70 sm:mb-8 sm:text-center sm:text-body-s md:mb-16">
         {t("entry.subtitle", { ns: FANCALL_NS })}
       </p>
 
