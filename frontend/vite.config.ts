@@ -22,7 +22,7 @@ export default defineConfig({
       },
       formats: ["es", "cjs"],
       fileName: (format, entryName) =>
-        `${entryName}.${format === "es" ? "mjs" : "js"}`,
+        `${entryName}.${format === "es" ? "js" : "cjs"}`,
     },
     rollupOptions: {
       external: [
