@@ -88,7 +88,6 @@ make migrate
 새로운 마이그레이션을 생성하려면 (models.py 변경 후):
 
 ```bash
-cd backend
 poetry run alembic revision --autogenerate -m "변경 설명"
 ```
 
