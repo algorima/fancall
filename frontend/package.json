@@ -11,15 +11,10 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
-    "./schemas": {
-      "types": "./dist/schemas.d.ts",
-      "import": "./dist/schemas.mjs",
-      "require": "./dist/schemas.js"
-    },
-    "./locale": {
-      "types": "./dist/i18n/translations.d.ts",
-      "import": "./dist/locale.mjs",
-      "require": "./dist/locale.js"
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.mjs",
+      "require": "./dist/client.js"
     }
   },
   "files": [
