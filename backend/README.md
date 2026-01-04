@@ -77,6 +77,21 @@ make unit-test
 make format
 ```
 
+## 데이터베이스 마이그레이션
+
+데이터베이스 스키마를 최신 상태로 업데이트하려면:
+
+```bash
+make migrate
+```
+
+새로운 마이그레이션을 생성하려면 (models.py 변경 후):
+
+```bash
+cd backend
+poetry run alembic revision --autogenerate -m "변경 설명"
+```
+
 ## 환경 변수
 
 ### 필수 (Agent 실행 시)
