@@ -18,8 +18,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, "src/index.ts"),
-        schemas: resolve(__dirname, "src/schemas.ts"),
-        locale: resolve(__dirname, "src/i18n/translations.ts"),
+        client: resolve(__dirname, "src/client.ts"),
       },
       formats: ["es", "cjs"],
       fileName: (format, entryName) =>
@@ -38,6 +37,15 @@ export default defineConfig({
         "react/jsx-runtime",
         /^next\//,
       ],
+      output: {
+        banner: (chunk) => {
+          // Only add 'use client' to client entry point
+          if (chunk.name === "client") {
+            return '"use client";';
+          }
+          return "";
+        },
+      },
     },
   },
   plugins: [
@@ -48,6 +56,7 @@ export default defineConfig({
         "src/repositories/**/*",
         "src/schemas.ts",
         "src/index.ts",
+        "src/client.ts",
         "src/i18n/translations.ts",
       ],
       exclude: [
