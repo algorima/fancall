@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Any
 
 from aioia_core.repositories import BaseRepository
+from aioia_core.types import CrudFilter
 from sqlalchemy.orm import Session
 
 from fancall.models import DBLiveRoom
@@ -54,7 +55,7 @@ class DatabaseLiveRoomRepository(
         current: int = 1,
         page_size: int = 10,
         sort: list[tuple[str, str]] | None = None,
-        filters: list[dict[str, Any]] | None = None,
+        filters: list[CrudFilter] | None = None,
         load_options: list[Any] | None = None,
     ) -> tuple[list[LiveRoom], int]:
         """Get list of LiveRooms"""
