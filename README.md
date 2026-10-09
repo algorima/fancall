@@ -6,8 +6,7 @@ AI-powered video call with virtual companions
 
 - LiveKit 기반 실시간 음성/영상 통화
 - AI 아이돌과 1:1 대화
-- Fish Audio TTS 음성 합성
-- Hedra 아바타 지원 (선택)
+- ElevenLabs TTS 음성 합성
 
 ## 빠른 시작
 
@@ -30,7 +29,7 @@ LiveKit Agent:
 ```bash
 cd backend
 export OPENAI_API_KEY=sk-...
-export FISH_API_KEY=...
+export ELEVEN_API_KEY=...
 python -m fancall.agent.worker dev
 ```
 

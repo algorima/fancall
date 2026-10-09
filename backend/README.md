@@ -5,8 +5,7 @@ AI 아이돌과 실시간 영상 통화 Python 패키지
 ## 주요 기능
 
 - LiveKit 기반 실시간 음성/영상 통화
-- Fish Audio TTS 음성 합성
-- Hedra 아바타 지원 (선택)
+- ElevenLabs TTS 음성 합성
 - 동적 설정 (voice_id, avatar_id, system_prompt)
 
 ## 설치
@@ -37,7 +36,7 @@ livekit-server --dev
 ```bash
 cd backend
 export OPENAI_API_KEY=sk-...
-export FISH_API_KEY=...
+export ELEVEN_API_KEY=...
 
 # 개발 모드
 python -m fancall.agent.worker dev
@@ -98,7 +97,7 @@ poetry run alembic revision --autogenerate -m "변경 설명"
 | 변수 | 설명 |
 |------|------|
 | `OPENAI_API_KEY` | OpenAI API 키 |
-| `FISH_API_KEY` | Fish Audio TTS API 키 |
+| `ELEVEN_API_KEY` | ElevenLabs TTS API 키 |
 
 ### 선택 (기능 활성화)
 

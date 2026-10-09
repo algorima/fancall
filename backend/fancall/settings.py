@@ -7,12 +7,26 @@ from pydantic_settings import BaseSettings
 
 
 class FancallModelSettings(BaseSettings):
-    """Fancall LLM model settings."""
+    """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    elevenlabs_model: str = "eleven_flash_v2_5"
 
     class Config:
         env_prefix = "FANCALL_"
+
+
+class ElevenLabsSettings(BaseSettings):
+    """Settings for ElevenLabs TTS
+
+    Attributes:
+        api_key: ElevenLabs API key (ELEVEN_API_KEY).
+    """
+
+    api_key: str | None = None
+
+    class Config:
+        env_prefix = "ELEVEN_"
 
 
 class LiveKitSettings(BaseSettings):

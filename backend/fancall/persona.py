@@ -22,7 +22,7 @@ class Persona(BaseModel):
         default=None, description="Profile picture URL for avatar generation"
     )
     voice_id: str | None = Field(
-        default=None, description="Fish Audio voice ID for TTS"
+        default=None, description="ElevenLabs voice ID for TTS"
     )
     system_prompt: str | None = Field(
         default=None,
@@ -87,7 +87,6 @@ Element tip: reinforce Wood to boost creativity & concept interpretation.
 Signature color/number: Rose gold · Charcoal / 11."""
 
 DEFAULT_PERSONA = Persona(
-    voice_id="c5274be32cac4aa4bd7b69f51a8a4b83",
     profile_picture_url="https://storage.googleapis.com/buppy/profile-pictures/017433aa-748f-400a-9f16-e326b0e5b02d.png",
     system_prompt=EUNWOO_SYSTEM_PROMPT,
 )
