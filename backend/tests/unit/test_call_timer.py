@@ -85,8 +85,13 @@ class TestRunCallTimer(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(events[0], ("sleep", 150))
         self.assertEqual(
-            events[1], ("update_instructions", "base\n\n" + WRAP_UP_INSTRUCTIONS)
+            events[1],
+            (
+                "update_instructions",
+                "base\n\n" + WRAP_UP_INSTRUCTIONS.format(lead_seconds=30),
+            ),
         )
+        self.assertIn("30초쯤 남았다", events[1][1])
         self.assertEqual(events[2], ("sleep", 18))
         self.assertEqual(events[3], ("interrupt",))
         self.assertEqual(events[4], ("generate_reply", CLOSING_INSTRUCTIONS, False))
@@ -114,6 +119,21 @@ class TestRunCallTimer(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertNotIn(("playout_done",), events)
+
+    async def test_wrap_up_follows_lead_setting(self):
+        """Test the wrap-up hint states the configured lead, not a fixed 30s"""
+        events: list = []
+
+        await run_call_timer(
+            FakeSession(events),
+            FakeAgent(events),
+            "base",
+            make_settings(wrap_up_lead_seconds=45),
+            sleep=FakeClock(events).sleep,
+        )
+
+        self.assertIn("45초쯤 남았다", events[1][1])
+        self.assertNotIn("30초", events[1][1])
 
 
 class TestFancallCallSettings(unittest.TestCase):
