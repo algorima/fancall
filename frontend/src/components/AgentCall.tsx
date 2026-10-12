@@ -2,9 +2,14 @@
 
 import {
   ChevronLeftIcon,
+  ClockIcon,
+  HeartIcon,
   PaperAirplaneIcon,
   PhoneXMarkIcon,
   SpeakerWaveIcon,
+  SpeakerXMarkIcon,
+  UserIcon,
+  VideoCameraSlashIcon,
 } from "@heroicons/react/24/solid";
 import {
   RoomAudioRenderer,
@@ -18,7 +23,7 @@ import {
 import clsx from "clsx";
 import { Track, RoomEvent } from "livekit-client";
 import Image from "next/image";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { LoadingQuips } from "@/components/LoadingQuips";
@@ -37,6 +42,15 @@ export interface AgentCallProps {
 }
 
 const LAST_SECONDS_WARNING = 30;
+const MAX_VISIBLE_MESSAGES = 3;
+const HEART_LIFETIME_MS = 1800;
+const HEART_TONES = ["text-error", "text-secondary", "text-primary"];
+
+interface FloatingHeart {
+  id: number;
+  /** Sideways drift at the top of the float, as a CSS length */
+  drift: string;
+}
 
 const formatRemaining = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -82,6 +96,9 @@ export function AgentCall({
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [canPlayAudio, setCanPlayAudio] = useState(false);
+  const [isSoundMuted, setIsSoundMuted] = useState(false);
+  const [hearts, setHearts] = useState<FloatingHeart[]>([]);
+  const nextHeartId = useRef(0);
 
   // Find agent video track
   const agentVideoTrack = tracks.find(
@@ -91,7 +108,7 @@ export function AgentCall({
   );
 
   // Send text message to agent via chat
-  const { send } = useChat();
+  const { send, chatMessages } = useChat();
 
   // Handle audio playback status
   useEffect(() => {
@@ -139,6 +156,16 @@ export function AgentCall({
     [message, isSending, agent, send],
   );
 
+  // Hearts stay on this screen, like tapping the like button on a live stream
+  const sendHeart = useCallback(() => {
+    const id = nextHeartId.current++;
+    const drift = `${Math.round((Math.random() - 0.5) * 48)}px`;
+    setHearts((current) => [...current, { id, drift }]);
+    setTimeout(() => {
+      setHearts((current) => current.filter((heart) => heart.id !== id));
+    }, HEART_LIFETIME_MS);
+  }, []);
+
   const isConnected = state !== "disconnected" && state !== "connecting";
   // Media not flowing yet: the agent and its avatar are still joining
   const isWaitingForMedia = !agentVideoTrack && !audioTrack;
@@ -148,10 +175,18 @@ export function AgentCall({
     callDurationSeconds,
   );
 
+  const stateLabel = t(`agentCall.state.${state}`, {
+    ns: FANCALL_NS,
+    defaultValue: "",
+  });
+  const recentMessages = chatMessages.slice(-MAX_VISIBLE_MESSAGES);
+  const isLastSeconds =
+    remainingSeconds !== null && remainingSeconds <= LAST_SECONDS_WARNING;
+
   return (
     <div className="relative size-full overflow-hidden bg-base-300">
       {/* Audio renderer */}
-      <RoomAudioRenderer />
+      <RoomAudioRenderer muted={isSoundMuted} />
 
       {/* Full-screen like a real video call. Until video arrives, the same
           photo the avatar is animated from, so the face simply starts moving */}
@@ -171,78 +206,95 @@ export function AgentCall({
         />
       )}
 
-      {/* Top bar: back, name and state, time left */}
-      <div className="absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-base-100/80 to-transparent px-4 pb-12 pt-4 text-base-content sm:pt-14">
-        <div className="grid grid-cols-[2.5rem_1fr_auto] items-start gap-2">
-          {onBack ? (
-            <button
-              type="button"
-              onClick={onBack}
-              aria-label={t("agentCall.back", { ns: FANCALL_NS })}
-              className="btn btn-circle btn-ghost btn-sm size-10 bg-base-content/15 backdrop-blur hover:bg-base-content/25"
-            >
-              <ChevronLeftIcon className="size-5" />
-            </button>
-          ) : (
-            <span />
-          )}
-          <div className="flex min-w-0 flex-col items-center pt-1 text-center">
-            <h1 className="truncate text-title-l">{displayName}</h1>
-            {biography && !agentVideoTrack && (
-              <p className="mt-1 max-w-xs text-body-s text-base-content/70">
-                {biography}
-              </p>
-            )}
-            {isWaitingForMedia ? (
-              <div className="mt-1">
-                <LoadingQuips />
-              </div>
-            ) : (
-              <div
-                className={clsx(
-                  "mt-0.5 text-body-s font-medium transition-colors",
-                  state === "speaking" && "text-secondary",
-                  state === "listening" && "text-primary",
-                  state === "thinking" && "text-accent",
-                  (state === "connecting" || state === "disconnected") &&
-                    "text-base-content/70",
-                )}
-              >
-                {state === "connecting" &&
-                  t("agentCall.state.connecting", { ns: FANCALL_NS })}
-                {state === "listening" &&
-                  t("agentCall.state.listening", { ns: FANCALL_NS })}
-                {state === "thinking" &&
-                  t("agentCall.state.thinking", { ns: FANCALL_NS })}
-                {state === "speaking" &&
-                  t("agentCall.state.speaking", { ns: FANCALL_NS })}
-                {state === "disconnected" &&
-                  t("agentCall.state.disconnected", { ns: FANCALL_NS })}
-              </div>
-            )}
-          </div>
-          <div
-            className={clsx(
-              "mt-1.5 min-w-[4.5rem] rounded-full px-3 py-1 text-center text-label-m tabular-nums backdrop-blur transition-colors",
-              remainingSeconds !== null &&
-                remainingSeconds <= LAST_SECONDS_WARNING
-                ? "bg-error text-error-content"
-                : "bg-base-content/15",
-              remainingSeconds === null && "invisible",
-            )}
-            aria-live="off"
+      {/* Scrims keep the overlays readable on any video */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-base-100/60 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-base-100/80 via-base-100/30 to-transparent" />
+
+      {/* Top bar: back, caller, time left */}
+      <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-3 px-4 pt-4 text-base-content sm:pt-14">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label={t("agentCall.back", { ns: FANCALL_NS })}
+            className="btn btn-circle btn-ghost size-10 min-h-0 shrink-0 border-none bg-base-100/30 backdrop-blur-xl hover:bg-base-100/50"
           >
-            {t("agentCall.remaining", {
-              ns: FANCALL_NS,
-              time: formatRemaining(remainingSeconds ?? callDurationSeconds),
-            })}
+            <ChevronLeftIcon className="size-5" />
+          </button>
+        )}
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          {profilePictureUrl && (
+            <Image
+              src={profilePictureUrl}
+              alt=""
+              width={36}
+              height={36}
+              className="size-9 shrink-0 rounded-full object-cover ring-2 ring-base-content/30"
+            />
+          )}
+          <div className="min-w-0">
+            <h1 className="truncate text-title-s drop-shadow">{displayName}</h1>
+            <p className="flex items-center gap-1.5 text-label-m text-base-content/80 drop-shadow">
+              <span
+                className={clsx(
+                  "size-1.5 shrink-0 rounded-full transition-colors",
+                  state === "speaking" && "bg-secondary",
+                  state === "listening" && "bg-primary",
+                  state === "thinking" && "bg-accent",
+                  (state === "connecting" || state === "disconnected") &&
+                    "bg-base-content/50",
+                )}
+              />
+              <span className="truncate">{stateLabel}</span>
+            </p>
           </div>
+        </div>
+        <div
+          className={clsx(
+            "flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-label-m tabular-nums ring-1 backdrop-blur-xl transition-colors",
+            isLastSeconds
+              ? "animate-pulse bg-error text-error-content ring-error"
+              : "bg-base-100/30 ring-base-content/10",
+            remainingSeconds === null && "invisible",
+          )}
+          aria-live="off"
+        >
+          <ClockIcon className="size-3.5" />
+          {t("agentCall.remaining", {
+            ns: FANCALL_NS,
+            time: formatRemaining(remainingSeconds ?? callDurationSeconds),
+          })}
         </div>
       </div>
 
+      {/* Self view. The fan joins without a camera, so it shows the camera-off tile */}
+      <div className="absolute right-4 top-[4.5rem] z-10 flex aspect-[3/4] w-[5.5rem] flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl bg-base-200/60 shadow-xl ring-1 ring-base-content/15 backdrop-blur-xl sm:top-28">
+        <span className="flex size-10 items-center justify-center rounded-full bg-base-content/15">
+          <UserIcon className="size-5 text-base-content/70" />
+        </span>
+        <span className="flex items-center gap-1 text-label-s text-base-content/70">
+          <VideoCameraSlashIcon className="size-3" />
+          {t("agentCall.cameraOff", { ns: FANCALL_NS })}
+        </span>
+      </div>
+
+      {/* While the avatar is joining */}
+      {isWaitingForMedia && (
+        <div className="absolute inset-x-0 bottom-64 z-10 flex flex-col items-center gap-3 px-6 text-center text-base-content">
+          {biography && (
+            <p className="max-w-xs text-body-s text-base-content/80 drop-shadow">
+              {biography}
+            </p>
+          )}
+          <div className="rounded-full bg-base-100/40 px-4 py-2 backdrop-blur-xl">
+            <LoadingQuips />
+          </div>
+        </div>
+      )}
+
       {/* Voice bars when the call is voice-only */}
       {audioTrack && !agentVideoTrack && (
-        <div className="absolute inset-x-0 bottom-48 z-10 flex h-24 items-center justify-center">
+        <div className="absolute inset-x-0 bottom-64 z-10 flex h-24 items-center justify-center">
           <BarVisualizer
             state={state}
             barCount={5}
@@ -252,51 +304,124 @@ export function AgentCall({
         </div>
       )}
 
-      {/* Bottom bar: chat input and hang up */}
-      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-5 bg-gradient-to-t from-base-100/90 to-transparent px-4 pb-8 pt-16">
-        <form
-          onSubmit={handleSendMessage}
-          className="flex w-full items-center gap-2"
-        >
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            disabled={!isConnected || !isAgentAvailable || isSending}
-            placeholder={
-              !isConnected
-                ? t("agentCall.chat.connecting", { ns: FANCALL_NS })
-                : !isAgentAvailable
-                  ? t("agentCall.chat.waitingForAgent", { ns: FANCALL_NS })
-                  : t("agentCall.chat.placeholder", { ns: FANCALL_NS })
-            }
-            className="input input-sm min-w-0 flex-1 rounded-full border-none bg-base-content/15 text-body-m backdrop-blur placeholder:text-base-content/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={
-              !message.trim() || isSending || !isConnected || !isAgentAvailable
-            }
-            aria-label={
-              isSending
-                ? t("agentCall.chat.sending", { ns: FANCALL_NS })
-                : t("agentCall.chat.send", { ns: FANCALL_NS })
-            }
-            className="btn btn-circle btn-primary btn-sm"
+      {/* Bottom: recent messages, message input with hearts, call controls */}
+      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-3 px-4 pb-6 text-base-content sm:pb-8">
+        {recentMessages.length > 0 && (
+          <ul className="flex flex-col items-start gap-1.5 pr-14">
+            {recentMessages.map((msg) => (
+              <li
+                key={msg.id}
+                className="max-w-full animate-fade-up break-words rounded-2xl bg-base-100/35 px-3 py-1.5 text-body-s backdrop-blur-md"
+              >
+                <span className="mr-1.5 font-semibold text-base-content/70">
+                  {msg.from?.isLocal
+                    ? t("agentCall.you", { ns: FANCALL_NS })
+                    : displayName}
+                </span>
+                {msg.message}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="flex items-center gap-2">
+          <form
+            onSubmit={handleSendMessage}
+            className="relative min-w-0 flex-1"
           >
-            <PaperAirplaneIcon className="size-4" />
-          </button>
-        </form>
-        {onHangUp && (
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              disabled={!isConnected || !isAgentAvailable || isSending}
+              placeholder={
+                !isConnected
+                  ? t("agentCall.chat.connecting", { ns: FANCALL_NS })
+                  : !isAgentAvailable
+                    ? t("agentCall.chat.waitingForAgent", { ns: FANCALL_NS })
+                    : t("agentCall.chat.placeholder", { ns: FANCALL_NS })
+              }
+              className="input h-11 w-full rounded-full border-none bg-base-content/15 pl-4 pr-12 text-body-m backdrop-blur-xl placeholder:text-base-content/60 focus:outline-none disabled:cursor-not-allowed disabled:bg-base-content/10 disabled:placeholder:text-base-content/40"
+            />
+            <button
+              type="submit"
+              disabled={
+                !message.trim() ||
+                isSending ||
+                !isConnected ||
+                !isAgentAvailable
+              }
+              aria-label={
+                isSending
+                  ? t("agentCall.chat.sending", { ns: FANCALL_NS })
+                  : t("agentCall.chat.send", { ns: FANCALL_NS })
+              }
+              className={clsx(
+                "btn btn-circle btn-primary absolute right-1 top-1 size-9 min-h-0 border-none transition-[opacity,transform]",
+                !message.trim() && "scale-75 opacity-0",
+              )}
+            >
+              <PaperAirplaneIcon className="size-4" />
+            </button>
+          </form>
+
+          <div className="relative shrink-0">
+            {hearts.map((heart) => (
+              <HeartIcon
+                key={heart.id}
+                aria-hidden
+                style={{ "--heart-drift": heart.drift } as React.CSSProperties}
+                className={clsx(
+                  "pointer-events-none absolute bottom-full left-2 size-7 animate-float-heart drop-shadow",
+                  HEART_TONES[heart.id % HEART_TONES.length],
+                )}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={sendHeart}
+              aria-label={t("agentCall.sendHeart", { ns: FANCALL_NS })}
+              className="btn btn-circle size-11 min-h-0 border-none bg-base-content/15 backdrop-blur-xl transition-transform hover:bg-base-content/25 active:scale-90"
+            >
+              <HeartIcon className="size-6 text-error" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 self-center rounded-full bg-base-100/30 p-2 ring-1 ring-base-content/10 backdrop-blur-2xl">
           <button
             type="button"
-            onClick={onHangUp}
-            aria-label={t("agentCall.hangUp", { ns: FANCALL_NS })}
-            className="btn btn-circle btn-error size-16 shadow-xl"
+            onClick={() => setIsSoundMuted((muted) => !muted)}
+            aria-pressed={isSoundMuted}
+            aria-label={
+              isSoundMuted
+                ? t("agentCall.speaker.unmute", { ns: FANCALL_NS })
+                : t("agentCall.speaker.mute", { ns: FANCALL_NS })
+            }
+            className={clsx(
+              "btn btn-circle size-14 min-h-0 border-none transition-colors",
+              isSoundMuted
+                ? "bg-base-content text-base-100 hover:bg-base-content/90"
+                : "bg-base-content/15 text-base-content hover:bg-base-content/25",
+            )}
           >
-            <PhoneXMarkIcon className="size-7 text-error-content" />
+            {isSoundMuted ? (
+              <SpeakerXMarkIcon className="size-6" />
+            ) : (
+              <SpeakerWaveIcon className="size-6" />
+            )}
           </button>
-        )}
+          {onHangUp && (
+            <button
+              type="button"
+              onClick={onHangUp}
+              aria-label={t("agentCall.hangUp", { ns: FANCALL_NS })}
+              className="btn btn-circle btn-error size-14 min-h-0 border-none"
+            >
+              <PhoneXMarkIcon className="size-6 text-error-content" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Audio permission button */}

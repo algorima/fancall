@@ -30,7 +30,10 @@ const config: Config = {
         // A heart sent during the call floats up and drifts sideways
         "float-heart": {
           "0%": { transform: "translate(0, 0) scale(0.6)", opacity: "0" },
-          "15%": { transform: "translate(0, -1.5rem) scale(1.1)", opacity: "1" },
+          "15%": {
+            transform: "translate(0, -1.5rem) scale(1.1)",
+            opacity: "1",
+          },
           "100%": {
             transform: "translate(var(--heart-drift, 0), -13rem) scale(0.9)",
             opacity: "0",
