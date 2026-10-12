@@ -8,7 +8,9 @@
     "missed": "未接视频通话",
     "decline": "拒绝",
     "connecting": "正在连接",
-    "callBack": "回拨"
+    "callBack": "回拨",
+    "calling": "正在呼叫…",
+    "end": "结束"
   },
   "room": {
     "failedToLoad": "加载直播间失败",
@@ -151,5 +153,15 @@
     "正在展开粉丝送的手幅",
     "正在看新专辑的小卡",
     "正在按下通话键"
-  ]
+  ],
+  "contacts": {
+    "title": "通讯录",
+    "search": "搜索",
+    "noResults": "无结果",
+    "message": "信息",
+    "call": "电话",
+    "video": "视频",
+    "mail": "邮件",
+    "count_other": "{{count}} 位联系人"
+  }
 }

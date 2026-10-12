@@ -27,7 +27,13 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { LoadingQuips } from "@/components/LoadingQuips";
+import {
+  coverRegionRect,
+  photoAspectFromRegion,
+  type Size,
+} from "@/components/videoLayout";
 import { FANCALL_NS } from "@/i18n";
+import type { VideoRegion } from "@/schemas";
 
 export interface AgentCallProps {
   profilePictureUrl?: string | null;
@@ -39,10 +45,17 @@ export interface AgentCallProps {
   onBack?: () => void;
   /** Call length; the countdown starts when the agent joins (matches the backend timer) */
   callDurationSeconds?: number;
+  /** Where the avatar video sits in the profile picture (see VideoRegion) */
+  videoRegion?: VideoRegion | null;
 }
 
 const LAST_SECONDS_WARNING = 30;
 const MAX_VISIBLE_MESSAGES = 3;
+// Narrower than 3:4 counts as portrait video that can fill the phone screen
+const PORTRAIT_ASPECT = 0.75;
+// Soft edges so the video blends into the photo underneath
+const FEATHER_MASK =
+  "linear-gradient(to bottom, transparent, black 8%, black 92%, transparent), linear-gradient(to right, transparent, black 6%, black 94%, transparent)";
 const HEART_LIFETIME_MS = 1800;
 const HEART_TONES = ["text-error", "text-secondary", "text-primary"];
 
@@ -56,6 +69,25 @@ const formatRemaining = (seconds: number) => {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
+};
+
+/** Size of an element, kept up to date as it resizes */
+const useElementSize = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<Size | null>(null);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setSize({ width, height });
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, size };
 };
 
 /** Seconds left in the call, counted from the moment the agent joined */
@@ -87,6 +119,7 @@ export function AgentCall({
   onHangUp,
   onBack,
   callDurationSeconds = 180,
+  videoRegion,
 }: AgentCallProps) {
   const { state, audioTrack, agent } = useVoiceAssistant();
   const { t } = useTranslation();
@@ -98,6 +131,20 @@ export function AgentCall({
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [hearts, setHearts] = useState<FloatingHeart[]>([]);
   const nextHeartId = useRef(0);
+  // Width / height of the avatar video, known once its first frame arrives
+  const [videoAspect, setVideoAspect] = useState<number | null>(null);
+  const isPortraitVideo = videoAspect !== null && videoAspect < PORTRAIT_ASPECT;
+  const { ref: screenRef, size: screenSize } = useElementSize();
+  // The avatar was made from a crop of the profile picture: put the video
+  // back on that crop so the whole screen looks like one moving picture
+  const regionRect =
+    videoRegion && profilePictureUrl && screenSize && !isPortraitVideo
+      ? coverRegionRect(
+          screenSize,
+          photoAspectFromRegion(videoRegion, videoAspect ?? 1),
+          videoRegion,
+        )
+      : null;
 
   // Find agent video track
   const agentVideoTrack = tracks.find(
@@ -183,7 +230,10 @@ export function AgentCall({
     remainingSeconds !== null && remainingSeconds <= LAST_SECONDS_WARNING;
 
   return (
-    <div className="relative size-full overflow-hidden bg-base-300">
+    <div
+      ref={screenRef}
+      className="relative size-full overflow-hidden bg-base-300"
+    >
       {/* Audio renderer */}
       <RoomAudioRenderer muted={isSoundMuted} />
 
@@ -198,10 +248,44 @@ export function AgentCall({
           priority
         />
       )}
+      {agentVideoTrack && !isPortraitVideo && !regionRect && (
+        // Square avatars (Simli) would be cropped and zoomed by object-cover on a
+        // tall phone. Fill the screen with a blurred copy instead and show the
+        // real frame at full width, so the face keeps its natural size.
+        <VideoTrack
+          trackRef={agentVideoTrack}
+          aria-hidden
+          className="absolute inset-0 size-full scale-125 animate-fade-in object-cover blur-2xl brightness-75"
+        />
+      )}
       {agentVideoTrack && (
         <VideoTrack
           trackRef={agentVideoTrack}
-          className="absolute inset-0 size-full animate-fade-in object-cover"
+          onResize={(e) => {
+            const { videoWidth, videoHeight } = e.currentTarget;
+            if (videoWidth && videoHeight) {
+              setVideoAspect(videoWidth / videoHeight);
+            }
+          }}
+          style={
+            regionRect
+              ? {
+                  ...regionRect,
+                  maskImage: FEATHER_MASK,
+                  WebkitMaskImage: FEATHER_MASK,
+                  maskComposite: "intersect",
+                  WebkitMaskComposite: "source-in",
+                }
+              : undefined
+          }
+          className={clsx(
+            "absolute animate-fade-in",
+            isPortraitVideo && "inset-0 size-full object-cover",
+            regionRect && "object-fill",
+            !isPortraitVideo &&
+              !regionRect &&
+              "inset-x-0 top-[45%] aspect-square w-full -translate-y-1/2 object-cover [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)]",
+          )}
         />
       )}
 

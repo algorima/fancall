@@ -8,7 +8,9 @@
     "missed": "不在着信（ビデオ通話）",
     "decline": "拒否",
     "connecting": "接続中",
-    "callBack": "折り返す"
+    "callBack": "折り返す",
+    "calling": "発信中…",
+    "end": "終了"
   },
   "room": {
     "failedToLoad": "ライブルームの読み込みに失敗しました",
@@ -151,5 +153,15 @@
     "ファンからもらったスローガンを広げています",
     "新アルバムのトレカを眺めています",
     "今まさに通話ボタンを押しています"
-  ]
+  ],
+  "contacts": {
+    "title": "連絡先",
+    "search": "検索",
+    "noResults": "該当なし",
+    "message": "メッセージ",
+    "call": "電話",
+    "video": "ビデオ",
+    "mail": "メール",
+    "count_other": "{{count}}件の連絡先"
+  }
 }

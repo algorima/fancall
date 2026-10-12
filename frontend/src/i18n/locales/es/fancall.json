@@ -8,7 +8,9 @@
     "missed": "Videollamada perdida",
     "decline": "Rechazar",
     "connecting": "Conectando",
-    "callBack": "Devolver llamada"
+    "callBack": "Devolver llamada",
+    "calling": "Llamando…",
+    "end": "Finalizar"
   },
   "room": {
     "failedToLoad": "Error al cargar la sala en vivo",
@@ -151,5 +153,16 @@
     "Desplegando una pancarta que me regalaron",
     "Mirando las photocards del nuevo álbum",
     "Pulsando el botón de llamar ahora mismo"
-  ]
+  ],
+  "contacts": {
+    "title": "Contactos",
+    "search": "Buscar",
+    "noResults": "Sin resultados",
+    "message": "mensaje",
+    "call": "llamar",
+    "video": "video",
+    "mail": "correo",
+    "count_one": "{{count}} contacto",
+    "count_other": "{{count}} contactos"
+  }
 }

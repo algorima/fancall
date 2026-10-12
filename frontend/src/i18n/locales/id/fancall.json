@@ -8,7 +8,9 @@
     "missed": "Panggilan video tak terjawab",
     "decline": "Tolak",
     "connecting": "Menghubungkan",
-    "callBack": "Telepon balik"
+    "callBack": "Telepon balik",
+    "calling": "Memanggil…",
+    "end": "Akhiri"
   },
   "room": {
     "failedToLoad": "Gagal memuat ruang langsung",
@@ -151,5 +153,15 @@
     "Membentangkan slogan pemberian fans",
     "Melihat-lihat photocard album baru",
     "Baru saja menekan tombol panggil"
-  ]
+  ],
+  "contacts": {
+    "title": "Kontak",
+    "search": "Cari",
+    "noResults": "Tidak Ada Hasil",
+    "message": "pesan",
+    "call": "telepon",
+    "video": "video",
+    "mail": "email",
+    "count_other": "{{count}} Kontak"
+  }
 }
