@@ -63,6 +63,10 @@ class TestVideoCallGuidelines(unittest.TestCase):
         """Test guidelines block inventing what the fan's camera shows"""
         self.assertIn("보인다고 지어내지", VIDEO_CALL_GUIDELINES)
 
+    def test_opening_does_not_claim_to_see_fan(self):
+        """Test opening example does not say the fan's screen is visible"""
+        self.assertNotIn("보여요 보여요", OPENING_INSTRUCTIONS)
+
     def test_opening_and_closing_are_not_empty(self):
         """Test call opening and closing instructions exist"""
         self.assertTrue(OPENING_INSTRUCTIONS.strip())
