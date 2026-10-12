@@ -52,6 +52,9 @@ export default function FancallRoomPage() {
     process.env.NEXT_PUBLIC_FANCALL_DISPLAY_NAME ||
     t("room.agentName", { ns: FANCALL_NS });
   const avatarUrl = process.env.NEXT_PUBLIC_FANCALL_AVATAR_URL;
+  // Must match the worker's FANCALL_CALL_DURATION_SECONDS
+  const callDurationSeconds =
+    Number(process.env.NEXT_PUBLIC_FANCALL_CALL_DURATION_SECONDS) || undefined;
 
   if (isLoading) {
     return (
@@ -93,6 +96,7 @@ export default function FancallRoomPage() {
         <AgentCall
           displayName={displayName}
           profilePictureUrl={avatarUrl}
+          callDurationSeconds={callDurationSeconds}
           onHangUp={leaveCall}
           onBack={leaveCall}
         />

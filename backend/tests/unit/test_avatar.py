@@ -38,7 +38,10 @@ class TestStartAvatar(unittest.IsolatedAsyncioTestCase):
         """avatar_id + Simli key starts a Simli avatar with that face"""
         simli_session.return_value.start = AsyncMock()
         settings = AvatarSettings(
-            tavus_api_key=None, simli_api_key="s", lemonslice_api_key="l"
+            anam_api_key=None,
+            tavus_api_key=None,
+            simli_api_key="s",
+            lemonslice_api_key="l",
         )
 
         await self._start("face-1", PICTURE_URL, settings)
@@ -56,7 +59,10 @@ class TestStartAvatar(unittest.IsolatedAsyncioTestCase):
         """Without avatar_id, the profile picture is animated by LemonSlice"""
         lemonslice_session.return_value.start = AsyncMock()
         settings = AvatarSettings(
-            tavus_api_key=None, simli_api_key="s", lemonslice_api_key="l"
+            anam_api_key=None,
+            tavus_api_key=None,
+            simli_api_key="s",
+            lemonslice_api_key="l",
         )
 
         await self._start(None, PICTURE_URL, settings)
@@ -74,7 +80,10 @@ class TestStartAvatar(unittest.IsolatedAsyncioTestCase):
     ) -> None:
         """No API key means no avatar is started"""
         settings = AvatarSettings(
-            tavus_api_key=None, simli_api_key=None, lemonslice_api_key=None
+            anam_api_key=None,
+            tavus_api_key=None,
+            simli_api_key=None,
+            lemonslice_api_key=None,
         )
 
         await self._start("face-1", PICTURE_URL, settings)
@@ -94,6 +103,7 @@ class TestStartAvatar(unittest.IsolatedAsyncioTestCase):
         """A Tavus key wins over Simli and LemonSlice, using the configured face"""
         tavus_session.return_value.start = AsyncMock()
         settings = AvatarSettings(
+            anam_api_key=None,
             tavus_api_key="t",
             tavus_face_id="face-t",
             simli_api_key="s",
@@ -107,11 +117,62 @@ class TestStartAvatar(unittest.IsolatedAsyncioTestCase):
         simli_session.assert_not_called()
         lemonslice_session.assert_not_called()
 
+    @patch("fancall.agent.worker.simli.AvatarSession")
+    @patch("fancall.agent.worker.tavus.AvatarSession")
+    @patch("fancall.agent.worker.anam.AvatarSession")
+    async def test_anam_preferred_when_configured(
+        self,
+        anam_session: MagicMock,
+        tavus_session: MagicMock,
+        simli_session: MagicMock,
+    ) -> None:
+        """Anam key + avatar wins over Tavus and Simli, rendering portrait video"""
+        anam_session.return_value.start = AsyncMock()
+        settings = AvatarSettings(
+            anam_api_key="a",
+            anam_avatar_id="avatar-a",
+            tavus_api_key="t",
+            simli_api_key="s",
+        )
+
+        await self._start("face-1", PICTURE_URL, settings)
+
+        kwargs = anam_session.call_args.kwargs
+        self.assertEqual(kwargs["persona_config"].avatarId, "avatar-a")
+        self.assertEqual(
+            (
+                kwargs["session_options"].video_width,
+                kwargs["session_options"].video_height,
+            ),
+            (768, 1152),
+        )
+        anam_session.return_value.start.assert_awaited_once()
+        tavus_session.assert_not_called()
+        simli_session.assert_not_called()
+
+    @patch("fancall.agent.worker.tavus.AvatarSession")
+    @patch("fancall.agent.worker.anam.AvatarSession")
+    async def test_anam_skipped_without_avatar_id(
+        self, anam_session: MagicMock, tavus_session: MagicMock
+    ) -> None:
+        """An Anam key alone is not enough; the next provider is used"""
+        tavus_session.return_value.start = AsyncMock()
+        settings = AvatarSettings(
+            anam_api_key="a", anam_avatar_id=None, tavus_api_key="t"
+        )
+
+        await self._start(None, None, settings)
+
+        anam_session.assert_not_called()
+        tavus_session.return_value.start.assert_awaited_once()
+
     @patch("fancall.agent.worker.tavus.AvatarSession")
     async def test_tavus_stock_face_when_unset(self, tavus_session: MagicMock) -> None:
         """Without a face id, Tavus falls back to its stock face (NOT_GIVEN)"""
         tavus_session.return_value.start = AsyncMock()
-        settings = AvatarSettings(tavus_api_key="t", tavus_face_id=None)
+        settings = AvatarSettings(
+            anam_api_key=None, tavus_api_key="t", tavus_face_id=None
+        )
 
         await self._start(None, None, settings)
 
@@ -124,7 +185,9 @@ class TestStartAvatar(unittest.IsolatedAsyncioTestCase):
     ) -> None:
         """A provider error must not break the call"""
         simli_session.return_value.start = AsyncMock(side_effect=RuntimeError("down"))
-        settings = AvatarSettings(tavus_api_key=None, simli_api_key="s")
+        settings = AvatarSettings(
+            anam_api_key=None, tavus_api_key=None, simli_api_key="s"
+        )
 
         await self._start("face-1", None, settings)
 

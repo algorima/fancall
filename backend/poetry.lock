@@ -1637,6 +1637,7 @@ livekit = "1.1.20"
 livekit-api = ">=1.2.0,<2"
 livekit-blingfire = ">=1.1,<2"
 livekit-local-inference = ">=0.2.7"
+livekit-plugins-anam = {version = ">=1.8.5", optional = true, markers = "extra == \"anam\""}
 livekit-plugins-elevenlabs = {version = ">=1.8.5", optional = true, markers = "extra == \"elevenlabs\""}
 livekit-plugins-lemonslice = {version = ">=1.8.5", optional = true, markers = "extra == \"lemonslice\""}
 livekit-plugins-openai = {version = ">=1.8.5", optional = true, markers = "extra == \"openai\""}
@@ -1836,6 +1837,20 @@ files = [
     {file = "livekit_local_inference-0.2.7-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7a97bc2932b73f72c5246cb8350cf2cd7d21fc6237053fc7c1ac645352ed0f3f"},
     {file = "livekit_local_inference-0.2.7-cp314-cp314-win_amd64.whl", hash = "sha256:168c2f2dd55ee6dd94fd7caae0ff73e4875e25aa418df819905fd339de1de4cd"},
 ]
+
+[[package]]
+name = "livekit-plugins-anam"
+version = "1.8.5"
+description = "Agent Framework plugin for anam"
+optional = false
+python-versions = ">=3.10.0"
+files = [
+    {file = "livekit_plugins_anam-1.8.5-py3-none-any.whl", hash = "sha256:6f39e77110d9bd46241a782da2070b2401728f2b91f68b61321a7a3119a9b61b"},
+    {file = "livekit_plugins_anam-1.8.5.tar.gz", hash = "sha256:7f2e3b16b7df3b548689ee65011567d9ec0a170db9983d94927c92f7f5999b86"},
+]
+
+[package.dependencies]
+livekit-agents = ">=1.8.5"
 
 [[package]]
 name = "livekit-plugins-elevenlabs"
@@ -4250,4 +4265,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "d0fb325ddcfafdabf495678f1440dfa7ccf948dc386569d77a3823b1d0398aaa"
+content-hash = "86aa357f51bb136eac3e70ca8e1eff909e74aa55850265a454611138863fd1b5"
