@@ -101,10 +101,16 @@ export function IncomingCallScreen({
       {/* Caller */}
       <div className="relative z-10 flex animate-fade-up flex-col items-center px-6 pt-16 text-center sm:pt-20">
         <p className="flex items-center gap-1.5 rounded-full bg-base-100/30 px-3 py-1 text-label-l text-base-content/90 backdrop-blur-xl">
-          <VideoCameraIcon className="size-3.5" />
-          {status === "missed"
-            ? t("entry.missed", { ns: FANCALL_NS })
-            : t("entry.incoming", { ns: FANCALL_NS })}
+          <VideoCameraIcon className="size-3.5 shrink-0" />
+          {status === "connecting" ? (
+            <span className="min-w-0 max-w-64">
+              <LoadingQuips inline />
+            </span>
+          ) : status === "missed" ? (
+            t("entry.missed", { ns: FANCALL_NS })
+          ) : (
+            t("entry.incoming", { ns: FANCALL_NS })
+          )}
         </p>
         <h1 className="mt-3 text-display-m tracking-tight drop-shadow-lg">
           {displayName}
@@ -130,14 +136,6 @@ export function IncomingCallScreen({
             >
               <VideoCameraIcon className="size-8 text-success-content" />
             </CallButton>
-          </div>
-        )}
-        {status === "connecting" && (
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-title-s">
-              {t("entry.connecting", { ns: FANCALL_NS })}
-            </p>
-            <LoadingQuips />
           </div>
         )}
         {status === "missed" && (

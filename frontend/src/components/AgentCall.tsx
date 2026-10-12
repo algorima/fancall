@@ -84,7 +84,6 @@ const useRemainingSeconds = (isRunning: boolean, totalSeconds: number) => {
 export function AgentCall({
   profilePictureUrl,
   displayName,
-  biography,
   onHangUp,
   onBack,
   callDurationSeconds = 180,
@@ -245,7 +244,13 @@ export function AgentCall({
                     "bg-base-content/50",
                 )}
               />
-              <span className="truncate">{stateLabel}</span>
+              {isWaitingForMedia ? (
+                <span className="min-w-0 flex-1">
+                  <LoadingQuips inline />
+                </span>
+              ) : (
+                <span className="truncate">{stateLabel}</span>
+              )}
             </p>
           </div>
         </div>
@@ -277,20 +282,6 @@ export function AgentCall({
           {t("agentCall.cameraOff", { ns: FANCALL_NS })}
         </span>
       </div>
-
-      {/* While the avatar is joining */}
-      {isWaitingForMedia && (
-        <div className="absolute inset-x-0 bottom-64 z-10 flex flex-col items-center gap-3 px-6 text-center text-base-content">
-          {biography && (
-            <p className="max-w-xs text-body-s text-base-content/80 drop-shadow">
-              {biography}
-            </p>
-          )}
-          <div className="rounded-full bg-base-100/40 px-4 py-2 backdrop-blur-xl">
-            <LoadingQuips />
-          </div>
-        </div>
-      )}
 
       {/* Voice bars when the call is voice-only */}
       {audioTrack && !agentVideoTrack && (

@@ -8,6 +8,8 @@ import { FANCALL_NS } from "@/i18n";
 export interface LoadingQuipsProps {
   /** Milliseconds each quip stays on screen */
   intervalMs?: number;
+  /** Render as a single line of text that inherits the surrounding style */
+  inline?: boolean;
 }
 
 // One shuffled order per page load, shared by every LoadingQuips instance.
@@ -33,7 +35,10 @@ const nextQuipIndex = (count: number) => {
 /**
  * 연결을 기다리는 동안 재미있는 문구를 돌아가며 보여줍니다.
  */
-export function LoadingQuips({ intervalMs = 2800 }: LoadingQuipsProps) {
+export function LoadingQuips({
+  intervalMs = 2800,
+  inline = false,
+}: LoadingQuipsProps) {
   const { t } = useTranslation();
   const raw: unknown = t("loadingQuips", {
     ns: FANCALL_NS,
@@ -53,6 +58,18 @@ export function LoadingQuips({ intervalMs = 2800 }: LoadingQuipsProps) {
     }, intervalMs);
     return () => clearInterval(timer);
   }, [quips.length, intervalMs]);
+
+  if (inline) {
+    return (
+      <span className="block truncate" aria-live="polite">
+        {index !== null && (
+          <span key={index} className="animate-fade-up">
+            {quips[index]}
+          </span>
+        )}
+      </span>
+    );
+  }
 
   return (
     <div
