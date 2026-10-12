@@ -23,7 +23,11 @@ from PIL import Image
 from pydantic import ValidationError
 
 from fancall.persona import DEFAULT_PERSONA, Persona
-from fancall.prompts import compose_instructions
+from fancall.prompts import (
+    CLOSING_INSTRUCTIONS,
+    OPENING_INSTRUCTIONS,
+    compose_instructions,
+)
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import FancallModelSettings, LiveKitSettings
 
@@ -35,6 +39,8 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_SYSTEM_PROMPT = "You are a friendly and helpful AI companion."
+FREE_TRIAL_SECONDS = 75
+CLOSING_LEAD_SECONDS = 10
 
 
 class CompanionAgent(Agent):
@@ -48,7 +54,8 @@ class CompanionAgent(Agent):
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
-        # Initial greeting could be generated here if needed
+        # 실제 영통처럼 소리·화면 확인과 인사로 먼저 말을 건다
+        self.session.generate_reply(instructions=OPENING_INSTRUCTIONS)
 
 
 async def entrypoint(  # pylint: disable=too-many-locals
@@ -176,7 +183,9 @@ async def entrypoint(  # pylint: disable=too-many-locals
         await avatar_session.start(agent_session=session, room=ctx.room)
 
     # Compose instructions from merged system prompt (Context Composer pattern)
-    instructions = compose_instructions(system_prompt, include_role_playing=True)
+    instructions = compose_instructions(
+        system_prompt, include_role_playing=False, include_video_call=True
+    )
     logger.info(
         "Using instructions: %s",
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
@@ -187,8 +196,11 @@ async def entrypoint(  # pylint: disable=too-many-locals
     logger.info("Agent session started.")
 
     # Free trial: auto-shutdown after 75 seconds
+    # 끊기기 전에 작별 인사할 시간을 남긴다 (실제 영통의 "시간 다 됐어~")
     try:
-        await asyncio.sleep(75)
+        await asyncio.sleep(FREE_TRIAL_SECONDS - CLOSING_LEAD_SECONDS)
+        session.generate_reply(instructions=CLOSING_INSTRUCTIONS)
+        await asyncio.sleep(CLOSING_LEAD_SECONDS)
         logger.info("Free trial session limit (75s) reached. Shutting down.")
         ctx.shutdown(reason="Free trial session limit reached (75 seconds)")
     except asyncio.CancelledError:
