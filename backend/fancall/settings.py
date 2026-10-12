@@ -10,10 +10,50 @@ class FancallModelSettings(BaseSettings):
     """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
-    elevenlabs_model: str = "eleven_flash_v2_5"
+    # Most expressive realtime model; plays through the text-to-dialogue stream
+    elevenlabs_model: str = "eleven_v4_turbo"
 
     class Config:
         env_prefix = "FANCALL_"
+
+
+class FancallCallSettings(BaseSettings):
+    """Video call timing settings.
+
+    Attributes:
+        call_duration_seconds: Total call length before the agent leaves.
+        wrap_up_lead_seconds: Seconds before the end when the agent stops
+            opening new topics and keeps answers short.
+        closing_lead_seconds: Seconds before the end when the agent cuts in
+            with a goodbye. Covers LLM·TTS latency plus a two-sentence goodbye.
+        closing_grace_seconds: Extra seconds allowed past the end so the
+            goodbye is not cut off mid-sentence.
+    """
+
+    call_duration_seconds: float = 180
+    wrap_up_lead_seconds: float = 30
+    closing_lead_seconds: float = 12
+    closing_grace_seconds: float = 5
+
+    class Config:
+        env_prefix = "FANCALL_"
+
+    @model_validator(mode="after")
+    def check_timeline(self) -> "FancallCallSettings":
+        """Validate that wrap-up and closing happen in order inside the call."""
+        if not (
+            self.call_duration_seconds
+            > self.wrap_up_lead_seconds
+            > self.closing_lead_seconds
+            > 0
+        ):
+            raise ValueError(
+                "Expected call_duration_seconds > wrap_up_lead_seconds "
+                "> closing_lead_seconds > 0"
+            )
+        if self.closing_grace_seconds < 0:
+            raise ValueError("closing_grace_seconds must not be negative")
+        return self
 
 
 class ElevenLabsSettings(BaseSettings):
@@ -27,6 +67,29 @@ class ElevenLabsSettings(BaseSettings):
 
     class Config:
         env_prefix = "ELEVEN_"
+
+
+class AvatarSettings(BaseSettings):
+    """Settings for realtime lip-synced avatars (replaces discontinued Hedra)
+
+    A provider is enabled by setting its API key. Tavus is preferred when its key
+    is set; otherwise Simli is used when the persona has an avatar_id (Simli face
+    ID), and LemonSlice when only a profile_picture_url is available. With no key
+    set, the call is voice-only.
+
+    Attributes:
+        tavus_api_key: Tavus API key (TAVUS_API_KEY).
+        tavus_face_id: Tavus face to render (TAVUS_FACE_ID). Stock face if unset.
+        tavus_pal_id: Tavus PAL in echo mode (TAVUS_PAL_ID). Stock PAL if unset.
+        simli_api_key: Simli API key (SIMLI_API_KEY).
+        lemonslice_api_key: LemonSlice API key (LEMONSLICE_API_KEY).
+    """
+
+    tavus_api_key: str | None = None
+    tavus_face_id: str | None = None
+    tavus_pal_id: str | None = None
+    simli_api_key: str | None = None
+    lemonslice_api_key: str | None = None
 
 
 class LiveKitSettings(BaseSettings):

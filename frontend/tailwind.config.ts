@@ -8,6 +8,42 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Incoming call motion: ripples around the accept button, a slow drift
+      // on the caller photo, and content easing in when the call screen opens
+      keyframes: {
+        ripple: {
+          "0%": { transform: "scale(1)", opacity: "0.6" },
+          "100%": { transform: "scale(1.9)", opacity: "0" },
+        },
+        "slow-zoom": {
+          "0%": { transform: "scale(1)" },
+          "100%": { transform: "scale(1.04)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        "fade-up": {
+          "0%": { transform: "translateY(16px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        // A heart sent during the call floats up and drifts sideways
+        "float-heart": {
+          "0%": { transform: "translate(0, 0) scale(0.6)", opacity: "0" },
+          "15%": { transform: "translate(0, -1.5rem) scale(1.1)", opacity: "1" },
+          "100%": {
+            transform: "translate(var(--heart-drift, 0), -13rem) scale(0.9)",
+            opacity: "0",
+          },
+        },
+      },
+      animation: {
+        ripple: "ripple 2s cubic-bezier(0, 0, 0.2, 1) infinite",
+        "slow-zoom": "slow-zoom 18s ease-in-out infinite alternate",
+        "fade-in": "fade-in 0.6s ease-out both",
+        "fade-up": "fade-up 0.5s cubic-bezier(0.2, 0, 0, 1) both",
+        "float-heart": "float-heart 1.8s cubic-bezier(0.2, 0, 0, 1) forwards",
+      },
       fontSize: {
         // Display - 히어로, 랜딩 페이지 (MD3 기반)
         "display-l": [

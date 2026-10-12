@@ -1,11 +1,13 @@
 "use client";
 
 import { LiveKitRoom } from "@livekit/components-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AgentCall } from "@/components/AgentCall";
+import { IncomingCallScreen } from "@/components/IncomingCallScreen";
+import { PhoneFrame } from "@/components/PhoneFrame";
 import { FANCALL_NS } from "@/i18n";
 import { LiveRoomRepository } from "@/repositories";
 import type { TokenResponse } from "@/schemas";
@@ -13,7 +15,8 @@ import { getApiService } from "@/services/ApiService";
 
 export default function FancallRoomPage() {
   const params = useParams();
-  const { t } = useTranslation();
+  const router = useRouter();
+  const { i18n, t } = useTranslation();
   const liveRoomId = Array.isArray(params.liveRoomId)
     ? params.liveRoomId[0]
     : params.liveRoomId;
@@ -45,37 +48,55 @@ export default function FancallRoomPage() {
     })();
   }, [liveRoomId, repository]);
 
+  const displayName =
+    process.env.NEXT_PUBLIC_FANCALL_DISPLAY_NAME ||
+    t("room.agentName", { ns: FANCALL_NS });
+  const avatarUrl = process.env.NEXT_PUBLIC_FANCALL_AVATAR_URL;
+
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center bg-black">
-        <span className="loading loading-spinner loading-lg text-white" />
-      </div>
+      <PhoneFrame>
+        <IncomingCallScreen
+          displayName={displayName}
+          avatarUrl={avatarUrl}
+          status="connecting"
+        />
+      </PhoneFrame>
     );
   }
 
   if (!token || !roomName) {
     return (
-      <div className="flex h-full items-center justify-center bg-black">
-        <div className="alert alert-error max-w-md">
-          <span>{t("room.failedToLoad", { ns: FANCALL_NS })}</span>
+      <PhoneFrame>
+        <div className="flex size-full items-center justify-center p-6">
+          <div className="alert alert-error">
+            <span>{t("room.failedToLoad", { ns: FANCALL_NS })}</span>
+          </div>
         </div>
-      </div>
+      </PhoneFrame>
     );
   }
 
   const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_WS_URL || "";
+  const leaveCall = () => router.push(`/${i18n.language}`);
 
   return (
-    <div className="h-full bg-black">
+    <PhoneFrame>
       <LiveKitRoom
         token={token}
         serverUrl={wsUrl}
         connect={true}
         audio={false}
         video={false}
+        className="size-full"
       >
-        <AgentCall displayName={t("room.agentName", { ns: FANCALL_NS })} />
+        <AgentCall
+          displayName={displayName}
+          profilePictureUrl={avatarUrl}
+          onHangUp={leaveCall}
+          onBack={leaveCall}
+        />
       </LiveKitRoom>
-    </div>
+    </PhoneFrame>
   );
 }

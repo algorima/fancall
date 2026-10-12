@@ -7,6 +7,7 @@ AI-powered video call with virtual companions
 - LiveKit 기반 실시간 음성/영상 통화
 - AI 아이돌과 1:1 대화
 - ElevenLabs TTS 음성 합성
+- 실시간 립싱크 아바타 (Simli · LemonSlice, 선택)
 
 ## 빠른 시작
 
