@@ -48,3 +48,38 @@ export interface AgentDispatchRequest {
   voiceId?: string | null;
   systemPrompt?: string | null;
 }
+
+/**
+ * Where the avatar's video sits inside the call photo, as fractions of the
+ * photo's width and height. When set, the call screen lays the lip-synced
+ * video over the same spot of the full-screen photo, so a square avatar
+ * fills a tall phone without being zoomed in.
+ */
+export const videoRegionSchema = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+  width: z.number().gt(0).max(1),
+  height: z.number().gt(0).max(1),
+});
+
+export type VideoRegion = z.infer<typeof videoRegionSchema>;
+
+/**
+ * A callable idol in the contacts list
+ */
+export const contactSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  /** Profile photo: contacts list, contact card and the calling screens */
+  photoUrl: z.string().min(1),
+  /** Still the avatar is animated from, shown once the call connects */
+  callPhotoUrl: z.string().min(1).nullish(),
+  avatarId: z.string().nullish(),
+  voiceId: z.string().nullish(),
+  systemPrompt: z.string().nullish(),
+  videoRegion: videoRegionSchema.nullish(),
+});
+
+export type Contact = z.infer<typeof contactSchema>;
+
+export const contactListSchema = z.array(contactSchema);

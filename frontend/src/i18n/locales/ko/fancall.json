@@ -9,7 +9,9 @@
     "ended": "통화 종료",
     "decline": "거절",
     "connecting": "연결 중",
-    "callBack": "다시 걸기"
+    "callBack": "다시 걸기",
+    "calling": "영상통화 거는 중…",
+    "end": "종료"
   },
   "room": {
     "failedToLoad": "라이브룸을 불러오지 못했습니다",
@@ -152,5 +154,15 @@
     "팬이 준 슬로건 펼쳐 보는 중",
     "새 앨범 포토카드 구경하는 중",
     "지금 막 통화 버튼 누르는 중"
-  ]
+  ],
+  "contacts": {
+    "title": "연락처",
+    "search": "검색",
+    "noResults": "결과 없음",
+    "message": "메시지",
+    "call": "전화",
+    "video": "영상통화",
+    "mail": "메일",
+    "count_other": "연락처 {{count}}개"
+  }
 }

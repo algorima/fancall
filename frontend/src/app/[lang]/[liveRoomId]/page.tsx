@@ -1,7 +1,7 @@
 "use client";
 
 import { LiveKitRoom } from "@livekit/components-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -13,10 +13,15 @@ import { LiveRoomRepository } from "@/repositories";
 import type { TokenResponse } from "@/schemas";
 import { getApiService } from "@/services/ApiService";
 
+import { useContacts } from "../useContacts";
+
 export default function FancallRoomPage() {
   const params = useParams();
   const router = useRouter();
   const { i18n, t } = useTranslation();
+  const contactId = useSearchParams().get("contact");
+  const contacts = useContacts(t("room.agentName", { ns: FANCALL_NS }));
+  const contact = contacts?.find((c) => c.id === contactId) ?? contacts?.[0];
   const liveRoomId = Array.isArray(params.liveRoomId)
     ? params.liveRoomId[0]
     : params.liveRoomId;
@@ -49,9 +54,12 @@ export default function FancallRoomPage() {
   }, [liveRoomId, repository]);
 
   const displayName =
-    process.env.NEXT_PUBLIC_FANCALL_DISPLAY_NAME ||
-    t("room.agentName", { ns: FANCALL_NS });
-  const avatarUrl = process.env.NEXT_PUBLIC_FANCALL_AVATAR_URL;
+    contact?.name ??
+    (process.env.NEXT_PUBLIC_FANCALL_DISPLAY_NAME ||
+      t("room.agentName", { ns: FANCALL_NS }));
+  const avatarUrl =
+    contact?.photoUrl ?? process.env.NEXT_PUBLIC_FANCALL_AVATAR_URL;
+  const callPhotoUrl = contact?.callPhotoUrl ?? avatarUrl;
   // Must match the worker's FANCALL_CALL_DURATION_SECONDS
   const callDurationSeconds =
     Number(process.env.NEXT_PUBLIC_FANCALL_CALL_DURATION_SECONDS) || undefined;
@@ -81,7 +89,7 @@ export default function FancallRoomPage() {
   }
 
   const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_WS_URL || "";
-  const leaveCall = () => router.push(`/${i18n.language}?ended=1`);
+  const leaveCall = () => router.push(`/${i18n.language}`);
 
   return (
     <PhoneFrame>
@@ -95,8 +103,9 @@ export default function FancallRoomPage() {
       >
         <AgentCall
           displayName={displayName}
-          profilePictureUrl={avatarUrl}
+          profilePictureUrl={callPhotoUrl}
           callDurationSeconds={callDurationSeconds}
+          videoRegion={contact?.videoRegion}
           onHangUp={leaveCall}
           onBack={leaveCall}
         />

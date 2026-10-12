@@ -9,7 +9,9 @@
     "ended": "Tapos na ang tawag",
     "decline": "Tanggihan",
     "connecting": "Kumokonekta",
-    "callBack": "Tumawag pabalik"
+    "callBack": "Tumawag pabalik",
+    "calling": "Tumatawag…",
+    "end": "Tapusin"
   },
   "room": {
     "failedToLoad": "Hindi na-load ang live room",
@@ -152,5 +154,16 @@
     "Binubuklat ang slogan banner mula sa fan",
     "Tinitingnan ang photocards ng bagong album",
     "Pinipindot na ang call button ngayon mismo"
-  ]
+  ],
+  "contacts": {
+    "title": "Mga Contact",
+    "search": "Maghanap",
+    "noResults": "Walang Resulta",
+    "message": "mensahe",
+    "call": "tawag",
+    "video": "video",
+    "mail": "mail",
+    "count_one": "{{count}} Contact",
+    "count_other": "{{count}} Contact"
+  }
 }
