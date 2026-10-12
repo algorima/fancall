@@ -9,6 +9,7 @@ from fancall.prompts import (
     OPENING_INSTRUCTIONS,
     ROLE_PLAYING_GUIDELINES,
     VIDEO_CALL_GUIDELINES,
+    WRAP_UP_INSTRUCTIONS,
     compose_instructions,
 )
 
@@ -65,7 +66,12 @@ class TestVideoCallGuidelines(unittest.TestCase):
     def test_opening_and_closing_are_not_empty(self):
         """Test call opening and closing instructions exist"""
         self.assertTrue(OPENING_INSTRUCTIONS.strip())
+        self.assertTrue(WRAP_UP_INSTRUCTIONS.strip())
         self.assertTrue(CLOSING_INSTRUCTIONS.strip())
+
+    def test_closing_forbids_new_questions(self):
+        """Test goodbye instructions keep the model from opening a new topic"""
+        self.assertIn("질문은 절대 하지 않는다", CLOSING_INSTRUCTIONS)
 
 
 if __name__ == "__main__":

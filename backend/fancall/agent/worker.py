@@ -22,14 +22,11 @@ from livekit.plugins import fishaudio, hedra, openai
 from PIL import Image
 from pydantic import ValidationError
 
+from fancall.agent.call_timer import run_call_timer
 from fancall.persona import DEFAULT_PERSONA, Persona
-from fancall.prompts import (
-    CLOSING_INSTRUCTIONS,
-    OPENING_INSTRUCTIONS,
-    compose_instructions,
-)
+from fancall.prompts import OPENING_INSTRUCTIONS, compose_instructions
 from fancall.schemas import AgentDispatchRequest
-from fancall.settings import FancallModelSettings, LiveKitSettings
+from fancall.settings import FancallCallSettings, FancallModelSettings, LiveKitSettings
 
 # Basic logging configuration
 logging.basicConfig(
@@ -39,8 +36,6 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_SYSTEM_PROMPT = "You are a friendly and helpful AI companion."
-FREE_TRIAL_SECONDS = 75
-CLOSING_LEAD_SECONDS = 10
 
 
 class CompanionAgent(Agent):
@@ -66,6 +61,7 @@ async def entrypoint(  # pylint: disable=too-many-locals
     fish_settings: FishAudioSettings,
     hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
+    call_settings: FancallCallSettings,
 ) -> None:
     """
     Agent entrypoint. Initializes AgentSession for text-to-speech tasks.
@@ -78,6 +74,7 @@ async def entrypoint(  # pylint: disable=too-many-locals
         fish_settings: Fish Audio TTS settings
         hedra_settings: Hedra avatar settings
         model_settings: Fancall LLM model settings
+        call_settings: Video call timing settings
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
@@ -195,16 +192,16 @@ async def entrypoint(  # pylint: disable=too-many-locals
     await session.start(agent=agent, room=ctx.room)
     logger.info("Agent session started.")
 
-    # Free trial: auto-shutdown after 75 seconds
-    # 끊기기 전에 작별 인사할 시간을 남긴다 (실제 영통의 "시간 다 됐어~")
+    # Call limit: wrap up, say goodbye, then shut down
     try:
-        await asyncio.sleep(FREE_TRIAL_SECONDS - CLOSING_LEAD_SECONDS)
-        session.generate_reply(instructions=CLOSING_INSTRUCTIONS)
-        await asyncio.sleep(CLOSING_LEAD_SECONDS)
-        logger.info("Free trial session limit (75s) reached. Shutting down.")
-        ctx.shutdown(reason="Free trial session limit reached (75 seconds)")
+        await run_call_timer(session, agent, instructions, call_settings)
+        logger.info(
+            "Call limit (%.0fs) reached. Shutting down.",
+            call_settings.call_duration_seconds,
+        )
+        ctx.shutdown(reason="Call time limit reached")
     except asyncio.CancelledError:
-        logger.info("Agent session cancelled before trial limit.")
+        logger.info("Agent session cancelled before call limit.")
 
 
 def create_worker_options(
@@ -214,6 +211,7 @@ def create_worker_options(
     fish_settings: FishAudioSettings,
     hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
+    call_settings: FancallCallSettings,
 ) -> WorkerOptions:
     """
     Create WorkerOptions for the agent with dependency injection.
@@ -227,6 +225,7 @@ def create_worker_options(
         fish_settings: Fish Audio TTS settings
         hedra_settings: Hedra avatar settings
         model_settings: Fancall LLM model settings
+        call_settings: Video call timing settings
 
     Returns:
         WorkerOptions configured with the agent entrypoint
@@ -240,6 +239,7 @@ def create_worker_options(
             fish_settings=fish_settings,
             hedra_settings=hedra_settings,
             model_settings=model_settings,
+            call_settings=call_settings,
         ),
         worker_type=agents.WorkerType.ROOM,
         agent_name=livekit_settings.agent_name,
@@ -253,6 +253,7 @@ def main() -> None:
     fish_settings = FishAudioSettings()
     hedra_settings = HedraSettings()
     model_settings = FancallModelSettings()
+    call_settings = FancallCallSettings()
     cli.run_app(
         create_worker_options(
             DEFAULT_PERSONA,
@@ -261,6 +262,7 @@ def main() -> None:
             fish_settings,
             hedra_settings,
             model_settings,
+            call_settings,
         )
     )
 

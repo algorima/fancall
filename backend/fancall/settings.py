@@ -15,6 +15,45 @@ class FancallModelSettings(BaseSettings):
         env_prefix = "FANCALL_"
 
 
+class FancallCallSettings(BaseSettings):
+    """Video call timing settings.
+
+    Attributes:
+        call_duration_seconds: Total call length before the agent leaves.
+        wrap_up_lead_seconds: Seconds before the end when the agent stops
+            opening new topics and keeps answers short.
+        closing_lead_seconds: Seconds before the end when the agent cuts in
+            with a goodbye. Covers LLM·TTS latency plus a two-sentence goodbye.
+        closing_grace_seconds: Extra seconds allowed past the end so the
+            goodbye is not cut off mid-sentence.
+    """
+
+    call_duration_seconds: float = 180
+    wrap_up_lead_seconds: float = 30
+    closing_lead_seconds: float = 12
+    closing_grace_seconds: float = 5
+
+    class Config:
+        env_prefix = "FANCALL_"
+
+    @model_validator(mode="after")
+    def check_timeline(self) -> "FancallCallSettings":
+        """Validate that wrap-up and closing happen in order inside the call."""
+        if not (
+            self.call_duration_seconds
+            > self.wrap_up_lead_seconds
+            > self.closing_lead_seconds
+            > 0
+        ):
+            raise ValueError(
+                "Expected call_duration_seconds > wrap_up_lead_seconds "
+                "> closing_lead_seconds > 0"
+            )
+        if self.closing_grace_seconds < 0:
+            raise ValueError("closing_grace_seconds must not be negative")
+        return self
+
+
 class LiveKitSettings(BaseSettings):
     """Settings for LiveKit API integration
 
