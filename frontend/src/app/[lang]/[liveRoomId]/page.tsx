@@ -106,6 +106,7 @@ export default function FancallRoomPage() {
           profilePictureUrl={callPhotoUrl}
           callDurationSeconds={callDurationSeconds}
           videoRegion={contact?.videoRegion}
+          clipGraph={contact?.clipGraph}
           onHangUp={leaveCall}
           onBack={leaveCall}
         />

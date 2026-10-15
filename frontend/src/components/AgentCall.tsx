@@ -26,6 +26,8 @@ import Image from "next/image";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { ClipMode } from "@/components/clipGraph";
+import { ClipGraphPlayer } from "@/components/ClipGraphPlayer";
 import { LoadingQuips } from "@/components/LoadingQuips";
 import {
   coverRegionRect,
@@ -33,7 +35,7 @@ import {
   type Size,
 } from "@/components/videoLayout";
 import { FANCALL_NS } from "@/i18n";
-import type { VideoRegion } from "@/schemas";
+import type { ClipGraph, VideoRegion } from "@/schemas";
 
 export interface AgentCallProps {
   profilePictureUrl?: string | null;
@@ -47,9 +49,13 @@ export interface AgentCallProps {
   callDurationSeconds?: number;
   /** Where the avatar video sits in the profile picture (see VideoRegion) */
   videoRegion?: VideoRegion | null;
+  /** Pre-rendered reaction clips; when set, they replace the avatar video */
+  clipGraph?: ClipGraph | null;
 }
 
 const LAST_SECONDS_WARNING = 30;
+// Wave goodbye in the final seconds of the call
+const CLOSING_SECONDS = 6;
 const MAX_VISIBLE_MESSAGES = 3;
 // Narrower than 3:4 counts as portrait video that can fill the phone screen
 const PORTRAIT_ASPECT = 0.75;
@@ -120,6 +126,7 @@ export function AgentCall({
   onBack,
   callDurationSeconds = 180,
   videoRegion,
+  clipGraph,
 }: AgentCallProps) {
   const { state, audioTrack, agent } = useVoiceAssistant();
   const { t } = useTranslation();
@@ -226,6 +233,14 @@ export function AgentCall({
     defaultValue: "",
   });
   const recentMessages = chatMessages.slice(-MAX_VISIBLE_MESSAGES);
+  const clipMode: ClipMode =
+    remainingSeconds !== null && remainingSeconds <= CLOSING_SECONDS
+      ? "closing"
+      : state === "speaking"
+        ? "speaking"
+        : state === "thinking"
+          ? "thinking"
+          : "listening";
   const isLastSeconds =
     remainingSeconds !== null && remainingSeconds <= LAST_SECONDS_WARNING;
 
@@ -248,7 +263,14 @@ export function AgentCall({
           priority
         />
       )}
-      {agentVideoTrack && !isPortraitVideo && !regionRect && (
+      {clipGraph && (
+        <ClipGraphPlayer
+          graph={clipGraph}
+          mode={clipMode}
+          className="absolute inset-0 size-full"
+        />
+      )}
+      {!clipGraph && agentVideoTrack && !isPortraitVideo && !regionRect && (
         // Square avatars (Simli) would be cropped and zoomed by object-cover on a
         // tall phone. Fill the screen with a blurred copy instead and show the
         // real frame at full width, so the face keeps its natural size.
@@ -258,7 +280,7 @@ export function AgentCall({
           className="absolute inset-0 size-full scale-125 animate-fade-in object-cover blur-2xl brightness-75"
         />
       )}
-      {agentVideoTrack && (
+      {!clipGraph && agentVideoTrack && (
         <VideoTrack
           trackRef={agentVideoTrack}
           onResize={(e) => {
