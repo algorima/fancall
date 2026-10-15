@@ -2,6 +2,8 @@
 Fancall settings
 """
 
+from typing import Literal
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
@@ -10,6 +12,10 @@ class FancallModelSettings(BaseSettings):
     """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    # "none" keeps thinking models (e.g. Gemini via the OpenAI-compatible API) fast enough for a live call
+    openai_reasoning_effort: (
+        Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"] | None
+    ) = None
     # Most expressive realtime model; plays through the text-to-dialogue stream
     elevenlabs_model: str = "eleven_v4_turbo"
 

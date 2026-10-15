@@ -53,6 +53,7 @@ export default function FancallContactsPage() {
             profilePictureUrl: callPhoto.startsWith("http") ? callPhoto : null,
             voiceId: contact.voiceId,
             systemPrompt: contact.systemPrompt,
+            language: i18n.language,
           });
           return roomId;
         })(),

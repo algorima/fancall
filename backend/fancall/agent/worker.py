@@ -30,7 +30,11 @@ from pydantic import ValidationError
 from fancall.agent.call_timer import run_call_timer
 from fancall.agent.reply_limit import limit_sentences
 from fancall.persona import DEFAULT_PERSONA, Persona
-from fancall.prompts import OPENING_INSTRUCTIONS, compose_instructions
+from fancall.prompts import (
+    OPENING_INSTRUCTIONS,
+    compose_instructions,
+    opening_user_input,
+)
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import (
     AvatarSettings,
@@ -58,13 +62,22 @@ class CompanionAgent(Agent):
     Processes user input and generates conversational responses using LLM and TTS.
     """
 
-    def __init__(self, instructions: str = DEFAULT_SYSTEM_PROMPT, **kwargs):
+    def __init__(
+        self,
+        instructions: str = DEFAULT_SYSTEM_PROMPT,
+        language: str | None = None,
+        **kwargs,
+    ):
         super().__init__(instructions=instructions, **kwargs)
+        self._language = language
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
         # 실제 영통처럼 소리·화면 확인과 인사로 먼저 말을 건다
-        self.session.generate_reply(instructions=OPENING_INSTRUCTIONS)
+        self.session.generate_reply(
+            user_input=opening_user_input(self._language),
+            instructions=OPENING_INSTRUCTIONS,
+        )
 
     def llm_node(
         self,
@@ -234,7 +247,10 @@ async def entrypoint(
     )
 
     # Initialize components
-    llm = openai.LLM(model=model_settings.openai_model)
+    llm = openai.LLM(
+        model=model_settings.openai_model,
+        reasoning_effort=model_settings.openai_reasoning_effort or NOT_GIVEN,
+    )
     if voice_id:
         logger.info("Using ElevenLabs voice_id: %s", voice_id)
 
@@ -273,7 +289,7 @@ async def entrypoint(
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
 
-    agent = CompanionAgent(instructions=instructions)
+    agent = CompanionAgent(instructions=instructions, language=metadata.language)
     await session.start(agent=agent, room=ctx.room)
     logger.info("Agent session started.")
 
