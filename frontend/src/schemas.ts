@@ -47,6 +47,8 @@ export interface AgentDispatchRequest {
   profilePictureUrl?: string | null;
   voiceId?: string | null;
   systemPrompt?: string | null;
+  /** Fan's app language (e.g. "en"); the idol greets in it before the fan speaks */
+  language?: string | null;
 }
 
 /**
@@ -64,6 +66,50 @@ export const videoRegionSchema = z.object({
 
 export type VideoRegion = z.infer<typeof videoRegionSchema>;
 
+export const clipKindSchema = z.enum([
+  "listen",
+  "nod",
+  "smile",
+  "tilt",
+  "think",
+  "surprise",
+  "talk",
+  "bye",
+]);
+
+export type ClipKind = z.infer<typeof clipKindSchema>;
+
+/** A short pre-rendered clip that starts on one anchor pose and ends on one */
+export const graphClipSchema = z.object({
+  id: z.string().min(1),
+  url: z.string().min(1),
+  from: z.string().min(1),
+  to: z.string().min(1),
+  kind: clipKindSchema,
+});
+
+export type GraphClip = z.infer<typeof graphClipSchema>;
+
+/**
+ * Clip graph: anchor poses are nodes and clips are edges between them. The
+ * first anchor is the main (front) pose the graph keeps returning to.
+ */
+export const clipGraphSchema = z
+  .object({
+    anchors: z.array(z.string().min(1)).min(1),
+    clips: z.array(graphClipSchema).min(1),
+  })
+  .refine(
+    (graph) =>
+      graph.clips.every(
+        (clip) =>
+          graph.anchors.includes(clip.from) && graph.anchors.includes(clip.to),
+      ),
+    { message: "Every clip must start and end on a listed anchor" },
+  );
+
+export type ClipGraph = z.infer<typeof clipGraphSchema>;
+
 /**
  * A callable idol in the contacts list
  */
@@ -78,6 +124,8 @@ export const contactSchema = z.object({
   voiceId: z.string().nullish(),
   systemPrompt: z.string().nullish(),
   videoRegion: videoRegionSchema.nullish(),
+  /** Pre-rendered reaction clips played on the device instead of a live avatar */
+  clipGraph: clipGraphSchema.nullish(),
 });
 
 export type Contact = z.infer<typeof contactSchema>;
