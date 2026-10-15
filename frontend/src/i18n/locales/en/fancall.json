@@ -28,7 +28,9 @@
       "connecting": "Connecting...",
       "waitingForAgent": "Waiting for agent...",
       "send": "Send",
-      "sending": "Sending..."
+      "sending": "Sending...",
+      "remaining": "Messages left: {{count}}",
+      "limitReached": "No messages left"
     },
     "audioPermission": {
       "title": "Audio Playback Permission Required",

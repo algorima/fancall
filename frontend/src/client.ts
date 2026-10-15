@@ -9,7 +9,7 @@
  */
 
 // Components (client-only)
-export { AgentCall } from "./components/AgentCall";
+export { AgentCall, MESSAGE_LIMIT_FALLBACK_MS } from "./components/AgentCall";
 export type { AgentCallProps } from "./components/AgentCall";
 export { StartCallSection } from "./components/StartCallSection";
 export type { StartCallSectionProps } from "./components/StartCallSection";

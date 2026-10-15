@@ -28,7 +28,9 @@
       "connecting": "接続中...",
       "waitingForAgent": "エージェントを待っています...",
       "send": "送信",
-      "sending": "送信中..."
+      "sending": "送信中...",
+      "remaining": "残りのメッセージ: {{count}}回",
+      "limitReached": "メッセージを使い切りました"
     },
     "audioPermission": {
       "title": "オーディオ再生許可が必要です",

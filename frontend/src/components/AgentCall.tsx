@@ -39,11 +39,20 @@ export interface AgentCallProps {
   onBack?: () => void;
   /** Call length; the countdown starts when the agent joins (matches the backend timer) */
   callDurationSeconds?: number;
+  /** Messages the fan may send in this call. Unlimited when omitted */
+  messageLimit?: number;
+  /**
+   * Called once the idol has answered the last allowed message
+   * (or MESSAGE_LIMIT_FALLBACK_MS after it was sent, if no answer comes)
+   */
+  onMessageLimitReached?: () => void;
 }
 
 const LAST_SECONDS_WARNING = 30;
 const MAX_VISIBLE_MESSAGES = 3;
 const HEART_LIFETIME_MS = 1800;
+// Report the message limit even if the idol never answers the last message
+export const MESSAGE_LIMIT_FALLBACK_MS = 20_000;
 const HEART_TONES = ["text-error", "text-secondary", "text-primary"];
 
 interface FloatingHeart {
@@ -87,6 +96,8 @@ export function AgentCall({
   onHangUp,
   onBack,
   callDurationSeconds = 180,
+  messageLimit,
+  onMessageLimitReached,
 }: AgentCallProps) {
   const { state, audioTrack, agent } = useVoiceAssistant();
   const { t } = useTranslation();
@@ -98,6 +109,14 @@ export function AgentCall({
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [hearts, setHearts] = useState<FloatingHeart[]>([]);
   const nextHeartId = useRef(0);
+  const [sentCount, setSentCount] = useState(0);
+  const hasFinalReplyStartedRef = useRef(false);
+  const hasReportedLimitRef = useRef(false);
+  const hasMessageLimit = messageLimit !== undefined;
+  const isMessageLimitReached = hasMessageLimit && sentCount >= messageLimit;
+  const remainingMessages = hasMessageLimit
+    ? Math.max(messageLimit - sentCount, 0)
+    : null;
 
   // Find agent video track
   const agentVideoTrack = tracks.find(
@@ -142,18 +161,45 @@ export function AgentCall({
   const handleSendMessage = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!message.trim() || isSending || !agent) return;
+      if (!message.trim() || isSending || !agent || isMessageLimitReached) {
+        return;
+      }
 
       setIsSending(true);
       try {
         await send(message.trim());
         setMessage("");
+        setSentCount((count) => count + 1);
       } finally {
         setIsSending(false);
       }
     },
-    [message, isSending, agent, send],
+    [message, isSending, agent, isMessageLimitReached, send],
   );
+
+  const reportMessageLimit = useCallback(() => {
+    if (hasReportedLimitRef.current) return;
+    hasReportedLimitRef.current = true;
+    onMessageLimitReached?.();
+  }, [onMessageLimitReached]);
+
+  // The answer to the last allowed message has finished (speaking → listening)
+  useEffect(() => {
+    if (!isMessageLimitReached) return;
+    if (state === "speaking") {
+      hasFinalReplyStartedRef.current = true;
+      return;
+    }
+    if (hasFinalReplyStartedRef.current && state === "listening") {
+      reportMessageLimit();
+    }
+  }, [state, isMessageLimitReached, reportMessageLimit]);
+
+  useEffect(() => {
+    if (!isMessageLimitReached) return;
+    const timer = setTimeout(reportMessageLimit, MESSAGE_LIMIT_FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [isMessageLimitReached, reportMessageLimit]);
 
   // Hearts stay on this screen, like tapping the like button on a live stream
   const sendHeart = useCallback(() => {
@@ -324,13 +370,25 @@ export function AgentCall({
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              disabled={!isConnected || !isAgentAvailable || isSending}
+              disabled={
+                !isConnected ||
+                !isAgentAvailable ||
+                isSending ||
+                isMessageLimitReached
+              }
               placeholder={
                 !isConnected
                   ? t("agentCall.chat.connecting", { ns: FANCALL_NS })
                   : !isAgentAvailable
                     ? t("agentCall.chat.waitingForAgent", { ns: FANCALL_NS })
-                    : t("agentCall.chat.placeholder", { ns: FANCALL_NS })
+                    : isMessageLimitReached
+                      ? t("agentCall.chat.limitReached", { ns: FANCALL_NS })
+                      : remainingMessages !== null
+                        ? t("agentCall.chat.remaining", {
+                            ns: FANCALL_NS,
+                            count: remainingMessages,
+                          })
+                        : t("agentCall.chat.placeholder", { ns: FANCALL_NS })
               }
               className="input h-11 w-full rounded-full border-none bg-base-content/15 pl-4 pr-12 text-body-m backdrop-blur-xl placeholder:text-base-content/60 focus:outline-none disabled:cursor-not-allowed disabled:bg-base-content/10 disabled:placeholder:text-base-content/40"
             />
@@ -340,7 +398,8 @@ export function AgentCall({
                 !message.trim() ||
                 isSending ||
                 !isConnected ||
-                !isAgentAvailable
+                !isAgentAvailable ||
+                isMessageLimitReached
               }
               aria-label={
                 isSending
