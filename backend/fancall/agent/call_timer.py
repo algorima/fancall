@@ -61,7 +61,8 @@ async def run_call_timer(
     """
     await sleep(settings.call_duration_seconds - settings.wrap_up_lead_seconds)
     logger.info("Call wrap-up: %.0fs left", settings.wrap_up_lead_seconds)
-    await agent.update_instructions(base_instructions + "\n\n" + WRAP_UP_INSTRUCTIONS)
+    wrap_up = WRAP_UP_INSTRUCTIONS.format(lead_seconds=settings.wrap_up_lead_seconds)
+    await agent.update_instructions(base_instructions + "\n\n" + wrap_up)
 
     await sleep(settings.wrap_up_lead_seconds - settings.closing_lead_seconds)
     logger.info("Call closing: %.0fs left", settings.closing_lead_seconds)
