@@ -47,4 +47,87 @@ export interface AgentDispatchRequest {
   profilePictureUrl?: string | null;
   voiceId?: string | null;
   systemPrompt?: string | null;
+  /** Fan's app language (e.g. "en"); the idol greets in it before the fan speaks */
+  language?: string | null;
 }
+
+/**
+ * Where the avatar's video sits inside the call photo, as fractions of the
+ * photo's width and height. When set, the call screen lays the lip-synced
+ * video over the same spot of the full-screen photo, so a square avatar
+ * fills a tall phone without being zoomed in.
+ */
+export const videoRegionSchema = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+  width: z.number().gt(0).max(1),
+  height: z.number().gt(0).max(1),
+});
+
+export type VideoRegion = z.infer<typeof videoRegionSchema>;
+
+export const clipKindSchema = z.enum([
+  "listen",
+  "nod",
+  "smile",
+  "tilt",
+  "think",
+  "surprise",
+  "talk",
+  "bye",
+]);
+
+export type ClipKind = z.infer<typeof clipKindSchema>;
+
+/** A short pre-rendered clip that starts on one anchor pose and ends on one */
+export const graphClipSchema = z.object({
+  id: z.string().min(1),
+  url: z.string().min(1),
+  from: z.string().min(1),
+  to: z.string().min(1),
+  kind: clipKindSchema,
+});
+
+export type GraphClip = z.infer<typeof graphClipSchema>;
+
+/**
+ * Clip graph: anchor poses are nodes and clips are edges between them. The
+ * first anchor is the main (front) pose the graph keeps returning to.
+ */
+export const clipGraphSchema = z
+  .object({
+    anchors: z.array(z.string().min(1)).min(1),
+    clips: z.array(graphClipSchema).min(1),
+  })
+  .refine(
+    (graph) =>
+      graph.clips.every(
+        (clip) =>
+          graph.anchors.includes(clip.from) && graph.anchors.includes(clip.to),
+      ),
+    { message: "Every clip must start and end on a listed anchor" },
+  );
+
+export type ClipGraph = z.infer<typeof clipGraphSchema>;
+
+/**
+ * A callable idol in the contacts list
+ */
+export const contactSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  /** Profile photo: contacts list, contact card and the calling screens */
+  photoUrl: z.string().min(1),
+  /** Still the avatar is animated from, shown once the call connects */
+  callPhotoUrl: z.string().min(1).nullish(),
+  avatarId: z.string().nullish(),
+  voiceId: z.string().nullish(),
+  systemPrompt: z.string().nullish(),
+  videoRegion: videoRegionSchema.nullish(),
+  /** Pre-rendered reaction clips played on the device instead of a live avatar */
+  clipGraph: clipGraphSchema.nullish(),
+});
+
+export type Contact = z.infer<typeof contactSchema>;
+
+export const contactListSchema = z.array(contactSchema);

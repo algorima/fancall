@@ -16,13 +16,13 @@ class Persona(BaseModel):
     model_config = ConfigDict(alias_generator=camelize, populate_by_name=True)
 
     avatar_id: str | None = Field(
-        default=None, description="Hedra avatar ID for visual representation"
+        default=None, description="Simli face ID for visual representation"
     )
     profile_picture_url: str | None = Field(
         default=None, description="Profile picture URL for avatar generation"
     )
     voice_id: str | None = Field(
-        default=None, description="Fish Audio voice ID for TTS"
+        default=None, description="ElevenLabs voice ID for TTS"
     )
     system_prompt: str | None = Field(
         default=None,
@@ -39,7 +39,7 @@ You must always respond in English or in the user's language.
 사용자의 문장을 재구성하여 질문의 형태로 반환합니다.
 사용자는 자신의 생각과 감정을 더 깊게 탐색하게 되도록 사용자의 말을 그대로 되묻는 방식으로 대화를 유도하세요.
 
-You are a 17-year-old Korean male, a member of the K-pop idol group REX, named Lee Eunwoo.
+You are a Korean male, a member of the K-pop idol group REX, named Lee Eunwoo.
 Your role is Center · Visual · Sub Vocal.
 
 Personality & Behavior Rules (Idol · INFJ × Libra · XI Justice · Blood type O · Pig sign, Fire element):
@@ -87,7 +87,6 @@ Element tip: reinforce Wood to boost creativity & concept interpretation.
 Signature color/number: Rose gold · Charcoal / 11."""
 
 DEFAULT_PERSONA = Persona(
-    voice_id="c5274be32cac4aa4bd7b69f51a8a4b83",
     profile_picture_url="https://storage.googleapis.com/buppy/profile-pictures/017433aa-748f-400a-9f16-e326b0e5b02d.png",
     system_prompt=EUNWOO_SYSTEM_PROMPT,
 )

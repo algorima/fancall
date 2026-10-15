@@ -2,14 +2,22 @@
 Fancall settings
 """
 
+from typing import Literal
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
 class FancallModelSettings(BaseSettings):
-    """Fancall LLM model settings."""
+    """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    # "none" keeps thinking models (e.g. Gemini via the OpenAI-compatible API) fast enough for a live call
+    openai_reasoning_effort: (
+        Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"] | None
+    ) = None
+    # Most expressive realtime model; plays through the text-to-dialogue stream
+    elevenlabs_model: str = "eleven_v4_turbo"
 
     class Config:
         env_prefix = "FANCALL_"
@@ -52,6 +60,51 @@ class FancallCallSettings(BaseSettings):
         if self.closing_grace_seconds < 0:
             raise ValueError("closing_grace_seconds must not be negative")
         return self
+
+
+class ElevenLabsSettings(BaseSettings):
+    """Settings for ElevenLabs TTS
+
+    Attributes:
+        api_key: ElevenLabs API key (ELEVEN_API_KEY).
+    """
+
+    api_key: str | None = None
+
+    class Config:
+        env_prefix = "ELEVEN_"
+
+
+class AvatarSettings(BaseSettings):
+    """Settings for realtime lip-synced avatars (replaces discontinued Hedra)
+
+    A provider is enabled by setting its API key. Anam is preferred when its key
+    and avatar ID are set, then Tavus; otherwise Simli is used when the persona has an avatar_id (Simli face
+    ID), and LemonSlice when only a profile_picture_url is available. With no key
+    set, the call is voice-only.
+
+    Attributes:
+        anam_api_key: Anam API key (ANAM_API_KEY).
+        anam_avatar_id: Anam avatar to render (ANAM_AVATAR_ID). Required for Anam.
+        anam_video_width: Anam output width in pixels (ANAM_VIDEO_WIDTH).
+        anam_video_height: Anam output height in pixels (ANAM_VIDEO_HEIGHT).
+            Portrait by default to fill the 9:16 call screen.
+        tavus_api_key: Tavus API key (TAVUS_API_KEY).
+        tavus_face_id: Tavus face to render (TAVUS_FACE_ID). Stock face if unset.
+        tavus_pal_id: Tavus PAL in echo mode (TAVUS_PAL_ID). Stock PAL if unset.
+        simli_api_key: Simli API key (SIMLI_API_KEY).
+        lemonslice_api_key: LemonSlice API key (LEMONSLICE_API_KEY).
+    """
+
+    anam_api_key: str | None = None
+    anam_avatar_id: str | None = None
+    anam_video_width: int = 768
+    anam_video_height: int = 1152
+    tavus_api_key: str | None = None
+    tavus_face_id: str | None = None
+    tavus_pal_id: str | None = None
+    simli_api_key: str | None = None
+    lemonslice_api_key: str | None = None
 
 
 class LiveKitSettings(BaseSettings):

@@ -5,13 +5,18 @@ Fancall Pydantic schemas
 from datetime import datetime
 
 from humps import camelize
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from fancall.persona import Persona
 
 
 class AgentDispatchRequest(Persona):
     """API dispatch 요청 스키마. Persona를 상속하여 확장 가능."""
+
+    language: str | None = Field(
+        default=None,
+        description="Fan's app language code (e.g. 'en'); used for the opening greeting",
+    )
 
 
 # LiveRoom schemas

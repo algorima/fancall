@@ -45,7 +45,7 @@ Conventional Commits 형식: `<type>(<scope>): <한국어 제목>`
 - 비즈니스: `room`, `call`, `avatar`
 - 데이터: `db`, `models`, `api`
 - UI: `ui`, `theme`, `i18n`
-- 연동: `livekit`, `openai`, `fishaudio`, `hedra`
+- 연동: `livekit`, `openai`, `elevenlabs`
 - 배포: `docker`, `deploy`, `config`, `workflow`
 - 기타: `deps`, `service`
 

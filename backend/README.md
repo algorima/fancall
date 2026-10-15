@@ -5,8 +5,8 @@ AI 아이돌과 실시간 영상 통화 Python 패키지
 ## 주요 기능
 
 - LiveKit 기반 실시간 음성/영상 통화
-- Fish Audio TTS 음성 합성
-- Hedra 아바타 지원 (선택)
+- ElevenLabs TTS 음성 합성
+- 실시간 립싱크 아바타 (Simli · LemonSlice, 선택)
 - 동적 설정 (voice_id, avatar_id, system_prompt)
 
 ## 설치
@@ -37,7 +37,7 @@ livekit-server --dev
 ```bash
 cd backend
 export OPENAI_API_KEY=sk-...
-export FISH_API_KEY=...
+export ELEVEN_API_KEY=...
 
 # 개발 모드
 python -m fancall.agent.worker dev
@@ -98,15 +98,20 @@ poetry run alembic revision --autogenerate -m "변경 설명"
 | 변수 | 설명 |
 |------|------|
 | `OPENAI_API_KEY` | OpenAI API 키 |
-| `FISH_API_KEY` | Fish Audio TTS API 키 |
+| `ELEVEN_API_KEY` | ElevenLabs TTS API 키 |
 
 ### 선택 (기능 활성화)
 
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI LLM 모델 |
-| `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
-| `HEDRA_API_KEY` | - | Hedra API 키 (enabled=true일 때 필수) |
+| `FANCALL_ELEVENLABS_MODEL` | `eleven_v4_turbo` | 사용할 ElevenLabs TTS 모델 |
+| `FANCALL_CALL_DURATION_SECONDS` | `180` | 통화 길이(초). 끝나기 전에 아이돌이 작별 인사 후 종료 |
+| `SIMLI_API_KEY` | - | Simli 아바타 API 키. `avatar_id`(Simli face ID)가 있는 페르소나에 사용 |
+| `LEMONSLICE_API_KEY` | - | LemonSlice 아바타 API 키. `profile_picture_url`만 있는 페르소나에 사용 |
+
+아바타 키가 없거나 아바타 시작이 실패하면 음성 통화로 진행됩니다.
+아바타는 LiveKit 방에 별도 참가자로 접속하므로 `LIVEKIT_URL`이 외부에서 접근 가능해야 합니다 (로컬 `ws://localhost` 불가).
 
 > **참고**: LiveKit, 데이터베이스, 모델 등 추가 설정은 기본값으로 로컬 개발 가능합니다.
 > 변경이 필요한 경우 `fancall/settings.py`의 Settings 클래스를 참고하세요.

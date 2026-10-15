@@ -85,7 +85,9 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    # Echo any origin: "*" is rejected by browsers for credentialed requests,
+    # and the frontend fetches with credentials: "include".
+    allow_origin_regex=".*",  # Configure appropriately for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
