@@ -29,7 +29,9 @@
       "connecting": "Đang kết nối...",
       "waitingForAgent": "Đang chờ agent...",
       "send": "Gửi",
-      "sending": "Đang gửi..."
+      "sending": "Đang gửi...",
+      "remaining": "Tin nhắn còn lại: {{count}}",
+      "limitReached": "Đã hết tin nhắn"
     },
     "audioPermission": {
       "title": "Cần quyền phát âm thanh",

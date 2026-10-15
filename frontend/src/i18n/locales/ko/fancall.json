@@ -29,7 +29,9 @@
       "connecting": "연결 중...",
       "waitingForAgent": "에이전트를 기다리는 중...",
       "send": "전송",
-      "sending": "전송 중..."
+      "sending": "전송 중...",
+      "remaining": "남은 메시지 {{count}}번",
+      "limitReached": "메시지를 모두 보냈어요"
     },
     "audioPermission": {
       "title": "오디오 재생 권한 필요",

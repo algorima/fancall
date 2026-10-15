@@ -29,7 +29,9 @@
       "connecting": "Menghubungkan...",
       "waitingForAgent": "Menunggu agen...",
       "send": "Kirim",
-      "sending": "Mengirim..."
+      "sending": "Mengirim...",
+      "remaining": "Sisa pesan: {{count}}",
+      "limitReached": "Pesan sudah habis"
     },
     "audioPermission": {
       "title": "Izin Pemutaran Audio Diperlukan",

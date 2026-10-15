@@ -29,7 +29,9 @@
       "connecting": "กำลังเชื่อมต่อ...",
       "waitingForAgent": "กำลังรอ Agent...",
       "send": "ส่ง",
-      "sending": "กำลังส่ง..."
+      "sending": "กำลังส่ง...",
+      "remaining": "ข้อความที่เหลือ: {{count}}",
+      "limitReached": "ข้อความหมดแล้ว"
     },
     "audioPermission": {
       "title": "ต้องการสิทธิ์เล่นเสียง",

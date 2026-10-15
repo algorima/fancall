@@ -29,7 +29,9 @@
       "connecting": "Conectando...",
       "waitingForAgent": "Esperando al agente...",
       "send": "Enviar",
-      "sending": "Enviando..."
+      "sending": "Enviando...",
+      "remaining": "Mensajes restantes: {{count}}",
+      "limitReached": "No te quedan mensajes"
     },
     "audioPermission": {
       "title": "Se requiere permiso de reproducción de audio",

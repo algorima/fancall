@@ -29,7 +29,9 @@
       "connecting": "Kumokonekta...",
       "waitingForAgent": "Naghihintay ng agent...",
       "send": "Ipadala",
-      "sending": "Ipinapadala..."
+      "sending": "Ipinapadala...",
+      "remaining": "Natitirang mensahe: {{count}}",
+      "limitReached": "Wala ka nang natitirang mensahe"
     },
     "audioPermission": {
       "title": "Kailangan ng Audio Playback Permission",

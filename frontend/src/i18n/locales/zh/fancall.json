@@ -29,7 +29,9 @@
       "connecting": "连接中...",
       "waitingForAgent": "等待代理...",
       "send": "发送",
-      "sending": "发送中..."
+      "sending": "发送中...",
+      "remaining": "剩余消息：{{count}}条",
+      "limitReached": "消息已用完"
     },
     "audioPermission": {
       "title": "需要音频播放权限",
