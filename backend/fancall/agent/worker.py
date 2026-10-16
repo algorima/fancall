@@ -52,6 +52,28 @@ class CompanionAgent(Agent):
         self.session.generate_reply(instructions=OPENING_INSTRUCTIONS)
 
 
+# The frontend stops ringing after 25 seconds; give the fan's join a margin.
+ANSWER_TIMEOUT_SECONDS = 60
+
+
+async def wait_for_answer(ctx: JobContext, timeout: float) -> bool:
+    """
+    Wait for the fan to join the room before the idol starts speaking.
+
+    The frontend dispatches the agent while the phone is still ringing so the
+    worker is ready when the fan answers. The opening greeting and the call
+    timer start only after the fan joins, and an unanswered call ends the job
+    here instead of letting the idol talk to an empty room.
+    """
+    try:
+        await asyncio.wait_for(ctx.wait_for_participant(), timeout=timeout)
+    except asyncio.TimeoutError:
+        logger.info("Call was not answered within %ss. Shutting down.", timeout)
+        ctx.shutdown(reason="Call was not answered")
+        return False
+    return True
+
+
 async def entrypoint(
     ctx: JobContext,
     default_persona: Persona,
@@ -119,6 +141,9 @@ async def entrypoint(
         logger.warning(
             "HEDRA_ENABLED=true is ignored: Hedra realtime avatar has been discontinued."
         )
+
+    if not await wait_for_answer(ctx, ANSWER_TIMEOUT_SECONDS):
+        return
 
     # Compose instructions from merged system prompt (Context Composer pattern)
     instructions = compose_instructions(

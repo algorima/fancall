@@ -1,6 +1,16 @@
 "use client";
 
-import { PaperAirplaneIcon, SpeakerWaveIcon } from "@heroicons/react/24/solid";
+import {
+  ChevronLeftIcon,
+  ClockIcon,
+  HeartIcon,
+  PaperAirplaneIcon,
+  PhoneXMarkIcon,
+  SpeakerWaveIcon,
+  SpeakerXMarkIcon,
+  UserIcon,
+  VideoCameraSlashIcon,
+} from "@heroicons/react/24/solid";
 import {
   RoomAudioRenderer,
   useVoiceAssistant,
@@ -13,16 +23,59 @@ import {
 import clsx from "clsx";
 import { Track, RoomEvent } from "livekit-client";
 import Image from "next/image";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
+import { LoadingQuips } from "@/components/LoadingQuips";
 import { FANCALL_NS } from "@/i18n";
 
 export interface AgentCallProps {
   profilePictureUrl?: string | null;
   displayName: string;
   biography?: string | null;
+  /** Called when the user taps the red hang-up button */
+  onHangUp?: () => void;
+  /** Called when the user taps the back button in the top-left corner */
+  onBack?: () => void;
+  /** Call length; the countdown starts when the agent joins (matches the backend timer) */
+  callDurationSeconds?: number;
 }
+
+const LAST_SECONDS_WARNING = 30;
+const MAX_VISIBLE_MESSAGES = 3;
+const HEART_LIFETIME_MS = 1800;
+const HEART_TONES = ["text-error", "text-secondary", "text-primary"];
+
+interface FloatingHeart {
+  id: number;
+  /** Sideways drift at the top of the float, as a CSS length */
+  drift: string;
+}
+
+const formatRemaining = (seconds: number) => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+};
+
+/** Seconds left in the call, counted from the moment the agent joined */
+const useRemainingSeconds = (isRunning: boolean, totalSeconds: number) => {
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (isRunning && startedAt === null) setStartedAt(Date.now());
+  }, [isRunning, startedAt]);
+
+  useEffect(() => {
+    if (startedAt === null) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [startedAt]);
+
+  if (startedAt === null) return null;
+  return Math.max(0, totalSeconds - Math.floor((now - startedAt) / 1000));
+};
 
 /**
  * Agent 통화 컴포넌트
@@ -31,7 +84,9 @@ export interface AgentCallProps {
 export function AgentCall({
   profilePictureUrl,
   displayName,
-  biography,
+  onHangUp,
+  onBack,
+  callDurationSeconds = 180,
 }: AgentCallProps) {
   const { state, audioTrack, agent } = useVoiceAssistant();
   const { t } = useTranslation();
@@ -40,6 +95,9 @@ export function AgentCall({
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [canPlayAudio, setCanPlayAudio] = useState(false);
+  const [isSoundMuted, setIsSoundMuted] = useState(false);
+  const [hearts, setHearts] = useState<FloatingHeart[]>([]);
+  const nextHeartId = useRef(0);
 
   // Find agent video track
   const agentVideoTrack = tracks.find(
@@ -49,7 +107,7 @@ export function AgentCall({
   );
 
   // Send text message to agent via chat
-  const { send } = useChat();
+  const { send, chatMessages } = useChat();
 
   // Handle audio playback status
   useEffect(() => {
@@ -97,28 +155,283 @@ export function AgentCall({
     [message, isSending, agent, send],
   );
 
+  // Hearts stay on this screen, like tapping the like button on a live stream
+  const sendHeart = useCallback(() => {
+    const id = nextHeartId.current++;
+    const drift = `${Math.round((Math.random() - 0.5) * 48)}px`;
+    setHearts((current) => [...current, { id, drift }]);
+    setTimeout(() => {
+      setHearts((current) => current.filter((heart) => heart.id !== id));
+    }, HEART_LIFETIME_MS);
+  }, []);
+
   const isConnected = state !== "disconnected" && state !== "connecting";
+  // Media not flowing yet: the agent and its avatar are still joining
+  const isWaitingForMedia = !agentVideoTrack && !audioTrack;
   const isAgentAvailable = !!agent;
+  const remainingSeconds = useRemainingSeconds(
+    isAgentAvailable,
+    callDurationSeconds,
+  );
+
+  const stateLabel = t(`agentCall.state.${state}`, {
+    ns: FANCALL_NS,
+    defaultValue: "",
+  });
+  const recentMessages = chatMessages.slice(-MAX_VISIBLE_MESSAGES);
+  const isLastSeconds =
+    remainingSeconds !== null && remainingSeconds <= LAST_SECONDS_WARNING;
 
   return (
-    <div className="relative flex h-full flex-col bg-base-200">
+    <div className="relative size-full overflow-hidden bg-base-300">
       {/* Audio renderer */}
-      <RoomAudioRenderer />
+      <RoomAudioRenderer muted={isSoundMuted} />
+
+      {/* Full-screen like a real video call. Until video arrives, the same
+          photo the avatar is animated from, so the face simply starts moving */}
+      {profilePictureUrl && (
+        <Image
+          src={profilePictureUrl}
+          alt=""
+          fill
+          className="object-cover"
+          priority
+        />
+      )}
+      {agentVideoTrack && (
+        <VideoTrack
+          trackRef={agentVideoTrack}
+          className="absolute inset-0 size-full animate-fade-in object-cover"
+        />
+      )}
+
+      {/* Scrims keep the overlays readable on any video */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-base-100/60 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-base-100/80 via-base-100/30 to-transparent" />
+
+      {/* Top bar: back, caller, time left */}
+      <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-3 px-4 pt-4 text-base-content sm:pt-14">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label={t("agentCall.back", { ns: FANCALL_NS })}
+            className="btn btn-circle btn-ghost size-10 min-h-0 shrink-0 border-none bg-base-100/30 backdrop-blur-xl hover:bg-base-100/50"
+          >
+            <ChevronLeftIcon className="size-5" />
+          </button>
+        )}
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          {profilePictureUrl && (
+            <Image
+              src={profilePictureUrl}
+              alt=""
+              width={36}
+              height={36}
+              className="size-9 shrink-0 rounded-full object-cover ring-2 ring-base-content/30"
+            />
+          )}
+          <div className="min-w-0">
+            <h1 className="truncate text-title-s drop-shadow">{displayName}</h1>
+            <p className="flex items-center gap-1.5 text-label-m text-base-content/80 drop-shadow">
+              <span
+                className={clsx(
+                  "size-1.5 shrink-0 rounded-full transition-colors",
+                  state === "speaking" && "bg-secondary",
+                  state === "listening" && "bg-primary",
+                  state === "thinking" && "bg-accent",
+                  (state === "connecting" || state === "disconnected") &&
+                    "bg-base-content/50",
+                )}
+              />
+              {isWaitingForMedia ? (
+                <span className="min-w-0 flex-1">
+                  <LoadingQuips inline />
+                </span>
+              ) : (
+                <span className="truncate">{stateLabel}</span>
+              )}
+            </p>
+          </div>
+        </div>
+        <div
+          className={clsx(
+            "flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-label-m tabular-nums ring-1 backdrop-blur-xl transition-colors",
+            isLastSeconds
+              ? "animate-pulse bg-error text-error-content ring-error"
+              : "bg-base-100/30 ring-base-content/10",
+            remainingSeconds === null && "invisible",
+          )}
+          aria-live="off"
+        >
+          <ClockIcon className="size-3.5" />
+          {t("agentCall.remaining", {
+            ns: FANCALL_NS,
+            time: formatRemaining(remainingSeconds ?? callDurationSeconds),
+          })}
+        </div>
+      </div>
+
+      {/* Self view. The fan joins without a camera, so it shows the camera-off tile */}
+      <div className="absolute right-4 top-[4.5rem] z-10 flex aspect-[3/4] w-[5.5rem] flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl bg-base-200/60 shadow-xl ring-1 ring-base-content/15 backdrop-blur-xl sm:top-28">
+        <span className="flex size-10 items-center justify-center rounded-full bg-base-content/15">
+          <UserIcon className="size-5 text-base-content/70" />
+        </span>
+        <span className="flex items-center gap-1 text-label-s text-base-content/70">
+          <VideoCameraSlashIcon className="size-3" />
+          {t("agentCall.cameraOff", { ns: FANCALL_NS })}
+        </span>
+      </div>
+
+      {/* Voice bars when the call is voice-only */}
+      {audioTrack && !agentVideoTrack && (
+        <div className="absolute inset-x-0 bottom-64 z-10 flex h-24 items-center justify-center">
+          <BarVisualizer
+            state={state}
+            barCount={5}
+            trackRef={audioTrack}
+            className="[--lk-fg:hsl(var(--p))] [--lk-va-bar-gap:12px] [--lk-va-bar-width:16px]"
+          />
+        </div>
+      )}
+
+      {/* Bottom: recent messages, message input with hearts, call controls */}
+      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-3 px-4 pb-6 text-base-content sm:pb-8">
+        {recentMessages.length > 0 && (
+          <ul className="flex flex-col items-start gap-1.5 pr-14">
+            {recentMessages.map((msg) => (
+              <li
+                key={msg.id}
+                className="max-w-full animate-fade-up break-words rounded-2xl bg-base-100/35 px-3 py-1.5 text-body-s backdrop-blur-md"
+              >
+                <span className="mr-1.5 font-semibold text-base-content/70">
+                  {msg.from?.isLocal
+                    ? t("agentCall.you", { ns: FANCALL_NS })
+                    : displayName}
+                </span>
+                {msg.message}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="flex items-center gap-2">
+          <form
+            onSubmit={handleSendMessage}
+            className="relative min-w-0 flex-1"
+          >
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              disabled={!isConnected || !isAgentAvailable || isSending}
+              placeholder={
+                !isConnected
+                  ? t("agentCall.chat.connecting", { ns: FANCALL_NS })
+                  : !isAgentAvailable
+                    ? t("agentCall.chat.waitingForAgent", { ns: FANCALL_NS })
+                    : t("agentCall.chat.placeholder", { ns: FANCALL_NS })
+              }
+              className="input h-11 w-full rounded-full border-none bg-base-content/15 pl-4 pr-12 text-body-m backdrop-blur-xl placeholder:text-base-content/60 focus:outline-none disabled:cursor-not-allowed disabled:bg-base-content/10 disabled:placeholder:text-base-content/40"
+            />
+            <button
+              type="submit"
+              disabled={
+                !message.trim() ||
+                isSending ||
+                !isConnected ||
+                !isAgentAvailable
+              }
+              aria-label={
+                isSending
+                  ? t("agentCall.chat.sending", { ns: FANCALL_NS })
+                  : t("agentCall.chat.send", { ns: FANCALL_NS })
+              }
+              className={clsx(
+                "btn btn-circle btn-primary absolute right-1 top-1 size-9 min-h-0 border-none transition-[opacity,transform]",
+                !message.trim() && "scale-75 opacity-0",
+              )}
+            >
+              <PaperAirplaneIcon className="size-4" />
+            </button>
+          </form>
+
+          <div className="relative shrink-0">
+            {hearts.map((heart) => (
+              <HeartIcon
+                key={heart.id}
+                aria-hidden
+                style={{ "--heart-drift": heart.drift } as React.CSSProperties}
+                className={clsx(
+                  "pointer-events-none absolute bottom-full left-2 size-7 animate-float-heart drop-shadow",
+                  HEART_TONES[heart.id % HEART_TONES.length],
+                )}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={sendHeart}
+              aria-label={t("agentCall.sendHeart", { ns: FANCALL_NS })}
+              className="btn btn-circle size-11 min-h-0 border-none bg-base-content/15 backdrop-blur-xl transition-transform hover:bg-base-content/25 active:scale-90"
+            >
+              <HeartIcon className="size-6 text-error" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 self-center rounded-full bg-base-100/30 p-2 ring-1 ring-base-content/10 backdrop-blur-2xl">
+          <button
+            type="button"
+            onClick={() => setIsSoundMuted((muted) => !muted)}
+            aria-pressed={isSoundMuted}
+            aria-label={
+              isSoundMuted
+                ? t("agentCall.speaker.unmute", { ns: FANCALL_NS })
+                : t("agentCall.speaker.mute", { ns: FANCALL_NS })
+            }
+            className={clsx(
+              "btn btn-circle size-14 min-h-0 border-none transition-colors",
+              isSoundMuted
+                ? "bg-base-content text-base-100 hover:bg-base-content/90"
+                : "bg-base-content/15 text-base-content hover:bg-base-content/25",
+            )}
+          >
+            {isSoundMuted ? (
+              <SpeakerXMarkIcon className="size-6" />
+            ) : (
+              <SpeakerWaveIcon className="size-6" />
+            )}
+          </button>
+          {onHangUp && (
+            <button
+              type="button"
+              onClick={onHangUp}
+              aria-label={t("agentCall.hangUp", { ns: FANCALL_NS })}
+              className="btn btn-circle btn-error size-14 min-h-0 border-none"
+            >
+              <PhoneXMarkIcon className="size-6 text-error-content" />
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Audio permission button */}
       {!canPlayAudio && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral/75 backdrop-blur-sm">
-          <div className="mx-4 max-w-md rounded-2xl bg-base-100 p-6 text-center shadow-2xl">
-            <SpeakerWaveIcon className="mx-auto mb-4 size-12 text-warning" />
-            <h3 className="mb-2 text-title-m font-semibold text-base-content">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-base-100/40 px-8 backdrop-blur-md">
+          <div className="w-full max-w-xs animate-fade-up rounded-xl bg-base-200/90 px-6 pb-6 pt-8 text-center shadow-2xl ring-1 ring-base-content/10">
+            <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-primary/15">
+              <SpeakerWaveIcon className="size-7 text-primary" />
+            </div>
+            <h3 className="text-title-l text-base-content">
               {t("agentCall.audioPermission.title", { ns: FANCALL_NS })}
             </h3>
-            <p className="mb-4 text-body-s text-neutral-content">
+            <p className="mt-2 break-keep text-body-m text-base-content/70">
               {t("agentCall.audioPermission.description", { ns: FANCALL_NS })}
             </p>
             <button
+              type="button"
               onClick={handleStartAudio}
-              className="btn btn-primary btn-block"
+              className="btn btn-primary btn-block mt-7 rounded-lg border-none text-label-l focus-visible:outline-offset-4"
             >
               <SpeakerWaveIcon className="size-5" />
               {t("agentCall.audioPermission.button", { ns: FANCALL_NS })}
@@ -126,111 +439,6 @@ export function AgentCall({
           </div>
         </div>
       )}
-
-      {/* Main content area */}
-      <div className="flex flex-1 flex-col items-center justify-center p-6">
-        {/* Video or Profile Picture */}
-        {agentVideoTrack ? (
-          <div className="relative mb-6 max-h-[70vh] w-full max-w-2xl overflow-hidden rounded-2xl shadow-2xl">
-            <VideoTrack
-              trackRef={agentVideoTrack}
-              className="size-full object-contain"
-            />
-          </div>
-        ) : (
-          <div className="mb-6 flex flex-col items-center">
-            {profilePictureUrl && (
-              <div className="relative mb-4 size-48 overflow-hidden rounded-full shadow-2xl ring-4 ring-primary/20">
-                <Image
-                  src={profilePictureUrl}
-                  alt={displayName}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            )}
-            <h1 className="text-headline-l font-bold text-base-content">
-              {displayName}
-            </h1>
-            {biography && (
-              <p className="mt-2 max-w-md text-center text-body-s text-neutral-content">
-                {biography}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Audio visualizer */}
-        {audioTrack && !agentVideoTrack && (
-          <div className="mb-6 flex h-32 items-center justify-center">
-            <BarVisualizer
-              state={state}
-              barCount={5}
-              trackRef={audioTrack}
-              className="[--lk-fg:hsl(var(--p))] [--lk-va-bar-gap:16px] [--lk-va-bar-width:24px]"
-            />
-          </div>
-        )}
-
-        {/* Agent state indicator */}
-        <div
-          className={clsx(
-            "mb-6 text-body-m font-medium transition-colors",
-            state === "speaking" && "text-secondary",
-            state === "listening" && "text-primary",
-            state === "thinking" && "text-accent",
-            (state === "connecting" || state === "disconnected") &&
-              "text-neutral-content",
-          )}
-        >
-          {state === "connecting" &&
-            t("agentCall.state.connecting", { ns: FANCALL_NS })}
-          {state === "listening" &&
-            t("agentCall.state.listening", { ns: FANCALL_NS })}
-          {state === "thinking" &&
-            t("agentCall.state.thinking", { ns: FANCALL_NS })}
-          {state === "speaking" &&
-            t("agentCall.state.speaking", { ns: FANCALL_NS })}
-          {state === "disconnected" &&
-            t("agentCall.state.disconnected", { ns: FANCALL_NS })}
-        </div>
-      </div>
-
-      {/* Chat input at bottom */}
-      <div className="border-t border-base-300 bg-base-100 p-4">
-        <form
-          onSubmit={handleSendMessage}
-          className="container mx-auto flex max-w-4xl items-center gap-3"
-        >
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            disabled={!isConnected || !isAgentAvailable || isSending}
-            placeholder={
-              !isConnected
-                ? t("agentCall.chat.connecting", { ns: FANCALL_NS })
-                : !isAgentAvailable
-                  ? t("agentCall.chat.waitingForAgent", { ns: FANCALL_NS })
-                  : t("agentCall.chat.placeholder", { ns: FANCALL_NS })
-            }
-            className="input input-bordered flex-1 focus:input-primary disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={
-              !message.trim() || isSending || !isConnected || !isAgentAvailable
-            }
-            className="btn btn-primary"
-          >
-            <PaperAirplaneIcon className="size-5" />
-            {isSending
-              ? t("agentCall.chat.sending", { ns: FANCALL_NS })
-              : t("agentCall.chat.send", { ns: FANCALL_NS })}
-          </button>
-        </form>
-      </div>
     </div>
   );
 }
