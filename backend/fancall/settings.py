@@ -10,6 +10,8 @@ class FancallModelSettings(BaseSettings):
     """Fancall LLM model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    stt_model: str = "gpt-4o-mini-transcribe"  # Phone calls only
+    stt_language: str = "ko"  # Phone calls only
 
     class Config:
         env_prefix = "FANCALL_"

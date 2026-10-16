@@ -7,6 +7,8 @@ import unittest
 from fancall.prompts import (
     CLOSING_INSTRUCTIONS,
     OPENING_INSTRUCTIONS,
+    PHONE_CALL_GUIDELINES,
+    PHONE_OPENING_INSTRUCTIONS,
     ROLE_PLAYING_GUIDELINES,
     VIDEO_CALL_GUIDELINES,
     WRAP_UP_INSTRUCTIONS,
@@ -49,6 +51,39 @@ class TestComposeInstructions(unittest.TestCase):
         )
 
         self.assertEqual(result, VIDEO_CALL_GUIDELINES)
+
+    def test_video_call_excludes_phone_call_guidelines(self):
+        """Test video call mode does not tell the model it is on a phone"""
+        result = compose_instructions(
+            "persona", include_role_playing=False, include_video_call=True
+        )
+
+        self.assertNotIn(PHONE_CALL_GUIDELINES, result)
+
+    def test_phone_call_builds_on_video_call_guidelines(self):
+        """Test phone call keeps the fan call rhythm and adds phone rules after it"""
+        result = compose_instructions(
+            "persona", include_role_playing=False, include_phone_call=True
+        )
+
+        self.assertIn(VIDEO_CALL_GUIDELINES, result)
+        self.assertLess(
+            result.index(VIDEO_CALL_GUIDELINES), result.index(PHONE_CALL_GUIDELINES)
+        )
+        self.assertLess(result.index(PHONE_CALL_GUIDELINES), result.index("persona"))
+
+
+class TestPhoneCallGuidelines(unittest.TestCase):
+    """Tests for the content contract of phone call prompts"""
+
+    def test_phone_guidelines_say_fan_cannot_see_idol(self):
+        """Test phone guidelines override the video call face/screen rules"""
+        self.assertIn("볼 수 없다", PHONE_CALL_GUIDELINES)
+
+    def test_phone_opening_starts_like_a_phone_call(self):
+        """Test phone opening greets like a real phone call, not a video check"""
+        self.assertIn("여보세요", PHONE_OPENING_INSTRUCTIONS)
+        self.assertNotIn("화면", PHONE_OPENING_INSTRUCTIONS)
 
 
 class TestVideoCallGuidelines(unittest.TestCase):

@@ -5,13 +5,18 @@ Fancall Pydantic schemas
 from datetime import datetime
 
 from humps import camelize
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from fancall.persona import Persona
 
 
 class AgentDispatchRequest(Persona):
     """API dispatch 요청 스키마. Persona를 상속하여 확장 가능."""
+
+    phone_call: bool = Field(
+        default=False,
+        description="Voice-only phone call over SIP (no avatar, speech input on)",
+    )
 
 
 # LiveRoom schemas
