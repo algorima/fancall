@@ -22,6 +22,7 @@ export type {
   DispatchResponse,
   AgentDispatchRequest,
   Contact,
+  ClipGraph,
   VideoRegion,
 } from "./schemas";
 export {
