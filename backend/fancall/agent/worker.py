@@ -13,7 +13,7 @@ from aioia_core.settings import HedraSettings, OpenAIAPISettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.agents.types import NOT_GIVEN
-from livekit.plugins import elevenlabs, openai
+from livekit.plugins import anam, elevenlabs, lemonslice, openai, simli, tavus
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
@@ -21,6 +21,7 @@ from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import OPENING_INSTRUCTIONS, compose_instructions
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import (
+    AvatarSettings,
     ElevenLabsSettings,
     FancallCallSettings,
     FancallModelSettings,
@@ -52,15 +53,96 @@ class CompanionAgent(Agent):
         self.session.generate_reply(instructions=OPENING_INSTRUCTIONS)
 
 
+async def start_avatar(
+    ctx: JobContext,
+    session: AgentSession,
+    avatar_id: str | None,
+    profile_picture_url: str | None,
+    livekit_settings: LiveKitSettings,
+    avatar_settings: AvatarSettings,
+) -> None:
+    """
+    Start a lip-synced avatar that joins the room and speaks the agent's audio.
+
+    Anam is preferred when configured, then Tavus; Simli is used for a pre-registered face
+    (avatar_id); LemonSlice animates a profile picture URL directly. If no
+    provider is configured or startup fails, the call continues voice-only and
+    the frontend shows the profile picture.
+    """
+    avatar: (
+        anam.AvatarSession
+        | tavus.AvatarSession
+        | simli.AvatarSession
+        | lemonslice.AvatarSession
+    )
+    if avatar_settings.anam_api_key and avatar_settings.anam_avatar_id:
+        logger.info(
+            "Starting Anam avatar with avatar_id: %s", avatar_settings.anam_avatar_id
+        )
+        avatar = anam.AvatarSession(
+            persona_config=anam.PersonaConfig(
+                name="fancall", avatarId=avatar_settings.anam_avatar_id
+            ),
+            session_options=anam.SessionOptions(
+                video_width=avatar_settings.anam_video_width,
+                video_height=avatar_settings.anam_video_height,
+            ),
+            api_key=avatar_settings.anam_api_key,
+        )
+    elif avatar_settings.tavus_api_key:
+        logger.info(
+            "Starting Tavus avatar with face_id: %s",
+            avatar_settings.tavus_face_id or "stock",
+        )
+        avatar = tavus.AvatarSession(
+            api_key=avatar_settings.tavus_api_key,
+            face_id=avatar_settings.tavus_face_id or NOT_GIVEN,
+            pal_id=avatar_settings.tavus_pal_id or NOT_GIVEN,
+        )
+    elif avatar_id and avatar_settings.simli_api_key:
+        logger.info("Starting Simli avatar with face_id: %s", avatar_id)
+        avatar = simli.AvatarSession(
+            simli_config=simli.SimliConfig(
+                api_key=avatar_settings.simli_api_key,
+                face_id=avatar_id,
+            ),
+        )
+    elif (
+        profile_picture_url
+        and profile_picture_url.startswith("http")
+        and avatar_settings.lemonslice_api_key
+    ):
+        logger.info("Starting LemonSlice avatar from profile picture")
+        avatar = lemonslice.AvatarSession(
+            agent_image_url=profile_picture_url,
+            api_key=avatar_settings.lemonslice_api_key,
+        )
+    else:
+        logger.info("No avatar provider configured for this persona; voice-only.")
+        return
+
+    try:
+        await avatar.start(
+            session,
+            room=ctx.room,
+            livekit_url=livekit_settings.url,
+            livekit_api_key=livekit_settings.api_key,
+            livekit_api_secret=livekit_settings.api_secret,
+        )
+    except Exception:  # pylint: disable=broad-exception-caught
+        logger.exception("Avatar failed to start; continuing voice-only.")
+
+
 async def entrypoint(
     ctx: JobContext,
     default_persona: Persona,
-    livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
+    livekit_settings: LiveKitSettings,
     openai_settings: OpenAIAPISettings,  # pylint: disable=unused-argument
     elevenlabs_settings: ElevenLabsSettings,
     hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
+    avatar_settings: AvatarSettings | None = None,
 ) -> None:
     """
     Agent entrypoint. Initializes AgentSession for text-to-speech tasks.
@@ -68,12 +150,13 @@ async def entrypoint(
     Args:
         ctx: LiveKit job context
         default_persona: Default persona for fallback configuration
-        livekit_settings: LiveKit settings with API credentials (reserved for future use)
+        livekit_settings: LiveKit settings; the avatar joins the room with these
         openai_settings: OpenAI API settings (현재 미사용: livekit.plugins.openai가 환경변수 직접 사용)
         elevenlabs_settings: ElevenLabs TTS settings
         hedra_settings: Hedra avatar settings (discontinued; only used to warn)
         model_settings: Fancall LLM/TTS model settings
         call_settings: Video call timing settings
+        avatar_settings: Lip-synced avatar settings (read from env if omitted)
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
@@ -92,6 +175,10 @@ async def entrypoint(
 
     # Merge metadata with default_persona (metadata takes precedence)
     voice_id = metadata.voice_id or default_persona.voice_id
+    avatar_id = metadata.avatar_id or default_persona.avatar_id
+    profile_picture_url = (
+        metadata.profile_picture_url or default_persona.profile_picture_url
+    )
     system_prompt = metadata.system_prompt or default_persona.system_prompt
 
     logger.info(
@@ -119,6 +206,15 @@ async def entrypoint(
         logger.warning(
             "HEDRA_ENABLED=true is ignored: Hedra realtime avatar has been discontinued."
         )
+
+    await start_avatar(
+        ctx,
+        session,
+        avatar_id,
+        profile_picture_url,
+        livekit_settings,
+        avatar_settings or AvatarSettings(),
+    )
 
     # Compose instructions from merged system prompt (Context Composer pattern)
     instructions = compose_instructions(
@@ -153,6 +249,7 @@ def create_worker_options(
     hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
+    avatar_settings: AvatarSettings | None = None,
 ) -> WorkerOptions:
     """
     Create WorkerOptions for the agent with dependency injection.
@@ -167,6 +264,7 @@ def create_worker_options(
         hedra_settings: Hedra avatar settings
         model_settings: Fancall LLM model settings
         call_settings: Video call timing settings
+        avatar_settings: Lip-synced avatar settings (read from env if omitted)
 
     Returns:
         WorkerOptions configured with the agent entrypoint
@@ -181,6 +279,7 @@ def create_worker_options(
             hedra_settings=hedra_settings,
             model_settings=model_settings,
             call_settings=call_settings,
+            avatar_settings=avatar_settings,
         ),
         worker_type=agents.WorkerType.ROOM,
         agent_name=livekit_settings.agent_name,

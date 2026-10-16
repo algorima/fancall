@@ -1240,8 +1240,12 @@ livekit = "1.1.20"
 livekit-api = ">=1.2.0,<2"
 livekit-blingfire = ">=1.1,<2"
 livekit-local-inference = ">=0.2.7"
+livekit-plugins-anam = {version = ">=1.8.6", optional = true, markers = "extra == \"anam\""}
 livekit-plugins-elevenlabs = {version = ">=1.8.6", optional = true, markers = "extra == \"elevenlabs\""}
+livekit-plugins-lemonslice = {version = ">=1.8.6", optional = true, markers = "extra == \"lemonslice\""}
 livekit-plugins-openai = {version = ">=1.8.6", optional = true, markers = "extra == \"openai\""}
+livekit-plugins-simli = {version = ">=1.8.6", optional = true, markers = "extra == \"simli\""}
+livekit-plugins-tavus = {version = ">=1.8.6", optional = true, markers = "extra == \"tavus\""}
 livekit-protocol = ">=1.1.21,<2"
 nest-asyncio = ">=1.6.0"
 numpy = ">=1.26.0"
@@ -1432,6 +1436,21 @@ files = [
 ]
 
 [[package]]
+name = "livekit-plugins-anam"
+version = "1.8.6"
+description = "Agent Framework plugin for anam"
+optional = false
+python-versions = ">=3.10.0"
+groups = ["main"]
+files = [
+    {file = "livekit_plugins_anam-1.8.6-py3-none-any.whl", hash = "sha256:93a9f588d7f9f5c5055582e8e0d958669df1491daa7b91b6a5fbaf24a786e2d1"},
+    {file = "livekit_plugins_anam-1.8.6.tar.gz", hash = "sha256:4eafd49b8791dd2f00d2d098a245879a2b42fd5afb2c61919e8300fc4011394c"},
+]
+
+[package.dependencies]
+livekit-agents = ">=1.8.6"
+
+[[package]]
 name = "livekit-plugins-elevenlabs"
 version = "1.8.6"
 description = "Agent Framework plugin for voice synthesis with ElevenLabs' API."
@@ -1445,6 +1464,22 @@ files = [
 
 [package.dependencies]
 livekit-agents = {version = ">=1.8.6", extras = ["codecs"]}
+
+[[package]]
+name = "livekit-plugins-lemonslice"
+version = "1.8.6"
+description = "Agent Framework plugin for LemonSlice"
+optional = false
+python-versions = ">=3.10.0"
+groups = ["main"]
+files = [
+    {file = "livekit_plugins_lemonslice-1.8.6-py3-none-any.whl", hash = "sha256:7e912307e3187b047034c0f7422ad483ed8bcba5879edf11f06618582f407340"},
+    {file = "livekit_plugins_lemonslice-1.8.6.tar.gz", hash = "sha256:868a87284c3d83964b112aa97020d41f6f2396352a184c8001db65af30968e7b"},
+]
+
+[package.dependencies]
+livekit-agents = ">=1.8.6"
+pillow = ">=10.3.0"
 
 [[package]]
 name = "livekit-plugins-openai"
@@ -1464,6 +1499,36 @@ openai = ">=2.50"
 
 [package.extras]
 vertex = ["google-auth (>=2.0.0)"]
+
+[[package]]
+name = "livekit-plugins-simli"
+version = "1.8.6"
+description = "Agent Framework plugin for Simli"
+optional = false
+python-versions = ">=3.10.0"
+groups = ["main"]
+files = [
+    {file = "livekit_plugins_simli-1.8.6-py3-none-any.whl", hash = "sha256:0f372c35afd4f854f0a6ec6cdc9f4467c4115ecab62c75819e12f546cf4c6bd8"},
+    {file = "livekit_plugins_simli-1.8.6.tar.gz", hash = "sha256:4de007420b566192635baecd8960ede99b1eacd897aa051c045a0cbfb78bb4f9"},
+]
+
+[package.dependencies]
+livekit-agents = ">=1.8.6"
+
+[[package]]
+name = "livekit-plugins-tavus"
+version = "1.8.6"
+description = "Agent Framework plugin for Tavus"
+optional = false
+python-versions = ">=3.10.0"
+groups = ["main"]
+files = [
+    {file = "livekit_plugins_tavus-1.8.6-py3-none-any.whl", hash = "sha256:2225a5e51dab991a533c1de87cf5eace94bfa74032bb36e290827904e65c8459"},
+    {file = "livekit_plugins_tavus-1.8.6.tar.gz", hash = "sha256:83c6fa1669e3b3a05f25c8081ea674162d2c82c5eefdc9a7dfe191456a69c6b9"},
+]
+
+[package.dependencies]
+livekit-agents = ">=1.8.6"
 
 [[package]]
 name = "livekit-protocol"
@@ -3538,4 +3603,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "3c6cd5b66c0b42c4a0a4a41233495940b4c81e039ddf4a5a2bfef3557d99dc00"
+content-hash = "86aa357f51bb136eac3e70ca8e1eff909e74aa55850265a454611138863fd1b5"
