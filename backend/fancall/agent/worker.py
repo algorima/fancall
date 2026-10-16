@@ -172,6 +172,9 @@ def create_worker_options(
         ),
         worker_type=agents.WorkerType.ROOM,
         agent_name=livekit_settings.agent_name,
+        ws_url=livekit_settings.url,
+        api_key=livekit_settings.api_key,
+        api_secret=livekit_settings.api_secret,
     )
 
 
