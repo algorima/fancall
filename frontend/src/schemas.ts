@@ -47,4 +47,6 @@ export interface AgentDispatchRequest {
   profilePictureUrl?: string | null;
   voiceId?: string | null;
   systemPrompt?: string | null;
+  /** Fan's app language (e.g. "en"); the idol greets in it before the fan speaks */
+  language?: string | null;
 }
