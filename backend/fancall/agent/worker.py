@@ -23,6 +23,7 @@ from PIL import Image
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
+from fancall.agent.phone_dialer import dial_phone
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import (
     OPENING_INSTRUCTIONS,
@@ -70,7 +71,7 @@ class CompanionAgent(Agent):
 async def entrypoint(  # pylint: disable=too-many-locals
     ctx: JobContext,
     default_persona: Persona,
-    livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
+    livekit_settings: LiveKitSettings,
     openai_settings: OpenAIAPISettings,  # pylint: disable=unused-argument
     fish_settings: FishAudioSettings,
     hedra_settings: HedraSettings,
@@ -83,7 +84,7 @@ async def entrypoint(  # pylint: disable=too-many-locals
     Args:
         ctx: LiveKit job context
         default_persona: Default persona for fallback configuration
-        livekit_settings: LiveKit settings with API credentials (reserved for future use)
+        livekit_settings: LiveKit settings (SIP outbound trunk for phone calls)
         openai_settings: OpenAI API settings (현재 미사용: livekit.plugins.openai가 환경변수 직접 사용)
         fish_settings: Fish Audio TTS settings
         hedra_settings: Hedra avatar settings
@@ -113,7 +114,7 @@ async def entrypoint(  # pylint: disable=too-many-locals
     voice_id = metadata.voice_id or default_persona.voice_id
     system_prompt = metadata.system_prompt or default_persona.system_prompt
 
-    phone_call = metadata.phone_call
+    phone_call = metadata.phone_call or metadata.phone_number is not None
 
     logger.info(
         "Agent configuration: avatar_id=%s, voice_id=%s, phone_call=%s",
@@ -219,6 +220,20 @@ async def entrypoint(  # pylint: disable=too-many-locals
         "Using instructions: %s",
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
+
+    # 팬이 전화를 받은 뒤에 세션을 시작해야 첫인사가 허공에 나가지 않는다
+    if metadata.phone_number:
+        trunk_id = livekit_settings.sip_outbound_trunk_id
+        if not trunk_id:
+            logger.error("LIVEKIT_SIP_OUTBOUND_TRUNK_ID is required for phone calls")
+            ctx.shutdown(reason="SIP outbound trunk is not configured")
+            return
+        answered = await dial_phone(
+            ctx.api.sip, ctx.room.name, trunk_id, metadata.phone_number
+        )
+        if not answered:
+            ctx.shutdown(reason="Phone call was not answered")
+            return
 
     opening_message = metadata.opening_message or (
         PHONE_OPENING_MESSAGE if phone_call else None

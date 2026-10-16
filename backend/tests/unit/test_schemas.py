@@ -116,6 +116,22 @@ class TestAgentDispatchRequestValidation(unittest.TestCase):
 
         self.assertEqual(metadata.opening_message, "안녕, 소연이 맞지! 난 시연이야.")
 
+    def test_phone_number_accepts_e164(self):
+        """Test an E.164 phone number is accepted"""
+        metadata = AgentDispatchRequest(phone_number="+821012345678")
+
+        self.assertEqual(metadata.phone_number, "+821012345678")
+
+    def test_phone_number_rejects_non_e164(self):
+        """Test local formats are rejected so SIP never dials a wrong number"""
+        for phone_number in ("010-1234-5678", "01012345678", "+0123456789", ""):
+            with self.subTest(phone_number=phone_number):
+                self.assertRaises(
+                    ValidationError,
+                    AgentDispatchRequest,
+                    phone_number=phone_number,
+                )
+
     def test_empty_optional_strings_are_preserved(self):
         """Test that empty strings for optional fields are preserved (not converted to None)"""
         metadata = AgentDispatchRequest.model_validate(
