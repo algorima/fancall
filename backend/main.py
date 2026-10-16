@@ -36,7 +36,7 @@ from sqlalchemy.orm import sessionmaker
 
 from fancall.api.router import create_fancall_router
 from fancall.factories import LiveRoomRepositoryFactory
-from fancall.settings import LiveKitSettings
+from fancall.settings import CorsSettings, LiveKitSettings
 
 # Configure logging
 logging.basicConfig(
@@ -85,7 +85,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=CorsSettings().origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

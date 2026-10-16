@@ -54,6 +54,29 @@ class FancallCallSettings(BaseSettings):
         return self
 
 
+class CorsSettings(BaseSettings):
+    """CORS settings for the API server.
+
+    The frontend fetches with ``credentials: "include"``, so browsers reject a
+    wildcard origin and every allowed origin must be listed explicitly.
+
+    Attributes:
+        allowed_origins: Comma-separated list of origins allowed to make
+            credentialed requests (CORS_ALLOWED_ORIGINS). Defaults to the local
+            Next.js dev server.
+    """
+
+    allowed_origins: str = "http://localhost:3000"
+
+    class Config:
+        env_prefix = "CORS_"
+
+    @property
+    def origins(self) -> list[str]:
+        """Parsed list of allowed origins; blank entries are ignored."""
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
+
 class LiveKitSettings(BaseSettings):
     """Settings for LiveKit API integration
 
