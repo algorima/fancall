@@ -166,6 +166,27 @@ PHONE_OPENING_INSTRUCTIONS = """전화가 방금 연결됐다. 실제 전화처�
 말투와 호칭은 캐릭터 설정을 따른다. 화면이나 얼굴 이야기는 하지 않는다.
 팬이 누군지 모르면 이름을 지어내지 말고 물어본다."""
 
+# 호스트 앱의 고정 첫 멘트를 팬의 앱 언어로 말할 때만 쓴다. 언어가 없으면 그대로 읽는다
+OPENING_MESSAGE_INSTRUCTIONS = """첫인사로 아래 첫 멘트를 말한다. 팬의 앱 언어가 첫 멘트와 다르면 뜻과 말투를 그대로 살려 그 언어로 옮겨 말한다.
+다른 말은 덧붙이지 않는다.
+첫 멘트: {opening_message}"""
+
+
+def opening_user_input(language: str | None, phone_call: bool = False) -> str:
+    """First-turn stage direction; names the fan's app language when known.
+
+    Gemini 등 일부 모델은 사용자 메시지 없이 지시문만 있는 요청을 거절한다.
+    첫인사 요청에 팬 쪽 상황 설명을 한 줄 붙여 보낸다.
+    """
+    call = "phone call" if phone_call else "video call"
+    if not language:
+        return f"(The fan just picked up the {call}.)"
+    return (
+        f"(The fan just picked up the {call}. "
+        f"Their app language is '{language}', so greet them in that language.)"
+    )
+
+
 CLOSING_INSTRUCTIONS = """통화 시간이 끝나서 지금 바로 작별 인사를 해야 한다.
 아쉬움, 고마움, 다음 만남 약속을 한두 문장으로 말한다.
 예: "가야 된대 미안해 시간이 없어~" / "고마워요~ 와 줘서" / "저희 기다려 줘야 돼요~ 알겠죠?! 안녕!" / "또 봐요~"

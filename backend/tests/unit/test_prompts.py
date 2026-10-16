@@ -13,6 +13,7 @@ from fancall.prompts import (
     VIDEO_CALL_GUIDELINES,
     WRAP_UP_INSTRUCTIONS,
     compose_instructions,
+    opening_user_input,
 )
 
 
@@ -128,6 +129,27 @@ class TestVideoCallGuidelines(unittest.TestCase):
     def test_closing_forbids_new_questions(self):
         """Test goodbye instructions keep the model from opening a new topic"""
         self.assertIn("질문은 절대 하지 않는다", CLOSING_INSTRUCTIONS)
+
+
+class TestOpeningUserInput(unittest.TestCase):
+    """Test cases for opening_user_input"""
+
+    def test_names_language_when_known(self) -> None:
+        """The fan's app language is passed so the greeting matches it"""
+        self.assertIn("'en'", opening_user_input("en"))
+
+    def test_plain_stage_direction_without_language(self) -> None:
+        """Without a language the stage direction does not name one"""
+        self.assertEqual(
+            opening_user_input(None), "(The fan just picked up the video call.)"
+        )
+
+    def test_phone_call_stage_direction(self) -> None:
+        """A phone call is described as a phone call, not a video call"""
+        self.assertEqual(
+            opening_user_input(None, phone_call=True),
+            "(The fan just picked up the phone call.)",
+        )
 
 
 if __name__ == "__main__":

@@ -21,8 +21,13 @@ class AgentDispatchRequest(Persona):
         default=None,
         description=(
             "First line spoken verbatim instead of an LLM-generated greeting. "
-            "Applies to both video and phone calls"
+            "Applies to both video and phone calls. "
+            "With `language`, it is spoken in that language instead"
         ),
+    )
+    language: str | None = Field(
+        default=None,
+        description="Fan's app language code (e.g. 'en'); used for the opening greeting",
     )
 
 
