@@ -50,3 +50,6 @@ storybook-static
 *.swp
 *.swo
 *~
+
+# local-only demo assets (e.g. a test idol photo)
+public/*.local.*
