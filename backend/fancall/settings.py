@@ -91,6 +91,38 @@ class CorsSettings(BaseSettings):
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
 
 
+class AvatarSettings(BaseSettings):
+    """Settings for realtime lip-synced avatars (replaces discontinued Hedra)
+
+    A provider is enabled by setting its API key. Anam is preferred when its key
+    and avatar ID are set, then Tavus; otherwise Simli is used when the persona has an avatar_id (Simli face
+    ID), and LemonSlice when only a profile_picture_url is available. With no key
+    set, the call is voice-only.
+
+    Attributes:
+        anam_api_key: Anam API key (ANAM_API_KEY).
+        anam_avatar_id: Anam avatar to render (ANAM_AVATAR_ID). Required for Anam.
+        anam_video_width: Anam output width in pixels (ANAM_VIDEO_WIDTH).
+        anam_video_height: Anam output height in pixels (ANAM_VIDEO_HEIGHT).
+            Portrait by default to fill the 9:16 call screen.
+        tavus_api_key: Tavus API key (TAVUS_API_KEY).
+        tavus_face_id: Tavus face to render (TAVUS_FACE_ID). Stock face if unset.
+        tavus_pal_id: Tavus PAL in echo mode (TAVUS_PAL_ID). Stock PAL if unset.
+        simli_api_key: Simli API key (SIMLI_API_KEY).
+        lemonslice_api_key: LemonSlice API key (LEMONSLICE_API_KEY).
+    """
+
+    anam_api_key: str | None = None
+    anam_avatar_id: str | None = None
+    anam_video_width: int = 768
+    anam_video_height: int = 1152
+    tavus_api_key: str | None = None
+    tavus_face_id: str | None = None
+    tavus_pal_id: str | None = None
+    simli_api_key: str | None = None
+    lemonslice_api_key: str | None = None
+
+
 class LiveKitSettings(BaseSettings):
     """Settings for LiveKit API integration
 
