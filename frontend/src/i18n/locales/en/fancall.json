@@ -9,7 +9,9 @@
     "ended": "Call ended",
     "decline": "Decline",
     "connecting": "Connecting",
-    "callBack": "Call back"
+    "callBack": "Call back",
+    "calling": "Calling…",
+    "end": "End"
   },
   "room": {
     "failedToLoad": "Failed to load live room",
@@ -152,5 +154,16 @@
     "Unrolling a slogan banner from a fan",
     "Flipping through the new album's photocards",
     "Pressing the call button right now"
-  ]
+  ],
+  "contacts": {
+    "title": "Contacts",
+    "search": "Search",
+    "noResults": "No Results",
+    "message": "message",
+    "call": "call",
+    "video": "video",
+    "mail": "mail",
+    "count_one": "{{count}} Contact",
+    "count_other": "{{count}} Contacts"
+  }
 }

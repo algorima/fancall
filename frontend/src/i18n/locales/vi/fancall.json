@@ -9,7 +9,9 @@
     "ended": "Cuộc gọi đã kết thúc",
     "decline": "Từ chối",
     "connecting": "Đang kết nối",
-    "callBack": "Gọi lại"
+    "callBack": "Gọi lại",
+    "calling": "Đang gọi…",
+    "end": "Kết thúc"
   },
   "room": {
     "failedToLoad": "Không thể tải phòng live",
@@ -152,5 +154,15 @@
     "Đang mở slogan fan tặng ra xem",
     "Đang ngắm photocard album mới",
     "Đang bấm nút gọi ngay đây"
-  ]
+  ],
+  "contacts": {
+    "title": "Danh bạ",
+    "search": "Tìm kiếm",
+    "noResults": "Không có kết quả",
+    "message": "nhắn tin",
+    "call": "gọi",
+    "video": "video",
+    "mail": "thư",
+    "count_other": "{{count}} liên hệ"
+  }
 }
