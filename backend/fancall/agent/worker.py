@@ -9,7 +9,7 @@ import asyncio
 import logging
 from functools import partial
 
-from aioia_core.settings import HedraSettings, OpenAIAPISettings
+from aioia_core.settings import OpenAIAPISettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.agents.types import NOT_GIVEN
@@ -58,7 +58,6 @@ async def entrypoint(
     livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
     openai_settings: OpenAIAPISettings,  # pylint: disable=unused-argument
     elevenlabs_settings: ElevenLabsSettings,
-    hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
 ) -> None:
@@ -71,7 +70,6 @@ async def entrypoint(
         livekit_settings: LiveKit settings with API credentials (reserved for future use)
         openai_settings: OpenAI API settings (현재 미사용: livekit.plugins.openai가 환경변수 직접 사용)
         elevenlabs_settings: ElevenLabs TTS settings
-        hedra_settings: Hedra avatar settings (discontinued; only used to warn)
         model_settings: Fancall LLM/TTS model settings
         call_settings: Video call timing settings
     """
@@ -113,13 +111,6 @@ async def entrypoint(
 
     session: AgentSession = AgentSession(llm=llm, tts=tts)
 
-    # Hedra sunset its realtime avatar service; livekit-plugins-hedra no longer works.
-    # The frontend falls back to the profile picture when no agent video track exists.
-    if hedra_settings.enabled:
-        logger.warning(
-            "HEDRA_ENABLED=true is ignored: Hedra realtime avatar has been discontinued."
-        )
-
     # Compose instructions from merged system prompt (Context Composer pattern)
     instructions = compose_instructions(
         system_prompt, include_role_playing=False, include_video_call=True
@@ -150,7 +141,6 @@ def create_worker_options(
     livekit_settings: LiveKitSettings,
     openai_settings: OpenAIAPISettings,
     elevenlabs_settings: ElevenLabsSettings,
-    hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
 ) -> WorkerOptions:
@@ -164,7 +154,6 @@ def create_worker_options(
         livekit_settings: LiveKit settings with API credentials
         openai_settings: OpenAI API settings
         elevenlabs_settings: ElevenLabs TTS settings
-        hedra_settings: Hedra avatar settings
         model_settings: Fancall LLM model settings
         call_settings: Video call timing settings
 
@@ -178,15 +167,11 @@ def create_worker_options(
             livekit_settings=livekit_settings,
             openai_settings=openai_settings,
             elevenlabs_settings=elevenlabs_settings,
-            hedra_settings=hedra_settings,
             model_settings=model_settings,
             call_settings=call_settings,
         ),
         worker_type=agents.WorkerType.ROOM,
         agent_name=livekit_settings.agent_name,
-        ws_url=livekit_settings.url,
-        api_key=livekit_settings.api_key,
-        api_secret=livekit_settings.api_secret,
     )
 
 
@@ -195,7 +180,6 @@ def main() -> None:
     livekit_settings = LiveKitSettings()
     openai_settings = OpenAIAPISettings()
     elevenlabs_settings = ElevenLabsSettings()
-    hedra_settings = HedraSettings()
     model_settings = FancallModelSettings()
     call_settings = FancallCallSettings()
     cli.run_app(
@@ -204,7 +188,6 @@ def main() -> None:
             livekit_settings,
             openai_settings,
             elevenlabs_settings,
-            hedra_settings,
             model_settings,
             call_settings,
         )
