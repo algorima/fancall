@@ -8,7 +8,7 @@ from fancall.prompts import (
     CLOSING_INSTRUCTIONS,
     OPENING_INSTRUCTIONS,
     PHONE_CALL_GUIDELINES,
-    PHONE_OPENING_INSTRUCTIONS,
+    PHONE_OPENING_MESSAGE,
     ROLE_PLAYING_GUIDELINES,
     VIDEO_CALL_GUIDELINES,
     WRAP_UP_INSTRUCTIONS,
@@ -81,9 +81,22 @@ class TestPhoneCallGuidelines(unittest.TestCase):
         self.assertIn("볼 수 없다", PHONE_CALL_GUIDELINES)
 
     def test_phone_opening_starts_like_a_phone_call(self):
-        """Test phone opening greets like a real phone call, not a video check"""
-        self.assertIn("여보세요", PHONE_OPENING_INSTRUCTIONS)
-        self.assertNotIn("화면", PHONE_OPENING_INSTRUCTIONS)
+        """Test the fixed phone opening greets like a phone call, not a video check"""
+        self.assertIn("여보세요", PHONE_OPENING_MESSAGE)
+        self.assertNotIn("화면", PHONE_OPENING_MESSAGE)
+
+    def test_phone_guidelines_forbid_claiming_to_be_human(self):
+        """Test the model admits it is AI when asked"""
+        self.assertIn("사람이라고 말하지 않는다", PHONE_CALL_GUIDELINES)
+
+    def test_phone_guidelines_forbid_sales(self):
+        """Test phone calls carry no sales or promotion"""
+        self.assertIn("판매나 홍보를 하지 않는다", PHONE_CALL_GUIDELINES)
+
+    def test_phone_guidelines_give_crisis_lines(self):
+        """Test crisis talk gets the Korean and US hotlines"""
+        self.assertIn("109", PHONE_CALL_GUIDELINES)
+        self.assertIn("988", PHONE_CALL_GUIDELINES)
 
 
 class TestVideoCallGuidelines(unittest.TestCase):

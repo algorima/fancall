@@ -106,6 +106,16 @@ class TestAgentDispatchRequestValidation(unittest.TestCase):
 
         self.assertTrue(metadata.phone_call)
 
+    def test_opening_message_round_trips_through_job_metadata(self):
+        """Test the fixed opening line reaches the worker unchanged"""
+        metadata_json = AgentDispatchRequest(
+            opening_message="안녕, 소연이 맞지! 난 시연이야."
+        ).model_dump_json(exclude_none=True)
+
+        metadata = AgentDispatchRequest.model_validate_json(metadata_json)
+
+        self.assertEqual(metadata.opening_message, "안녕, 소연이 맞지! 난 시연이야.")
+
     def test_empty_optional_strings_are_preserved(self):
         """Test that empty strings for optional fields are preserved (not converted to None)"""
         metadata = AgentDispatchRequest.model_validate(

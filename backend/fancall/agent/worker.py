@@ -26,7 +26,7 @@ from fancall.agent.call_timer import run_call_timer
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import (
     OPENING_INSTRUCTIONS,
-    PHONE_OPENING_INSTRUCTIONS,
+    PHONE_OPENING_MESSAGE,
     compose_instructions,
 )
 from fancall.schemas import AgentDispatchRequest
@@ -51,16 +51,20 @@ class CompanionAgent(Agent):
     def __init__(
         self,
         instructions: str = DEFAULT_SYSTEM_PROMPT,
-        opening_instructions: str = OPENING_INSTRUCTIONS,
+        opening_message: str | None = None,
         **kwargs,
     ):
         super().__init__(instructions=instructions, **kwargs)
-        self.opening_instructions = opening_instructions
+        self.opening_message = opening_message
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
-        # 실제 영통·전화처럼 인사로 먼저 말을 건다
-        self.session.generate_reply(instructions=self.opening_instructions)
+        # 고정 첫 멘트가 있으면 LLM 없이 그대로 읽는다
+        if self.opening_message:
+            self.session.say(self.opening_message, allow_interruptions=False)
+            return
+        # 실제 영통처럼 소리·화면 확인과 인사로 먼저 말을 건다
+        self.session.generate_reply(instructions=OPENING_INSTRUCTIONS)
 
 
 async def entrypoint(  # pylint: disable=too-many-locals
@@ -216,12 +220,10 @@ async def entrypoint(  # pylint: disable=too-many-locals
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
 
-    agent = CompanionAgent(
-        instructions=instructions,
-        opening_instructions=(
-            PHONE_OPENING_INSTRUCTIONS if phone_call else OPENING_INSTRUCTIONS
-        ),
+    opening_message = metadata.opening_message or (
+        PHONE_OPENING_MESSAGE if phone_call else None
     )
+    agent = CompanionAgent(instructions=instructions, opening_message=opening_message)
     await session.start(agent=agent, room=ctx.room)
     logger.info("Agent session started.")
 
