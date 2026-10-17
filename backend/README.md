@@ -6,6 +6,7 @@ AI 아이돌과 실시간 영상 통화 Python 패키지
 
 - LiveKit 기반 실시간 음성/영상 통화
 - ElevenLabs TTS 음성 합성
+- 아이돌 답변은 두 문장을 넘지 않게 잘라 음성으로 내보냄 (실제 영통팬싸 화법)
 - 동적 설정 (voice_id, avatar_id, system_prompt)
 
 > **Fish Audio에서 옮겨오는 호스트 앱**: `voice_id`는 이제 ElevenLabs voice ID입니다. 기존 Fish Audio `voice_id`를 그대로 넘기면 ElevenLabs에서 찾지 못해 음성 합성이 실패하므로, ElevenLabs voice ID로 바꾸거나 `voice_id`를 비워 기본 목소리를 쓰세요. `create_worker_options()`의 `fish_settings` 인자는 `elevenlabs_settings`로 바뀌었고, `hedra_settings` 인자는 제거되었습니다(Hedra 실시간 아바타 서비스 종료).

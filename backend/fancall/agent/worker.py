@@ -7,16 +7,27 @@ This file runs a real-time AI agent using ElevenLabs TTS.
 
 import asyncio
 import logging
+from collections.abc import AsyncIterator
 from functools import partial
+from typing import Any
 
 from aioia_core.settings import OpenAIAPISettings
 from livekit import agents
-from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
+from livekit.agents import (
+    Agent,
+    AgentSession,
+    JobContext,
+    ModelSettings,
+    WorkerOptions,
+    cli,
+)
+from livekit.agents.llm import ChatContext, Tool
 from livekit.agents.types import NOT_GIVEN
 from livekit.plugins import elevenlabs, openai
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
+from fancall.agent.reply_limit import limit_sentences
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import OPENING_INSTRUCTIONS, compose_instructions
 from fancall.schemas import AgentDispatchRequest
@@ -35,6 +46,8 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_SYSTEM_PROMPT = "You are a friendly and helpful AI companion."
+# Real idols speak about 1.3 seconds at a time; anything longer is cut
+MAX_REPLY_SENTENCES = 2
 
 
 class CompanionAgent(Agent):
@@ -50,6 +63,16 @@ class CompanionAgent(Agent):
         """Called when agent becomes active in the session."""
         # 실제 영통처럼 소리·화면 확인과 인사로 먼저 말을 건다
         self.session.generate_reply(instructions=OPENING_INSTRUCTIONS)
+
+    def llm_node(
+        self,
+        chat_ctx: ChatContext,
+        tools: list[Tool],
+        model_settings: ModelSettings,
+    ) -> AsyncIterator[Any]:
+        """Generate the reply, cut to MAX_REPLY_SENTENCES before it is spoken."""
+        reply = Agent.default.llm_node(self, chat_ctx, tools, model_settings)
+        return limit_sentences(reply, MAX_REPLY_SENTENCES)
 
 
 async def entrypoint(
