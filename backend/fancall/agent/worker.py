@@ -193,15 +193,20 @@ async def entrypoint(  # pylint: disable=too-many-locals
     logger.info("Agent session started.")
 
     # Call limit: wrap up, say goodbye, then shut down
+    timer = asyncio.create_task(
+        run_call_timer(session, agent, instructions, call_settings)
+    )
+    # 팬이 먼저 끊으면 세션이 닫힌다. 타이머가 남아 있으면 작업이 끝나지 않고 강제 종료된다
+    session.on("close", lambda _event: timer.cancel())
     try:
-        await run_call_timer(session, agent, instructions, call_settings)
+        await timer
         logger.info(
             "Call limit (%.0fs) reached. Shutting down.",
             call_settings.call_duration_seconds,
         )
         ctx.shutdown(reason="Call time limit reached")
     except asyncio.CancelledError:
-        logger.info("Agent session cancelled before call limit.")
+        logger.info("Agent session ended before call limit.")
 
 
 def create_worker_options(
