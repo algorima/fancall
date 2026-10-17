@@ -26,7 +26,9 @@ export default function FancallEntryPage() {
     try {
       const response = await repository.create({ variables: {} });
       const liveRoom = response.data;
-      await repository.dispatchAgent(liveRoom.id, {});
+      await repository.dispatchAgent(liveRoom.id, {
+        language: i18n.language,
+      });
 
       router.push(`/${i18n.language}/${liveRoom.id}`);
       // 리디렉션 후에는 로딩 상태를 유지 (버튼 비활성화 유지)

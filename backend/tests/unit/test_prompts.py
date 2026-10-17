@@ -7,10 +7,12 @@ import unittest
 from fancall.prompts import (
     CLOSING_INSTRUCTIONS,
     OPENING_INSTRUCTIONS,
+    OPENING_USER_INPUT,
     ROLE_PLAYING_GUIDELINES,
     VIDEO_CALL_GUIDELINES,
     WRAP_UP_INSTRUCTIONS,
     compose_instructions,
+    opening_user_input,
 )
 
 
@@ -76,6 +78,18 @@ class TestVideoCallGuidelines(unittest.TestCase):
     def test_closing_forbids_new_questions(self):
         """Test goodbye instructions keep the model from opening a new topic"""
         self.assertIn("질문은 절대 하지 않는다", CLOSING_INSTRUCTIONS)
+
+
+class TestOpeningUserInput(unittest.TestCase):
+    """Test cases for opening_user_input"""
+
+    def test_names_language_when_known(self) -> None:
+        """The fan's app language is passed so the greeting matches it"""
+        self.assertIn("'en'", opening_user_input("en"))
+
+    def test_plain_stage_direction_without_language(self) -> None:
+        """Without a language the generic stage direction is used"""
+        self.assertEqual(opening_user_input(None), OPENING_USER_INPUT)
 
 
 if __name__ == "__main__":
