@@ -7,9 +7,10 @@ from pydantic_settings import BaseSettings
 
 
 class FancallModelSettings(BaseSettings):
-    """Fancall LLM model settings."""
+    """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    elevenlabs_model: str = "eleven_flash_v2_5"
 
     class Config:
         env_prefix = "FANCALL_"
@@ -52,6 +53,19 @@ class FancallCallSettings(BaseSettings):
         if self.closing_grace_seconds < 0:
             raise ValueError("closing_grace_seconds must not be negative")
         return self
+
+
+class ElevenLabsSettings(BaseSettings):
+    """Settings for ElevenLabs TTS
+
+    Attributes:
+        api_key: ElevenLabs API key (ELEVEN_API_KEY).
+    """
+
+    api_key: str | None = None
+
+    class Config:
+        env_prefix = "ELEVEN_"
 
 
 class CorsSettings(BaseSettings):

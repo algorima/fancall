@@ -45,6 +45,7 @@ export type DispatchResponse = z.infer<typeof dispatchResponseSchema>;
 export interface AgentDispatchRequest {
   avatarId?: string | null;
   profilePictureUrl?: string | null;
+  /** ElevenLabs voice ID. A Fish Audio voice ID will fail TTS; omit to use the default voice. */
   voiceId?: string | null;
   systemPrompt?: string | null;
 }

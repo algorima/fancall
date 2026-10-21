@@ -5,9 +5,11 @@ AI 아이돌과 실시간 영상 통화 Python 패키지
 ## 주요 기능
 
 - LiveKit 기반 실시간 음성/영상 통화
-- Fish Audio TTS 음성 합성
+- ElevenLabs TTS 음성 합성
 - Hedra 아바타 지원 (선택)
 - 동적 설정 (voice_id, avatar_id, system_prompt)
+
+> **Fish Audio에서 옮겨오는 호스트 앱**: `voice_id`는 이제 ElevenLabs voice ID입니다. 기존 Fish Audio `voice_id`를 그대로 넘기면 ElevenLabs에서 찾지 못해 음성 합성이 실패하므로, ElevenLabs voice ID로 바꾸거나 `voice_id`를 비워 기본 목소리를 쓰세요. `create_worker_options()`의 `fish_settings` 인자는 `elevenlabs_settings`로 바뀌었습니다.
 
 ## 설치
 
@@ -37,7 +39,7 @@ livekit-server --dev
 ```bash
 cd backend
 export OPENAI_API_KEY=sk-...
-export FISH_API_KEY=...
+export ELEVEN_API_KEY=...
 
 # 개발 모드
 python -m fancall.agent.worker dev
@@ -98,13 +100,14 @@ poetry run alembic revision --autogenerate -m "변경 설명"
 | 변수 | 설명 |
 |------|------|
 | `OPENAI_API_KEY` | OpenAI API 키 |
-| `FISH_API_KEY` | Fish Audio TTS API 키 |
+| `ELEVEN_API_KEY` | ElevenLabs TTS API 키 |
 
 ### 선택 (기능 활성화)
 
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI LLM 모델 |
+| `FANCALL_ELEVENLABS_MODEL` | `eleven_flash_v2_5` | 사용할 ElevenLabs TTS 모델 |
 | `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
 | `HEDRA_API_KEY` | - | Hedra API 키 (enabled=true일 때 필수) |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` | 쿠키를 실은 요청을 허용할 프런트 origin (쉼표로 구분). 운영에서는 실제 도메인으로 설정 |
