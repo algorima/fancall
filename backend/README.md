@@ -6,7 +6,6 @@ AI 아이돌과 실시간 영상 통화 Python 패키지
 
 - LiveKit 기반 실시간 음성/영상 통화
 - Fish Audio TTS 음성 합성
-- Hedra 아바타 지원 (선택)
 - 동적 설정 (voice_id, avatar_id, system_prompt)
 
 ## 설치
@@ -105,8 +104,6 @@ poetry run alembic revision --autogenerate -m "변경 설명"
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI LLM 모델 |
-| `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
-| `HEDRA_API_KEY` | - | Hedra API 키 (enabled=true일 때 필수) |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` | 쿠키를 실은 요청을 허용할 프런트 origin (쉼표로 구분). 운영에서는 실제 도메인으로 설정 |
 
 > **참고**: LiveKit, 데이터베이스, 모델 등 추가 설정은 기본값으로 로컬 개발 가능합니다.
