@@ -16,12 +16,10 @@ class Persona(BaseModel):
     model_config = ConfigDict(alias_generator=camelize, populate_by_name=True)
 
     avatar_id: str | None = Field(
-        default=None,
-        description="Avatar ID (currently unused: realtime avatar integration was removed)",
+        default=None, description="Hedra avatar ID for visual representation"
     )
     profile_picture_url: str | None = Field(
-        default=None,
-        description="Profile picture URL shown when the agent has no video track",
+        default=None, description="Profile picture URL for avatar generation"
     )
     voice_id: str | None = Field(
         default=None, description="ElevenLabs voice ID for TTS"

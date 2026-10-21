@@ -1238,6 +1238,7 @@ livekit = ">=1.0.12,<2"
 livekit-api = ">=1.0.5,<2"
 livekit-blingfire = ">=1.0,<2.0"
 livekit-plugins-elevenlabs = {version = ">=1.2.18", optional = true, markers = "extra == \"elevenlabs\""}
+livekit-plugins-hedra = {version = ">=1.2.18", optional = true, markers = "extra == \"hedra\""}
 livekit-plugins-openai = {version = ">=1.2.18", optional = true, markers = "extra == \"openai\""}
 livekit-protocol = ">=1.0,<2.0"
 nest-asyncio = ">=1.6.0"
@@ -1372,6 +1373,21 @@ files = [
 
 [package.dependencies]
 livekit-agents = {version = ">=1.2.18", extras = ["codecs"]}
+
+[[package]]
+name = "livekit-plugins-hedra"
+version = "1.2.18"
+description = "Agent Framework plugin for Hedra Avatar"
+optional = false
+python-versions = ">=3.9.0"
+groups = ["main"]
+files = [
+    {file = "livekit_plugins_hedra-1.2.18-py3-none-any.whl", hash = "sha256:3fe8c04c7c3ebb8a18c99f1d19d45b4cb4d90ec8d6b8c075134095a64032962e"},
+    {file = "livekit_plugins_hedra-1.2.18.tar.gz", hash = "sha256:e22a6cdb4caed0d27c90dc48b9720c2d106d1d142807c7beb70d812ea135e687"},
+]
+
+[package.dependencies]
+livekit-agents = ">=1.2.18"
 
 [[package]]
 name = "livekit-plugins-openai"
@@ -3372,4 +3388,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "8225b2a036b06cd13cde438cf8b887b9a630beb25780abed79cdc4de461299cb"
+content-hash = "68f286a98f1e4930ca37b06bb8a38ee20d59bda26a6b84cdfa5d3a76abe4d9d3"
