@@ -6,7 +6,7 @@ AI 아이돌과 실시간 영상 통화 Python 패키지
 
 - LiveKit 기반 실시간 음성/영상 통화
 - ElevenLabs TTS 음성 합성
-- Hedra 아바타 지원 (선택)
+- Simli 실시간 립싱크 아바타 (선택)
 - 동적 설정 (voice_id, avatar_id, system_prompt)
 
 > **Fish Audio에서 옮겨오는 호스트 앱**: `voice_id`는 이제 ElevenLabs voice ID입니다. 기존 Fish Audio `voice_id`를 그대로 넘기면 ElevenLabs에서 찾지 못해 음성 합성이 실패하므로, ElevenLabs voice ID로 바꾸거나 `voice_id`를 비워 기본 목소리를 쓰세요. `create_worker_options()`의 `fish_settings` 인자는 `elevenlabs_settings`로 바뀌었습니다.
@@ -108,9 +108,13 @@ poetry run alembic revision --autogenerate -m "변경 설명"
 |------|--------|------|
 | `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI LLM 모델 |
 | `FANCALL_ELEVENLABS_MODEL` | `eleven_flash_v2_5` | 사용할 ElevenLabs TTS 모델 |
-| `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
-| `HEDRA_API_KEY` | - | Hedra API 키 (enabled=true일 때 필수) |
+| `SIMLI_API_KEY` | - | Simli 아바타 API 키. `avatar_id`(Simli face ID)가 있는 페르소나에 사용 |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` | 쿠키를 실은 요청을 허용할 프런트 origin (쉼표로 구분). 운영에서는 실제 도메인으로 설정 |
+
+키가 없거나 `avatar_id`가 없거나 시작에 실패하면 음성 통화로 진행되고, 프런트는 프로필 사진을 보여줍니다.
+아바타는 LiveKit 방에 별도 참가자로 접속하므로 `LIVEKIT_URL`이 외부에서 접근 가능해야 합니다 (로컬 `ws://localhost` 불가).
+
+> **Hedra에서 옮겨오는 호스트 앱**: Hedra 실시간 아바타는 서비스가 종료되었습니다. `create_worker_options()`의 `hedra_settings` 인자는 제거되었고 `HEDRA_ENABLED`/`HEDRA_API_KEY`는 더 이상 읽지 않습니다. `avatar_id`는 이제 Simli face ID입니다.
 
 > **참고**: LiveKit, 데이터베이스, 모델 등 추가 설정은 기본값으로 로컬 개발 가능합니다.
 > 변경이 필요한 경우 `fancall/settings.py`의 Settings 클래스를 참고하세요.

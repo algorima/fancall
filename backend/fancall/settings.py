@@ -91,6 +91,19 @@ class CorsSettings(BaseSettings):
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
 
 
+class AvatarSettings(BaseSettings):
+    """Settings for the Simli realtime lip-synced avatar (replaces discontinued Hedra)
+
+    The avatar is enabled when the API key is set and the persona has an avatar_id
+    (Simli face ID). Otherwise the call is voice-only.
+
+    Attributes:
+        simli_api_key: Simli API key (SIMLI_API_KEY).
+    """
+
+    simli_api_key: str | None = None
+
+
 class LiveKitSettings(BaseSettings):
     """Settings for LiveKit API integration
 

@@ -1238,8 +1238,8 @@ livekit = ">=1.0.12,<2"
 livekit-api = ">=1.0.5,<2"
 livekit-blingfire = ">=1.0,<2.0"
 livekit-plugins-elevenlabs = {version = ">=1.2.18", optional = true, markers = "extra == \"elevenlabs\""}
-livekit-plugins-hedra = {version = ">=1.2.18", optional = true, markers = "extra == \"hedra\""}
 livekit-plugins-openai = {version = ">=1.2.18", optional = true, markers = "extra == \"openai\""}
+livekit-plugins-simli = {version = ">=1.2.18", optional = true, markers = "extra == \"simli\""}
 livekit-protocol = ">=1.0,<2.0"
 nest-asyncio = ">=1.6.0"
 numpy = ">=1.26.0"
@@ -1375,21 +1375,6 @@ files = [
 livekit-agents = {version = ">=1.2.18", extras = ["codecs"]}
 
 [[package]]
-name = "livekit-plugins-hedra"
-version = "1.2.18"
-description = "Agent Framework plugin for Hedra Avatar"
-optional = false
-python-versions = ">=3.9.0"
-groups = ["main"]
-files = [
-    {file = "livekit_plugins_hedra-1.2.18-py3-none-any.whl", hash = "sha256:3fe8c04c7c3ebb8a18c99f1d19d45b4cb4d90ec8d6b8c075134095a64032962e"},
-    {file = "livekit_plugins_hedra-1.2.18.tar.gz", hash = "sha256:e22a6cdb4caed0d27c90dc48b9720c2d106d1d142807c7beb70d812ea135e687"},
-]
-
-[package.dependencies]
-livekit-agents = ">=1.2.18"
-
-[[package]]
 name = "livekit-plugins-openai"
 version = "1.2.18"
 description = "Agent Framework plugin for services from OpenAI"
@@ -1407,6 +1392,21 @@ openai = {version = ">=1.107.2", extras = ["realtime"]}
 
 [package.extras]
 vertex = ["google-auth (>=2.0.0)"]
+
+[[package]]
+name = "livekit-plugins-simli"
+version = "1.2.18"
+description = "Agent Framework plugin for Simli"
+optional = false
+python-versions = ">=3.9.0"
+groups = ["main"]
+files = [
+    {file = "livekit_plugins_simli-1.2.18-py3-none-any.whl", hash = "sha256:14fe212a0b842451c162e7cdc3e701fc3ef2d81024a18a1ae37b4565637ededf"},
+    {file = "livekit_plugins_simli-1.2.18.tar.gz", hash = "sha256:6f43409224c0c61ee573ee8e856ecf50d5f66945ee157fe49bb3771874ee2da4"},
+]
+
+[package.dependencies]
+livekit-agents = ">=1.2.18"
 
 [[package]]
 name = "livekit-protocol"
@@ -3388,4 +3388,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "68f286a98f1e4930ca37b06bb8a38ee20d59bda26a6b84cdfa5d3a76abe4d9d3"
+content-hash = "a8cff96c602d8bbc0353a4d0b0bc38365d947a2655a1fb258cd040018d3c088b"
