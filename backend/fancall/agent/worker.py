@@ -2,18 +2,24 @@
 """
 LiveKit Agent Worker with ElevenLabs TTS Integration
 
-This file runs a real-time AI agent using ElevenLabs TTS.
+This file runs a real-time AI agent using ElevenLabs TTS and, optionally,
+a Hedra avatar.
 """
 
 import asyncio
+import base64
+import io
 import logging
+import re
 from functools import partial
 
+import httpx
 from aioia_core.settings import HedraSettings, OpenAIAPISettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.agents.types import NOT_GIVEN
-from livekit.plugins import elevenlabs, openai
+from livekit.plugins import elevenlabs, hedra, openai
+from PIL import Image
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
@@ -74,7 +80,7 @@ async def wait_for_answer(ctx: JobContext, timeout: float) -> bool:
     return True
 
 
-async def entrypoint(
+async def entrypoint(  # pylint: disable=too-many-locals
     ctx: JobContext,
     default_persona: Persona,
     livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
@@ -93,7 +99,7 @@ async def entrypoint(
         livekit_settings: LiveKit settings with API credentials (reserved for future use)
         openai_settings: OpenAI API settings (현재 미사용: livekit.plugins.openai가 환경변수 직접 사용)
         elevenlabs_settings: ElevenLabs TTS settings
-        hedra_settings: Hedra avatar settings (discontinued; only used to warn)
+        hedra_settings: Hedra avatar settings
         model_settings: Fancall LLM/TTS model settings
         call_settings: Video call timing settings
     """
@@ -113,13 +119,17 @@ async def entrypoint(
             return
 
     # Merge metadata with default_persona (metadata takes precedence)
+    avatar_id = metadata.avatar_id or default_persona.avatar_id
+    profile_picture_url = (
+        metadata.profile_picture_url or default_persona.profile_picture_url
+    )
     voice_id = metadata.voice_id or default_persona.voice_id
     system_prompt = metadata.system_prompt or default_persona.system_prompt
 
     logger.info(
-        "Agent configuration: voice_id=%s, elevenlabs_model=%s",
+        "Agent configuration: avatar_id=%s, voice_id=%s",
+        avatar_id,
         voice_id,
-        model_settings.elevenlabs_model,
     )
 
     # Initialize components
@@ -135,12 +145,67 @@ async def entrypoint(
 
     session: AgentSession = AgentSession(llm=llm, tts=tts)
 
-    # Hedra sunset its realtime avatar service; livekit-plugins-hedra no longer works.
-    # The frontend falls back to the profile picture when no agent video track exists.
+    # Initialize Hedra avatar if enabled
+    avatar_session = None
+
     if hedra_settings.enabled:
-        logger.warning(
-            "HEDRA_ENABLED=true is ignored: Hedra realtime avatar has been discontinued."
-        )
+        hedra_api_key = hedra_settings.api_key
+        if not hedra_api_key:
+            logger.error("HEDRA_API_KEY is required when HEDRA_ENABLED=true")
+            ctx.shutdown(reason="HEDRA_API_KEY is required when HEDRA_ENABLED=true")
+            return
+
+        if avatar_id:
+            logger.info("Hedra avatar is enabled with avatar_id: %s", avatar_id)
+            avatar_session = hedra.AvatarSession(
+                avatar_id=avatar_id,
+                api_key=hedra_api_key,
+            )
+        elif profile_picture_url:
+            # At this point, profile_picture_url is guaranteed to be str
+            url = profile_picture_url
+            logger.info(
+                "Hedra avatar is enabled with profile_picture_url: %s",
+                url[:100] + "..." if len(url) > 100 else url,
+            )
+
+            # Handle both data URLs and HTTP(S) URLs
+            if url.startswith("data:"):
+                # Extract base64 data from data URL
+                match = re.match(r"data:image/[^;]+;base64,(.+)", url)
+                if match:
+                    base64_data = match.group(1)
+                    image_bytes = base64.b64decode(base64_data)
+                    avatar_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+                else:
+                    logger.error("Invalid data URL format")
+                    ctx.shutdown(
+                        reason="Invalid data URL format for profile_picture_url"
+                    )
+                    return
+            else:
+                # Regular HTTP(S) URL
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(url)
+                    response.raise_for_status()
+                    avatar_image = Image.open(io.BytesIO(response.content)).convert(
+                        "RGB"
+                    )
+
+            avatar_session = hedra.AvatarSession(
+                avatar_image=avatar_image,
+                api_key=hedra_api_key,
+            )
+        else:
+            logger.error(
+                "No avatar_id or profile_picture_url found. Cannot initialize Hedra avatar."
+            )
+            ctx.shutdown(
+                reason="No avatar_id or profile_picture_url found for Hedra avatar"
+            )
+            return
+
+        await avatar_session.start(agent_session=session, room=ctx.room)
 
     if not await wait_for_answer(ctx, ANSWER_TIMEOUT_SECONDS):
         return
@@ -159,15 +224,20 @@ async def entrypoint(
     logger.info("Agent session started.")
 
     # Call limit: wrap up, say goodbye, then shut down
+    timer = asyncio.create_task(
+        run_call_timer(session, agent, instructions, call_settings)
+    )
+    # 팬이 먼저 끊으면 세션이 닫힌다. 타이머가 남아 있으면 작업이 끝나지 않고 강제 종료된다
+    session.on("close", lambda _event: timer.cancel())
     try:
-        await run_call_timer(session, agent, instructions, call_settings)
+        await timer
         logger.info(
             "Call limit (%.0fs) reached. Shutting down.",
             call_settings.call_duration_seconds,
         )
         ctx.shutdown(reason="Call time limit reached")
     except asyncio.CancelledError:
-        logger.info("Agent session cancelled before call limit.")
+        logger.info("Agent session ended before call limit.")
 
 
 def create_worker_options(
@@ -190,7 +260,7 @@ def create_worker_options(
         openai_settings: OpenAI API settings
         elevenlabs_settings: ElevenLabs TTS settings
         hedra_settings: Hedra avatar settings
-        model_settings: Fancall LLM model settings
+        model_settings: Fancall LLM/TTS model settings
         call_settings: Video call timing settings
 
     Returns:
@@ -209,9 +279,6 @@ def create_worker_options(
         ),
         worker_type=agents.WorkerType.ROOM,
         agent_name=livekit_settings.agent_name,
-        ws_url=livekit_settings.url,
-        api_key=livekit_settings.api_key,
-        api_secret=livekit_settings.api_secret,
     )
 
 
