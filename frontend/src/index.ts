@@ -21,11 +21,15 @@ export type {
   TokenResponse,
   DispatchResponse,
   AgentDispatchRequest,
+  Contact,
+  VideoRegion,
 } from "./schemas";
 export {
   liveRoomSchema,
   tokenResponseSchema,
   dispatchResponseSchema,
+  contactSchema,
+  contactListSchema,
 } from "./schemas";
 
 // i18n - Server-safe exports (JSON resources and constants)

@@ -12,7 +12,13 @@ import { useTranslation } from "react-i18next";
 import { LoadingQuips } from "@/components/LoadingQuips";
 import { FANCALL_NS } from "@/i18n";
 
-export type IncomingCallStatus = "ringing" | "connecting" | "missed" | "ended";
+/** "calling" is an outgoing call the fan placed; the rest are incoming */
+export type IncomingCallStatus =
+  | "ringing"
+  | "calling"
+  | "connecting"
+  | "missed"
+  | "ended";
 
 export interface IncomingCallScreenProps {
   displayName: string;
@@ -90,7 +96,8 @@ export function IncomingCallScreen({
           priority
           className={clsx(
             "object-cover transition-[filter,opacity] duration-700",
-            status === "ringing" && "animate-slow-zoom",
+            (status === "ringing" || status === "calling") &&
+              "animate-slow-zoom",
             (status === "missed" || status === "ended") &&
               "opacity-40 blur-md grayscale",
           )}
@@ -107,6 +114,8 @@ export function IncomingCallScreen({
             <span className="min-w-0 max-w-64">
               <LoadingQuips inline />
             </span>
+          ) : status === "calling" ? (
+            t("entry.calling", { ns: FANCALL_NS })
           ) : status === "missed" ? (
             t("entry.missed", { ns: FANCALL_NS })
           ) : status === "ended" ? (
@@ -140,6 +149,15 @@ export function IncomingCallScreen({
               <VideoCameraIcon className="size-8 text-success-content" />
             </CallButton>
           </div>
+        )}
+        {status === "calling" && (
+          <CallButton
+            label={t("entry.end", { ns: FANCALL_NS })}
+            onClick={onDecline}
+            tone="decline"
+          >
+            <PhoneXMarkIcon className="size-8 text-error-content" />
+          </CallButton>
         )}
         {(status === "missed" || status === "ended") && (
           <CallButton
