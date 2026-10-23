@@ -48,4 +48,8 @@ export interface AgentDispatchRequest {
   /** ElevenLabs voice ID. A Fish Audio voice ID will fail TTS; omit to use the default voice. */
   voiceId?: string | null;
   systemPrompt?: string | null;
+  /** Voice-only phone call over SIP (no avatar, speech input on). Defaults to false. */
+  phoneCall?: boolean;
+  /** First line spoken verbatim instead of an LLM-generated greeting. Applies to both video and phone calls. */
+  openingMessage?: string | null;
 }
