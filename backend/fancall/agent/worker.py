@@ -15,13 +15,17 @@ import aiohttp
 from aioia_core.settings import OpenAIAPISettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
-from livekit.agents.types import NOT_GIVEN
+from livekit.agents.types import NOT_GIVEN, NotGiven
 from livekit.plugins import elevenlabs, openai, simli
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
 from fancall.persona import DEFAULT_PERSONA, Persona
-from fancall.prompts import OPENING_INSTRUCTIONS, compose_instructions
+from fancall.prompts import (
+    OPENING_INSTRUCTIONS,
+    PHONE_OPENING_INSTRUCTIONS,
+    compose_instructions,
+)
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import (
     ElevenLabsSettings,
@@ -47,13 +51,26 @@ class CompanionAgent(Agent):
     Processes user input and generates conversational responses using LLM and TTS.
     """
 
-    def __init__(self, instructions: str = DEFAULT_SYSTEM_PROMPT, **kwargs):
+    def __init__(
+        self,
+        instructions: str = DEFAULT_SYSTEM_PROMPT,
+        opening_instructions: str = OPENING_INSTRUCTIONS,
+        opening_message: str | None = None,
+        **kwargs,
+    ):
         super().__init__(instructions=instructions, **kwargs)
+        self.opening_instructions = opening_instructions
+        self.opening_message = opening_message
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
-        # 실제 영통처럼 소리·화면 확인과 인사로 먼저 말을 건다
-        self.session.generate_reply(instructions=OPENING_INSTRUCTIONS)
+        # 호스트 앱이 첫 멘트를 주면 LLM 없이 그대로 읽는다.
+        # 팬도 "여보세요"를 겹쳐 말하기 쉬우니 영상 첫인사처럼 끼어들 수 있게 둔다
+        if self.opening_message:
+            self.session.say(self.opening_message)
+            return
+        # 실제 통화처럼 캐릭터 말투로 먼저 인사한다 (영상: 소리·화면 확인, 전화: 여보세요)
+        self.session.generate_reply(instructions=self.opening_instructions)
 
 
 async def start_avatar(
@@ -124,7 +141,7 @@ async def entrypoint(
         elevenlabs_settings: ElevenLabs TTS settings
         simli_settings: Simli avatar settings
         model_settings: Fancall LLM/TTS model settings
-        call_settings: Video call timing settings
+        call_settings: Call timing settings (video and phone)
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
@@ -146,10 +163,13 @@ async def entrypoint(
     voice_id = metadata.voice_id or default_persona.voice_id
     system_prompt = metadata.system_prompt or default_persona.system_prompt
 
+    phone_call = metadata.phone_call
+
     logger.info(
-        "Agent configuration: avatar_id=%s, voice_id=%s",
+        "Agent configuration: avatar_id=%s, voice_id=%s, phone_call=%s",
         avatar_id,
         voice_id,
+        phone_call,
     )
 
     # Initialize components
@@ -163,27 +183,49 @@ async def entrypoint(
         voice_id=voice_id or elevenlabs.DEFAULT_VOICE_ID,
     )
 
-    session: AgentSession = AgentSession(llm=llm, tts=tts)
-
-    await start_avatar(
-        ctx,
-        session,
-        avatar_id,
-        livekit_settings,
-        simli_settings,
-        call_settings,
+    # 전화는 팬 목소리를 들어야 대화가 된다. 서버 VAD 스트리밍이라 별도 VAD가 필요 없다
+    stt: openai.STT | NotGiven = (
+        openai.STT(
+            model=model_settings.stt_model,
+            language=model_settings.stt_language,
+            use_realtime=True,
+        )
+        if phone_call
+        else NOT_GIVEN
     )
+
+    session: AgentSession = AgentSession(llm=llm, tts=tts, stt=stt)
+
+    # 전화에는 화면이 없으므로 아바타를 띄우지 않는다
+    if not phone_call:
+        await start_avatar(
+            ctx,
+            session,
+            avatar_id,
+            livekit_settings,
+            simli_settings,
+            call_settings,
+        )
 
     # Compose instructions from merged system prompt (Context Composer pattern)
     instructions = compose_instructions(
-        system_prompt, include_role_playing=False, include_video_call=True
+        system_prompt,
+        include_role_playing=False,
+        include_video_call=True,
+        include_phone_call=phone_call,
     )
     logger.info(
         "Using instructions: %s",
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
 
-    agent = CompanionAgent(instructions=instructions)
+    agent = CompanionAgent(
+        instructions=instructions,
+        opening_instructions=(
+            PHONE_OPENING_INSTRUCTIONS if phone_call else OPENING_INSTRUCTIONS
+        ),
+        opening_message=metadata.opening_message,
+    )
     await session.start(agent=agent, room=ctx.room)
     logger.info("Agent session started.")
 
@@ -225,7 +267,7 @@ def create_worker_options(
         elevenlabs_settings: ElevenLabs TTS settings
         simli_settings: Simli avatar settings
         model_settings: Fancall LLM/TTS model settings
-        call_settings: Video call timing settings
+        call_settings: Call timing settings (video and phone)
 
     Returns:
         WorkerOptions configured with the agent entrypoint

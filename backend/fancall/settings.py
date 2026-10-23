@@ -11,13 +11,15 @@ class FancallModelSettings(BaseSettings):
 
     openai_model: str = "gpt-4o-mini"
     elevenlabs_model: str = "eleven_flash_v2_5"
+    stt_model: str = "gpt-4o-mini-transcribe"  # Phone calls only
+    stt_language: str = "ko"  # Phone calls only
 
     class Config:
         env_prefix = "FANCALL_"
 
 
 class FancallCallSettings(BaseSettings):
-    """Video call timing settings.
+    """Call timing settings, shared by video and phone calls.
 
     Attributes:
         call_duration_seconds: Total call length before the agent leaves.
