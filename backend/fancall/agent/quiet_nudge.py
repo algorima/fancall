@@ -52,17 +52,19 @@ class QuietNudger:
         self._sleep = sleep
         self._in_row = 0
         self._stopped = False
+        self._agent_listening = False
+        self._fan_speaking = False
         self._task: asyncio.Task[None] | None = None
 
     def on_agent_state(self, state: str) -> None:
         """Start the quiet countdown when the agent starts listening."""
-        self._cancel()
-        if (
-            state == "listening"
-            and not self._stopped
-            and self._in_row < self._max_in_row
-        ):
-            self._task = asyncio.ensure_future(self._nudge_after_quiet())
+        self._agent_listening = state == "listening"
+        self._restart()
+
+    def on_user_state(self, state: str) -> None:
+        """Hold the countdown while the fan is speaking; restart it when they stop."""
+        self._fan_speaking = state == "speaking"
+        self._restart()
 
     def on_user_message(self, text: str) -> None:
         """A fan message cancels the countdown and resets the limit."""
@@ -76,6 +78,16 @@ class QuietNudger:
         """Stop nudging, e.g. once the call starts wrapping up."""
         self._stopped = True
         self._cancel()
+
+    def _restart(self) -> None:
+        self._cancel()
+        if (
+            self._agent_listening
+            and not self._fan_speaking
+            and not self._stopped
+            and self._in_row < self._max_in_row
+        ):
+            self._task = asyncio.ensure_future(self._nudge_after_quiet())
 
     def _cancel(self) -> None:
         if self._task is not None and not self._task.done():

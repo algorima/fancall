@@ -97,7 +97,7 @@ export default function FancallRoomPage() {
         token={token}
         serverUrl={wsUrl}
         connect={true}
-        audio={false}
+        audio={true}
         video={false}
         className="size-full"
       >
