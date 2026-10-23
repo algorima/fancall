@@ -153,6 +153,16 @@ OPENING_INSTRUCTIONS = """통화가 방금 연결됐다. 실제 영통처럼 소
 OPENING_USER_INPUT = "(The fan just picked up the video call.)"
 
 
+QUIET_NUDGE_INSTRUCTIONS = """팬이 몇 초째 아무 말이 없다. 영통에서 팬이 말을 멈췄을 때처럼 네가 먼저 한마디 한다.
+- 방금 나눈 이야기에 이어지는 가벼운 질문 하나, 또는 오늘 네 하루(연습, 먹은 것, 기분) 이야기 한 줄을 한다.
+- 한두 문장으로 짧게 한다. 바로 전에 한 말을 되풀이하지 않는다.
+- 팬을 탓하거나 붙잡지 않는다. "왜 말이 없어?", "가지 마", "나 심심해" 같은 말은 하지 않는다.
+- 팬의 언어로 말한다."""
+
+# 지시문만 있는 요청을 거절하는 모델이 있어 팬 쪽 상황을 한 줄 붙인다 (OPENING_USER_INPUT 와 같은 이유)
+QUIET_NUDGE_USER_INPUT = "(The fan has been quiet for a few seconds.)"
+
+
 def opening_user_input(language: str | None) -> str:
     """First-turn stage direction; names the fan's app language when known."""
     if not language:

@@ -22,12 +22,13 @@ from livekit.agents import (
     WorkerOptions,
     cli,
 )
-from livekit.agents.llm import ChatContext, Tool
+from livekit.agents.llm import ChatContext, ChatMessage, Tool
 from livekit.agents.types import NOT_GIVEN
 from livekit.plugins import anam, elevenlabs, lemonslice, openai, simli, tavus
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
+from fancall.agent.quiet_nudge import QuietNudger
 from fancall.agent.reply_limit import limit_sentences
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import (
@@ -290,6 +291,27 @@ async def entrypoint(
     )
 
     agent = CompanionAgent(instructions=instructions, language=metadata.language)
+
+    # 팬이 조용하면 먼저 한마디 한다. 마무리 단계부터는 작별 인사와 겹치지 않게 멈춘다.
+    nudger = QuietNudger(
+        session,
+        quiet_seconds=call_settings.quiet_nudge_seconds,
+        max_in_row=call_settings.quiet_nudge_max_in_row,
+    )
+    session.on("agent_state_changed", lambda ev: nudger.on_agent_state(ev.new_state))
+    session.on(
+        "conversation_item_added",
+        lambda ev: (
+            nudger.on_user_message(ev.item.text_content or "")
+            if isinstance(ev.item, ChatMessage) and ev.item.role == "user"
+            else None
+        ),
+    )
+    asyncio.get_running_loop().call_later(
+        call_settings.call_duration_seconds - call_settings.wrap_up_lead_seconds,
+        nudger.stop,
+    )
+
     await session.start(agent=agent, room=ctx.room)
     logger.info("Agent session started.")
 
