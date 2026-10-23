@@ -21,7 +21,7 @@ livekit-api = "^1.0.7"
 livekit-agents = {extras = ["openai", "elevenlabs", "simli"], version = "^1.2.17"}
 sqlalchemy-mixins = "^2.0.5"
 pyhumps = "^3.8.0"
-openai = ">=1.0.0"
+openai = ">=2.8.0,<3"  # reasoning_effort "none" 은 2.8.0 부터
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.0.0"
