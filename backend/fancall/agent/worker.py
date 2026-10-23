@@ -8,8 +8,10 @@ a Simli lip-synced avatar.
 
 import asyncio
 import logging
+import math
 from functools import partial
 
+import aiohttp
 from aioia_core.settings import OpenAIAPISettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
@@ -22,11 +24,11 @@ from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import OPENING_INSTRUCTIONS, compose_instructions
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import (
-    AvatarSettings,
     ElevenLabsSettings,
     FancallCallSettings,
     FancallModelSettings,
     LiveKitSettings,
+    SimliSettings,
 )
 
 # Basic logging configuration
@@ -59,24 +61,33 @@ async def start_avatar(
     session: AgentSession,
     avatar_id: str | None,
     livekit_settings: LiveKitSettings,
-    avatar_settings: AvatarSettings,
+    simli_settings: SimliSettings,
+    call_settings: FancallCallSettings,
 ) -> None:
     """
     Start a Simli lip-synced avatar that joins the room and speaks the agent's audio.
 
     Simli needs a pre-registered face (avatar_id) and an API key. Without them, or
-    if startup fails, the call continues voice-only and the frontend shows the
-    profile picture.
+    if the Simli API call fails, the call continues voice-only and the frontend
+    shows the profile picture. Configuration or code errors are raised.
     """
-    if not (avatar_id and avatar_settings.simli_api_key):
+    if not (avatar_id and simli_settings.api_key):
         logger.info("No Simli avatar configured for this persona; voice-only.")
         return
 
+    # Once started, the agent's audio goes only to the Simli participant. If Simli
+    # disconnects mid-call (defaults: 30s idle, 600s total), the fan loses the voice
+    # too, so keep the avatar alive for the whole call including the goodbye.
+    call_seconds = math.ceil(
+        call_settings.call_duration_seconds + call_settings.closing_grace_seconds
+    )
     logger.info("Starting Simli avatar with face_id: %s", avatar_id)
     avatar = simli.AvatarSession(
         simli_config=simli.SimliConfig(
-            api_key=avatar_settings.simli_api_key,
+            api_key=simli_settings.api_key,
             face_id=avatar_id,
+            max_session_length=call_seconds,
+            max_idle_time=call_seconds,
         ),
     )
     try:
@@ -87,8 +98,9 @@ async def start_avatar(
             livekit_api_key=livekit_settings.api_key,
             livekit_api_secret=livekit_settings.api_secret,
         )
-    except Exception:  # pylint: disable=broad-exception-caught
-        logger.exception("Avatar failed to start; continuing voice-only.")
+    except (aiohttp.ClientError, asyncio.TimeoutError):
+        # Simli API errors (HTTP status, network, timeout) are expected outages
+        logger.exception("Simli avatar failed to start; continuing voice-only.")
 
 
 async def entrypoint(
@@ -97,9 +109,9 @@ async def entrypoint(
     livekit_settings: LiveKitSettings,
     openai_settings: OpenAIAPISettings,  # pylint: disable=unused-argument
     elevenlabs_settings: ElevenLabsSettings,
+    simli_settings: SimliSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
-    avatar_settings: AvatarSettings | None = None,
 ) -> None:
     """
     Agent entrypoint. Initializes AgentSession for text-to-speech tasks.
@@ -110,9 +122,9 @@ async def entrypoint(
         livekit_settings: LiveKit settings; the avatar joins the room with these
         openai_settings: OpenAI API settings (현재 미사용: livekit.plugins.openai가 환경변수 직접 사용)
         elevenlabs_settings: ElevenLabs TTS settings
+        simli_settings: Simli avatar settings
         model_settings: Fancall LLM/TTS model settings
         call_settings: Video call timing settings
-        avatar_settings: Simli avatar settings (read from env if omitted)
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
@@ -158,7 +170,8 @@ async def entrypoint(
         session,
         avatar_id,
         livekit_settings,
-        avatar_settings or AvatarSettings(),
+        simli_settings,
+        call_settings,
     )
 
     # Compose instructions from merged system prompt (Context Composer pattern)
@@ -196,9 +209,9 @@ def create_worker_options(
     livekit_settings: LiveKitSettings,
     openai_settings: OpenAIAPISettings,
     elevenlabs_settings: ElevenLabsSettings,
+    simli_settings: SimliSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
-    avatar_settings: AvatarSettings | None = None,
 ) -> WorkerOptions:
     """
     Create WorkerOptions for the agent with dependency injection.
@@ -210,9 +223,9 @@ def create_worker_options(
         livekit_settings: LiveKit settings with API credentials
         openai_settings: OpenAI API settings
         elevenlabs_settings: ElevenLabs TTS settings
+        simli_settings: Simli avatar settings
         model_settings: Fancall LLM/TTS model settings
         call_settings: Video call timing settings
-        avatar_settings: Simli avatar settings (read from env if omitted)
 
     Returns:
         WorkerOptions configured with the agent entrypoint
@@ -224,9 +237,9 @@ def create_worker_options(
             livekit_settings=livekit_settings,
             openai_settings=openai_settings,
             elevenlabs_settings=elevenlabs_settings,
+            simli_settings=simli_settings,
             model_settings=model_settings,
             call_settings=call_settings,
-            avatar_settings=avatar_settings,
         ),
         worker_type=agents.WorkerType.ROOM,
         agent_name=livekit_settings.agent_name,
@@ -238,6 +251,7 @@ def main() -> None:
     livekit_settings = LiveKitSettings()
     openai_settings = OpenAIAPISettings()
     elevenlabs_settings = ElevenLabsSettings()
+    simli_settings = SimliSettings()
     model_settings = FancallModelSettings()
     call_settings = FancallCallSettings()
     cli.run_app(
@@ -246,6 +260,7 @@ def main() -> None:
             livekit_settings,
             openai_settings,
             elevenlabs_settings,
+            simli_settings,
             model_settings,
             call_settings,
         )
