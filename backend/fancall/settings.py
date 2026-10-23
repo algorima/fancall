@@ -34,12 +34,18 @@ class FancallCallSettings(BaseSettings):
             with a goodbye. Covers LLM·TTS latency plus a two-sentence goodbye.
         closing_grace_seconds: Extra seconds allowed past the end so the
             goodbye is not cut off mid-sentence.
+        quiet_nudge_seconds: Seconds the fan may stay quiet after the agent's
+            turn before the agent speaks first.
+        quiet_nudge_max_in_row: Times the agent speaks first before the fan
+            replies again. 0 turns the nudge off.
     """
 
     call_duration_seconds: float = 180
     wrap_up_lead_seconds: float = 30
     closing_lead_seconds: float = 12
     closing_grace_seconds: float = 5
+    quiet_nudge_seconds: float = 7
+    quiet_nudge_max_in_row: int = 2
 
     class Config:
         env_prefix = "FANCALL_"
@@ -59,6 +65,10 @@ class FancallCallSettings(BaseSettings):
             )
         if self.closing_grace_seconds < 0:
             raise ValueError("closing_grace_seconds must not be negative")
+        if self.quiet_nudge_seconds <= 0:
+            raise ValueError("quiet_nudge_seconds must be positive")
+        if self.quiet_nudge_max_in_row < 0:
+            raise ValueError("quiet_nudge_max_in_row must not be negative")
         return self
 
 
