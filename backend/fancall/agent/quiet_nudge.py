@@ -55,6 +55,7 @@ class QuietNudger:
         self._agent_listening = False
         self._fan_speaking = False
         self._task: asyncio.Task[None] | None = None
+        self._speech: Any = None
 
     def on_agent_state(self, state: str) -> None:
         """Start the quiet countdown when the agent starts listening."""
@@ -64,6 +65,9 @@ class QuietNudger:
     def on_user_state(self, state: str) -> None:
         """Hold the countdown while the fan is speaking; restart it when they stop."""
         self._fan_speaking = state == "speaking"
+        if self._fan_speaking:
+            # 준비 중이던 한마디는 팬 말에 자리를 내준다
+            self._interrupt_prepared_line()
         self._restart()
 
     def on_user_message(self, text: str) -> None:
@@ -103,6 +107,11 @@ class QuietNudger:
             self._in_row,
             self._max_in_row,
         )
-        self._session.generate_reply(
+        self._speech = self._session.generate_reply(
             user_input=QUIET_NUDGE_USER_INPUT, instructions=QUIET_NUDGE_INSTRUCTIONS
         )
+
+    def _interrupt_prepared_line(self) -> None:
+        speech = self._speech
+        if speech is not None and not speech.done():
+            speech.interrupt()

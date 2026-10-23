@@ -24,6 +24,8 @@ class FancallModelSettings(BaseSettings):
     # Flux sends an early "probably done" signal at this confidence; the reply
     # starts generating then and is dropped if the fan keeps talking (0.3-0.9).
     stt_eager_eot_threshold: float = 0.4
+    # Flux ends the fan's turn at this confidence (0.5-0.9, Flux default 0.7).
+    stt_eot_threshold: float = 0.7
 
     class Config:
         env_prefix = "FANCALL_"
@@ -41,19 +43,24 @@ class FancallCallSettings(BaseSettings):
         closing_grace_seconds: Extra seconds allowed past the end so the
             goodbye is not cut off mid-sentence.
         quiet_nudge_seconds: Seconds of silence (agent listening, fan not
-            speaking) before the agent starts preparing a line. Generating and
-            voicing it takes about 1.5s more, so the line starts near 3s: in
-            295 real fan calls three quarters of pauses were under 2.9s.
+            speaking) before the agent starts preparing a line. Generating,
+            voicing and lip-syncing it takes about 2.3s more, so the line is
+            heard near 3s: in 295 real fan calls three quarters of pauses were
+            under 2.9s. If the fan starts talking first, the line is dropped.
         quiet_nudge_max_in_row: Times the agent speaks first before the fan
-            replies again. 0 turns the nudge off.
+            replies again. 0 turns the nudge off. Real fan calls leave no long
+            silences, so the trainee keeps the call going for a while.
+        end_of_turn_min_delay: Extra wait after the speech recognizer decides
+            the fan finished. Flux already decides end of turn, so keep it short.
     """
 
     call_duration_seconds: float = 180
     wrap_up_lead_seconds: float = 30
     closing_lead_seconds: float = 12
     closing_grace_seconds: float = 5
-    quiet_nudge_seconds: float = 1.5
-    quiet_nudge_max_in_row: int = 2
+    quiet_nudge_seconds: float = 0.5
+    quiet_nudge_max_in_row: int = 5
+    end_of_turn_min_delay: float = 0.2
 
     class Config:
         env_prefix = "FANCALL_"

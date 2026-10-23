@@ -11,14 +11,28 @@ from fancall.prompts import QUIET_NUDGE_INSTRUCTIONS, QUIET_NUDGE_USER_INPUT
 QUIET = 0.01
 
 
+class FakeSpeech:
+    """Speech handle that records interruptions"""
+
+    def __init__(self):
+        self.interrupted = False
+        self.done = lambda: False
+
+    def interrupt(self):
+        self.interrupted = True
+
+
 class FakeSession:
     """Records the replies the nudger asks for"""
 
     def __init__(self):
         self.replies: list[tuple[str, str]] = []
+        self.speeches: list[FakeSpeech] = []
 
     def generate_reply(self, *, user_input: str, instructions: str):
         self.replies.append((user_input, instructions))
+        self.speeches.append(FakeSpeech())
+        return self.speeches[-1]
 
 
 def make_nudger(session: FakeSession, max_in_row: int = 2) -> QuietNudger:
@@ -114,6 +128,16 @@ class QuietNudgerTest(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(QUIET * 5)
 
         self.assertEqual(len(session.replies), 1)
+
+    async def test_fan_speaking_cancels_a_line_being_prepared(self):
+        session = FakeSession()
+        nudger = make_nudger(session)
+
+        nudger.on_agent_state("listening")
+        await asyncio.sleep(QUIET * 5)
+        nudger.on_user_state("speaking")
+
+        self.assertTrue(session.speeches[0].interrupted)
 
     async def test_zero_max_disables_nudges(self):
         session = FakeSession()

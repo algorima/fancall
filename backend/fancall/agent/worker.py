@@ -8,12 +8,13 @@ a lip-synced avatar (Anam, Tavus, Simli or LemonSlice).
 
 import asyncio
 import logging
+import os
 from collections.abc import AsyncIterator
 from functools import partial
 from typing import Any
 
 from aioia_core.settings import HedraSettings, OpenAIAPISettings
-from livekit import agents
+from livekit import agents, rtc
 from livekit.agents import (
     Agent,
     AgentSession,
@@ -31,11 +32,20 @@ from pydantic import ValidationError
 from fancall.agent.call_timer import run_call_timer
 from fancall.agent.hangup import end_call_when_fan_leaves
 from fancall.agent.latency_log import log_latency
+from fancall.agent.quick_reaction import (
+    REACTION_SAMPLE_RATE,
+    QuickReactions,
+    ReactionFetch,
+    elevenlabs_pcm_fetch,
+    prerender,
+    replay,
+)
 from fancall.agent.quiet_nudge import QuietNudger
 from fancall.agent.reply_limit import limit_sentences
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import (
     OPENING_INSTRUCTIONS,
+    QUICK_REACTION_NOTE,
     compose_instructions,
     opening_user_input,
 )
@@ -70,18 +80,53 @@ class CompanionAgent(Agent):
         self,
         instructions: str = DEFAULT_SYSTEM_PROMPT,
         language: str | None = None,
+        reaction_fetch: ReactionFetch | None = None,
         **kwargs,
     ):
         super().__init__(instructions=instructions, **kwargs)
         self._language = language
+        self._reactions = QuickReactions(language)
+        self._reaction_fetch = reaction_fetch
+        self._reaction_audio: dict[str, list[rtc.AudioFrame]] = {}
+        self._prerender_task: asyncio.Task[None] | None = None
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
+        # 맞장구는 미리 음성으로 만들어 두고 TTS 없이 바로 낸다
+        self._prerender_task = asyncio.create_task(self._prerender_reactions())
+        self.session.on("user_input_transcribed", self._react_to_fan)
         # 실제 영통처럼 소리·화면 확인과 인사로 먼저 말을 건다
         self.session.generate_reply(
             user_input=opening_user_input(self._language),
             instructions=OPENING_INSTRUCTIONS,
         )
+
+    def _react_to_fan(self, event: Any) -> None:
+        """React right away so the fan isn't left waiting for the full reply.
+
+        Flux sends a final transcript only when the fan's turn ends, so this is
+        the earliest moment. Hooking on_user_turn_completed instead fires after
+        LiveKit already started the preemptive reply and invalidates it.
+        Reacting on the earlier preflight transcript was tried: the final
+        transcript then cuts the reaction off, and making it uninterruptible
+        makes LiveKit drop the reply (2026-10-23 test).
+        """
+        if not event.is_final or not event.transcript.strip():
+            return
+        word = self._reactions.next()
+        frames = self._reaction_audio.get(word)
+        self.session.say(
+            word,
+            audio=replay(frames) if frames else NOT_GIVEN,
+            add_to_chat_ctx=False,
+            allow_interruptions=True,
+        )
+
+    async def _prerender_reactions(self) -> None:
+        if self._reaction_fetch is not None:
+            self._reaction_audio = await prerender(
+                self._reaction_fetch, self._reactions.words, REACTION_SAMPLE_RATE
+            )
 
     def llm_node(
         self,
@@ -272,13 +317,18 @@ async def entrypoint(
         stt=inference.STT(
             model_settings.stt_model,
             extra_kwargs=(
-                {"eager_eot_threshold": model_settings.stt_eager_eot_threshold}
+                {
+                    "eager_eot_threshold": model_settings.stt_eager_eot_threshold,
+                    "eot_threshold": model_settings.stt_eot_threshold,
+                }
                 if "flux" in model_settings.stt_model
                 else NOT_GIVEN
             ),
         ),
         turn_handling={
             "turn_detection": "stt",
+            # Flux가 이미 말 끝을 판단하므로 기본 0.5초 추가 대기를 줄인다
+            "endpointing": {"min_delay": call_settings.end_of_turn_min_delay},
             "preemptive_generation": {"preemptive_tts": True},
         },
     )
@@ -304,15 +354,33 @@ async def entrypoint(
     )
 
     # Compose instructions from merged system prompt (Context Composer pattern)
-    instructions = compose_instructions(
-        system_prompt, include_role_playing=False, include_video_call=True
+    instructions = (
+        compose_instructions(
+            system_prompt, include_role_playing=False, include_video_call=True
+        )
+        + "\n\n"
+        + QUICK_REACTION_NOTE
     )
     logger.info(
         "Using instructions: %s",
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
 
-    agent = CompanionAgent(instructions=instructions, language=metadata.language)
+    eleven_key = elevenlabs_settings.api_key or os.environ.get("ELEVEN_API_KEY")
+    agent = CompanionAgent(
+        instructions=instructions,
+        language=metadata.language,
+        reaction_fetch=(
+            elevenlabs_pcm_fetch(
+                eleven_key,
+                voice_id or elevenlabs.DEFAULT_VOICE_ID,
+                model_settings.elevenlabs_model,
+                REACTION_SAMPLE_RATE,
+            )
+            if eleven_key
+            else None
+        ),
+    )
 
     # 팬이 조용하면 먼저 한마디 한다. 마무리 단계부터는 작별 인사와 겹치지 않게 멈춘다.
     nudger = QuietNudger(
