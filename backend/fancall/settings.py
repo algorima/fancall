@@ -2,6 +2,7 @@
 Fancall settings
 """
 
+from openai.types.shared import ReasoningEffort
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
@@ -10,6 +11,9 @@ class FancallModelSettings(BaseSettings):
     """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    # Unset keeps the plugin default. Thinking models need a low effort to answer
+    # fast enough for a live call. Allowed values follow the installed openai SDK
+    openai_reasoning_effort: ReasoningEffort = None
     elevenlabs_model: str = "eleven_flash_v2_5"
 
     class Config:

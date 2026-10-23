@@ -107,6 +107,7 @@ poetry run alembic revision --autogenerate -m "변경 설명"
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI LLM 모델 |
+| `FANCALL_OPENAI_REASONING_EFFORT` | - | thinking 모델의 추론 강도 (`minimal`·`low`·`medium`·`high`). 비우면 플러그인 기본값 |
 | `FANCALL_ELEVENLABS_MODEL` | `eleven_flash_v2_5` | 사용할 ElevenLabs TTS 모델 |
 | `HEDRA_ENABLED` | `false` | Hedra 아바타 활성화 |
 | `HEDRA_API_KEY` | - | Hedra API 키 (enabled=true일 때 필수) |

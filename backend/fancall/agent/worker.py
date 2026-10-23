@@ -111,7 +111,10 @@ async def entrypoint(  # pylint: disable=too-many-locals
     )
 
     # Initialize components
-    llm = openai.LLM(model=model_settings.openai_model)
+    llm = openai.LLM(
+        model=model_settings.openai_model,
+        reasoning_effort=model_settings.openai_reasoning_effort or NOT_GIVEN,
+    )
     if voice_id:
         logger.info("Using ElevenLabs voice_id: %s", voice_id)
 
