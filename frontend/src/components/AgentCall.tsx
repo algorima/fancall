@@ -66,9 +66,11 @@ const CLOSING_SECONDS = 6;
 const MAX_VISIBLE_MESSAGES = 3;
 // Narrower than 3:4 counts as portrait video that can fill the phone screen
 const PORTRAIT_ASPECT = 0.75;
-// Soft edges so the video blends into the photo underneath
+// Show only the face and hair of the video, fading into the photo underneath.
+// Lip-sync avatars move only the face, and on a wider (upper-body) call photo
+// the square video's shoulders would not line up with the photo's.
 const FEATHER_MASK =
-  "linear-gradient(to bottom, transparent, black 8%, black 92%, transparent), linear-gradient(to right, transparent, black 6%, black 94%, transparent)";
+  "radial-gradient(ellipse 36% 44% at 50% 47%, black 70%, transparent 100%)";
 const HEART_LIFETIME_MS = 1800;
 // Report the message limit even if the idol never answers the last message
 export const MESSAGE_LIMIT_FALLBACK_MS = 20_000;
@@ -341,8 +343,6 @@ export function AgentCall({
                   ...regionRect,
                   maskImage: FEATHER_MASK,
                   WebkitMaskImage: FEATHER_MASK,
-                  maskComposite: "intersect",
-                  WebkitMaskComposite: "source-in",
                 }
               : undefined
           }
