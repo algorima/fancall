@@ -11,13 +11,15 @@ class FancallModelSettings(BaseSettings):
 
     openai_model: str = "gpt-4o-mini"
     elevenlabs_model: str = "eleven_flash_v2_5"
+    stt_model: str = "gpt-4o-mini-transcribe"  # Phone calls only
+    stt_language: str = "ko"  # Phone calls only
 
     class Config:
         env_prefix = "FANCALL_"
 
 
 class FancallCallSettings(BaseSettings):
-    """Video call timing settings.
+    """Call timing settings, shared by video and phone calls.
 
     Attributes:
         call_duration_seconds: Total call length before the agent leaves.
@@ -89,6 +91,22 @@ class CorsSettings(BaseSettings):
     def origins(self) -> list[str]:
         """Parsed list of allowed origins; blank entries are ignored."""
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
+
+class SimliSettings(BaseSettings):
+    """Settings for the Simli realtime lip-synced avatar (replaces discontinued Hedra)
+
+    The avatar is enabled when the API key is set and the persona has an avatar_id
+    (Simli face ID). Otherwise the call is voice-only.
+
+    Attributes:
+        api_key: Simli API key (SIMLI_API_KEY).
+    """
+
+    api_key: str | None = None
+
+    class Config:
+        env_prefix = "SIMLI_"
 
 
 class LiveKitSettings(BaseSettings):

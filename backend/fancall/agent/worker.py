@@ -3,34 +3,36 @@
 LiveKit Agent Worker with ElevenLabs TTS Integration
 
 This file runs a real-time AI agent using ElevenLabs TTS and, optionally,
-a Hedra avatar.
+a Simli lip-synced avatar.
 """
 
 import asyncio
-import base64
-import io
 import logging
-import re
+import math
 from functools import partial
 
-import httpx
-from aioia_core.settings import HedraSettings, OpenAIAPISettings
+import aiohttp
+from aioia_core.settings import OpenAIAPISettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
-from livekit.agents.types import NOT_GIVEN
-from livekit.plugins import elevenlabs, hedra, openai
-from PIL import Image
+from livekit.agents.types import NOT_GIVEN, NotGiven
+from livekit.plugins import elevenlabs, openai, simli
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
 from fancall.persona import DEFAULT_PERSONA, Persona
-from fancall.prompts import OPENING_INSTRUCTIONS, compose_instructions
+from fancall.prompts import (
+    OPENING_INSTRUCTIONS,
+    PHONE_OPENING_INSTRUCTIONS,
+    compose_instructions,
+)
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import (
     ElevenLabsSettings,
     FancallCallSettings,
     FancallModelSettings,
     LiveKitSettings,
+    SimliSettings,
 )
 
 # Basic logging configuration
@@ -49,13 +51,73 @@ class CompanionAgent(Agent):
     Processes user input and generates conversational responses using LLM and TTS.
     """
 
-    def __init__(self, instructions: str = DEFAULT_SYSTEM_PROMPT, **kwargs):
+    def __init__(
+        self,
+        instructions: str = DEFAULT_SYSTEM_PROMPT,
+        opening_instructions: str = OPENING_INSTRUCTIONS,
+        opening_message: str | None = None,
+        **kwargs,
+    ):
         super().__init__(instructions=instructions, **kwargs)
+        self.opening_instructions = opening_instructions
+        self.opening_message = opening_message
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
-        # 실제 영통처럼 소리·화면 확인과 인사로 먼저 말을 건다
-        self.session.generate_reply(instructions=OPENING_INSTRUCTIONS)
+        # 호스트 앱이 첫 멘트를 주면 LLM 없이 그대로 읽는다.
+        # 팬도 "여보세요"를 겹쳐 말하기 쉬우니 영상 첫인사처럼 끼어들 수 있게 둔다
+        if self.opening_message:
+            self.session.say(self.opening_message)
+            return
+        # 실제 통화처럼 캐릭터 말투로 먼저 인사한다 (영상: 소리·화면 확인, 전화: 여보세요)
+        self.session.generate_reply(instructions=self.opening_instructions)
+
+
+async def start_avatar(
+    ctx: JobContext,
+    session: AgentSession,
+    avatar_id: str | None,
+    livekit_settings: LiveKitSettings,
+    simli_settings: SimliSettings,
+    call_settings: FancallCallSettings,
+) -> None:
+    """
+    Start a Simli lip-synced avatar that joins the room and speaks the agent's audio.
+
+    Simli needs a pre-registered face (avatar_id) and an API key. Without them, or
+    if the Simli API call fails, the call continues voice-only and the frontend
+    shows the profile picture. Configuration or code errors are raised.
+    """
+    if not (avatar_id and simli_settings.api_key):
+        logger.info("No Simli avatar configured for this persona; voice-only.")
+        return
+
+    # Once started, the agent's audio goes only to the Simli participant. If Simli
+    # disconnects mid-call (defaults: 30s idle, 600s total), the fan loses the voice
+    # too, so keep the avatar alive for the whole call including the goodbye.
+    call_seconds = math.ceil(
+        call_settings.call_duration_seconds + call_settings.closing_grace_seconds
+    )
+    logger.info("Starting Simli avatar with face_id: %s", avatar_id)
+    avatar = simli.AvatarSession(
+        simli_config=simli.SimliConfig(
+            api_key=simli_settings.api_key,
+            face_id=avatar_id,
+            max_session_length=call_seconds,
+            max_idle_time=call_seconds,
+        ),
+    )
+    try:
+        await avatar.start(
+            session,
+            room=ctx.room,
+            livekit_url=livekit_settings.url,
+            livekit_api_key=livekit_settings.api_key,
+            livekit_api_secret=livekit_settings.api_secret,
+        )
+    except (aiohttp.ClientError, asyncio.TimeoutError):
+        # Simli API errors (HTTP status, network, timeout) are expected outages
+        logger.exception("Simli avatar failed to start; continuing voice-only.")
 
 
 # The frontend stops ringing after 25 seconds; give the fan's join a margin.
@@ -83,10 +145,10 @@ async def wait_for_answer(ctx: JobContext, timeout: float) -> bool:
 async def entrypoint(  # pylint: disable=too-many-locals
     ctx: JobContext,
     default_persona: Persona,
-    livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
+    livekit_settings: LiveKitSettings,
     openai_settings: OpenAIAPISettings,  # pylint: disable=unused-argument
     elevenlabs_settings: ElevenLabsSettings,
-    hedra_settings: HedraSettings,
+    simli_settings: SimliSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
 ) -> None:
@@ -96,12 +158,12 @@ async def entrypoint(  # pylint: disable=too-many-locals
     Args:
         ctx: LiveKit job context
         default_persona: Default persona for fallback configuration
-        livekit_settings: LiveKit settings with API credentials (reserved for future use)
+        livekit_settings: LiveKit settings; the avatar joins the room with these
         openai_settings: OpenAI API settings (현재 미사용: livekit.plugins.openai가 환경변수 직접 사용)
         elevenlabs_settings: ElevenLabs TTS settings
-        hedra_settings: Hedra avatar settings
+        simli_settings: Simli avatar settings
         model_settings: Fancall LLM/TTS model settings
-        call_settings: Video call timing settings
+        call_settings: Call timing settings (video and phone)
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
@@ -120,16 +182,16 @@ async def entrypoint(  # pylint: disable=too-many-locals
 
     # Merge metadata with default_persona (metadata takes precedence)
     avatar_id = metadata.avatar_id or default_persona.avatar_id
-    profile_picture_url = (
-        metadata.profile_picture_url or default_persona.profile_picture_url
-    )
     voice_id = metadata.voice_id or default_persona.voice_id
     system_prompt = metadata.system_prompt or default_persona.system_prompt
 
+    phone_call = metadata.phone_call
+
     logger.info(
-        "Agent configuration: avatar_id=%s, voice_id=%s",
+        "Agent configuration: avatar_id=%s, voice_id=%s, phone_call=%s",
         avatar_id,
         voice_id,
+        phone_call,
     )
 
     # Initialize components
@@ -143,83 +205,52 @@ async def entrypoint(  # pylint: disable=too-many-locals
         voice_id=voice_id or elevenlabs.DEFAULT_VOICE_ID,
     )
 
-    session: AgentSession = AgentSession(llm=llm, tts=tts)
+    # 전화는 팬 목소리를 들어야 대화가 된다. 서버 VAD 스트리밍이라 별도 VAD가 필요 없다
+    stt: openai.STT | NotGiven = (
+        openai.STT(
+            model=model_settings.stt_model,
+            language=model_settings.stt_language,
+            use_realtime=True,
+        )
+        if phone_call
+        else NOT_GIVEN
+    )
 
-    # Initialize Hedra avatar if enabled
-    avatar_session = None
+    session: AgentSession = AgentSession(llm=llm, tts=tts, stt=stt)
 
-    if hedra_settings.enabled:
-        hedra_api_key = hedra_settings.api_key
-        if not hedra_api_key:
-            logger.error("HEDRA_API_KEY is required when HEDRA_ENABLED=true")
-            ctx.shutdown(reason="HEDRA_API_KEY is required when HEDRA_ENABLED=true")
-            return
-
-        if avatar_id:
-            logger.info("Hedra avatar is enabled with avatar_id: %s", avatar_id)
-            avatar_session = hedra.AvatarSession(
-                avatar_id=avatar_id,
-                api_key=hedra_api_key,
-            )
-        elif profile_picture_url:
-            # At this point, profile_picture_url is guaranteed to be str
-            url = profile_picture_url
-            logger.info(
-                "Hedra avatar is enabled with profile_picture_url: %s",
-                url[:100] + "..." if len(url) > 100 else url,
-            )
-
-            # Handle both data URLs and HTTP(S) URLs
-            if url.startswith("data:"):
-                # Extract base64 data from data URL
-                match = re.match(r"data:image/[^;]+;base64,(.+)", url)
-                if match:
-                    base64_data = match.group(1)
-                    image_bytes = base64.b64decode(base64_data)
-                    avatar_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-                else:
-                    logger.error("Invalid data URL format")
-                    ctx.shutdown(
-                        reason="Invalid data URL format for profile_picture_url"
-                    )
-                    return
-            else:
-                # Regular HTTP(S) URL
-                async with httpx.AsyncClient() as client:
-                    response = await client.get(url)
-                    response.raise_for_status()
-                    avatar_image = Image.open(io.BytesIO(response.content)).convert(
-                        "RGB"
-                    )
-
-            avatar_session = hedra.AvatarSession(
-                avatar_image=avatar_image,
-                api_key=hedra_api_key,
-            )
-        else:
-            logger.error(
-                "No avatar_id or profile_picture_url found. Cannot initialize Hedra avatar."
-            )
-            ctx.shutdown(
-                reason="No avatar_id or profile_picture_url found for Hedra avatar"
-            )
-            return
-
-        await avatar_session.start(agent_session=session, room=ctx.room)
+    # 전화에는 화면이 없으므로 아바타를 띄우지 않는다
+    if not phone_call:
+        await start_avatar(
+            ctx,
+            session,
+            avatar_id,
+            livekit_settings,
+            simli_settings,
+            call_settings,
+        )
 
     if not await wait_for_answer(ctx, ANSWER_TIMEOUT_SECONDS):
         return
 
     # Compose instructions from merged system prompt (Context Composer pattern)
     instructions = compose_instructions(
-        system_prompt, include_role_playing=False, include_video_call=True
+        system_prompt,
+        include_role_playing=False,
+        include_video_call=True,
+        include_phone_call=phone_call,
     )
     logger.info(
         "Using instructions: %s",
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
 
-    agent = CompanionAgent(instructions=instructions)
+    agent = CompanionAgent(
+        instructions=instructions,
+        opening_instructions=(
+            PHONE_OPENING_INSTRUCTIONS if phone_call else OPENING_INSTRUCTIONS
+        ),
+        opening_message=metadata.opening_message,
+    )
     await session.start(agent=agent, room=ctx.room)
     logger.info("Agent session started.")
 
@@ -245,7 +276,7 @@ def create_worker_options(
     livekit_settings: LiveKitSettings,
     openai_settings: OpenAIAPISettings,
     elevenlabs_settings: ElevenLabsSettings,
-    hedra_settings: HedraSettings,
+    simli_settings: SimliSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
 ) -> WorkerOptions:
@@ -259,9 +290,9 @@ def create_worker_options(
         livekit_settings: LiveKit settings with API credentials
         openai_settings: OpenAI API settings
         elevenlabs_settings: ElevenLabs TTS settings
-        hedra_settings: Hedra avatar settings
+        simli_settings: Simli avatar settings
         model_settings: Fancall LLM/TTS model settings
-        call_settings: Video call timing settings
+        call_settings: Call timing settings (video and phone)
 
     Returns:
         WorkerOptions configured with the agent entrypoint
@@ -273,7 +304,7 @@ def create_worker_options(
             livekit_settings=livekit_settings,
             openai_settings=openai_settings,
             elevenlabs_settings=elevenlabs_settings,
-            hedra_settings=hedra_settings,
+            simli_settings=simli_settings,
             model_settings=model_settings,
             call_settings=call_settings,
         ),
@@ -287,7 +318,7 @@ def main() -> None:
     livekit_settings = LiveKitSettings()
     openai_settings = OpenAIAPISettings()
     elevenlabs_settings = ElevenLabsSettings()
-    hedra_settings = HedraSettings()
+    simli_settings = SimliSettings()
     model_settings = FancallModelSettings()
     call_settings = FancallCallSettings()
     cli.run_app(
@@ -296,7 +327,7 @@ def main() -> None:
             livekit_settings,
             openai_settings,
             elevenlabs_settings,
-            hedra_settings,
+            simli_settings,
             model_settings,
             call_settings,
         )
