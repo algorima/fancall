@@ -7,9 +7,10 @@ from pydantic_settings import BaseSettings
 
 
 class FancallModelSettings(BaseSettings):
-    """Fancall LLM model settings."""
+    """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    elevenlabs_model: str = "eleven_flash_v2_5"
     stt_model: str = "gpt-4o-mini-transcribe"  # Phone calls only
     stt_language: str = "ko"  # Phone calls only
 
@@ -54,6 +55,42 @@ class FancallCallSettings(BaseSettings):
         if self.closing_grace_seconds < 0:
             raise ValueError("closing_grace_seconds must not be negative")
         return self
+
+
+class ElevenLabsSettings(BaseSettings):
+    """Settings for ElevenLabs TTS
+
+    Attributes:
+        api_key: ElevenLabs API key (ELEVEN_API_KEY).
+    """
+
+    api_key: str | None = None
+
+    class Config:
+        env_prefix = "ELEVEN_"
+
+
+class CorsSettings(BaseSettings):
+    """CORS settings for the API server.
+
+    The frontend fetches with ``credentials: "include"``, so browsers reject a
+    wildcard origin and every allowed origin must be listed explicitly.
+
+    Attributes:
+        allowed_origins: Comma-separated list of origins allowed to make
+            credentialed requests (CORS_ALLOWED_ORIGINS). Defaults to the local
+            Next.js dev server.
+    """
+
+    allowed_origins: str = "http://localhost:3000"
+
+    class Config:
+        env_prefix = "CORS_"
+
+    @property
+    def origins(self) -> list[str]:
+        """Parsed list of allowed origins; blank entries are ignored."""
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
 
 
 class LiveKitSettings(BaseSettings):

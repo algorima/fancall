@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-LiveKit Agent Worker with Fish Audio TTS Integration
+LiveKit Agent Worker with ElevenLabs TTS Integration
 
-This file runs a real-time AI agent using Fish Audio TTS and, optionally,
+This file runs a real-time AI agent using ElevenLabs TTS and, optionally,
 a Hedra avatar.
 """
 
@@ -14,11 +14,11 @@ import re
 from functools import partial
 
 import httpx
-from aioia_core.settings import FishAudioSettings, HedraSettings, OpenAIAPISettings
+from aioia_core.settings import HedraSettings, OpenAIAPISettings
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.agents.types import NOT_GIVEN, NotGiven
-from livekit.plugins import fishaudio, hedra, openai
+from livekit.plugins import elevenlabs, hedra, openai
 from PIL import Image
 from pydantic import ValidationError
 
@@ -30,7 +30,12 @@ from fancall.prompts import (
     compose_instructions,
 )
 from fancall.schemas import AgentDispatchRequest
-from fancall.settings import FancallCallSettings, FancallModelSettings, LiveKitSettings
+from fancall.settings import (
+    ElevenLabsSettings,
+    FancallCallSettings,
+    FancallModelSettings,
+    LiveKitSettings,
+)
 
 # Basic logging configuration
 logging.basicConfig(
@@ -72,7 +77,7 @@ async def entrypoint(  # pylint: disable=too-many-locals
     default_persona: Persona,
     livekit_settings: LiveKitSettings,  # pylint: disable=unused-argument
     openai_settings: OpenAIAPISettings,  # pylint: disable=unused-argument
-    fish_settings: FishAudioSettings,
+    elevenlabs_settings: ElevenLabsSettings,
     hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
@@ -85,9 +90,9 @@ async def entrypoint(  # pylint: disable=too-many-locals
         default_persona: Default persona for fallback configuration
         livekit_settings: LiveKit settings with API credentials (reserved for future use)
         openai_settings: OpenAI API settings (현재 미사용: livekit.plugins.openai가 환경변수 직접 사용)
-        fish_settings: Fish Audio TTS settings
+        elevenlabs_settings: ElevenLabs TTS settings
         hedra_settings: Hedra avatar settings
-        model_settings: Fancall LLM model settings
+        model_settings: Fancall LLM/TTS model settings
         call_settings: Video call timing settings
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
@@ -125,11 +130,12 @@ async def entrypoint(  # pylint: disable=too-many-locals
     # Initialize components
     llm = openai.LLM(model=model_settings.openai_model)
     if voice_id:
-        logger.info("Using Fish Audio voice_id: %s", voice_id)
+        logger.info("Using ElevenLabs voice_id: %s", voice_id)
 
-    tts = fishaudio.TTS(
-        api_key=fish_settings.api_key or NOT_GIVEN,
-        reference_id=voice_id or NOT_GIVEN,
+    tts = elevenlabs.TTS(
+        api_key=elevenlabs_settings.api_key or NOT_GIVEN,
+        model=model_settings.elevenlabs_model,
+        voice_id=voice_id or elevenlabs.DEFAULT_VOICE_ID,
     )
 
     # 전화는 팬 목소리를 들어야 대화가 된다. 서버 VAD 스트리밍이라 별도 VAD가 필요 없다
@@ -228,22 +234,27 @@ async def entrypoint(  # pylint: disable=too-many-locals
     logger.info("Agent session started.")
 
     # Call limit: wrap up, say goodbye, then shut down
+    timer = asyncio.create_task(
+        run_call_timer(session, agent, instructions, call_settings)
+    )
+    # 팬이 먼저 끊으면 세션이 닫힌다. 타이머가 남아 있으면 작업이 끝나지 않고 강제 종료된다
+    session.on("close", lambda _event: timer.cancel())
     try:
-        await run_call_timer(session, agent, instructions, call_settings)
+        await timer
         logger.info(
             "Call limit (%.0fs) reached. Shutting down.",
             call_settings.call_duration_seconds,
         )
         ctx.shutdown(reason="Call time limit reached")
     except asyncio.CancelledError:
-        logger.info("Agent session cancelled before call limit.")
+        logger.info("Agent session ended before call limit.")
 
 
 def create_worker_options(
     default_persona: Persona,
     livekit_settings: LiveKitSettings,
     openai_settings: OpenAIAPISettings,
-    fish_settings: FishAudioSettings,
+    elevenlabs_settings: ElevenLabsSettings,
     hedra_settings: HedraSettings,
     model_settings: FancallModelSettings,
     call_settings: FancallCallSettings,
@@ -257,9 +268,9 @@ def create_worker_options(
         default_persona: Default persona for agent configuration
         livekit_settings: LiveKit settings with API credentials
         openai_settings: OpenAI API settings
-        fish_settings: Fish Audio TTS settings
+        elevenlabs_settings: ElevenLabs TTS settings
         hedra_settings: Hedra avatar settings
-        model_settings: Fancall LLM model settings
+        model_settings: Fancall LLM/TTS model settings
         call_settings: Video call timing settings
 
     Returns:
@@ -271,7 +282,7 @@ def create_worker_options(
             default_persona=default_persona,
             livekit_settings=livekit_settings,
             openai_settings=openai_settings,
-            fish_settings=fish_settings,
+            elevenlabs_settings=elevenlabs_settings,
             hedra_settings=hedra_settings,
             model_settings=model_settings,
             call_settings=call_settings,
@@ -285,7 +296,7 @@ def main() -> None:
     """Main function to run the agent worker."""
     livekit_settings = LiveKitSettings()
     openai_settings = OpenAIAPISettings()
-    fish_settings = FishAudioSettings()
+    elevenlabs_settings = ElevenLabsSettings()
     hedra_settings = HedraSettings()
     model_settings = FancallModelSettings()
     call_settings = FancallCallSettings()
@@ -294,7 +305,7 @@ def main() -> None:
             DEFAULT_PERSONA,
             livekit_settings,
             openai_settings,
-            fish_settings,
+            elevenlabs_settings,
             hedra_settings,
             model_settings,
             call_settings,
