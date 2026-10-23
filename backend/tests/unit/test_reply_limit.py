@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator
 
 from livekit.agents import llm
 
-from fancall.agent.reply_limit import limit_sentences
+from fancall.agent.reply_limit import drop_opening_interjection, limit_sentences
 
 
 async def stream(*pieces: str) -> AsyncIterator[str]:
@@ -63,6 +63,46 @@ class TestLimitSentences(unittest.IsolatedAsyncioTestCase):
 
         text = await collect(chunks(), max_sentences=1)
         self.assertEqual(text, "고마워요.")
+
+
+async def dropped(*pieces: str) -> str:
+    out = []
+    async for chunk in drop_opening_interjection(stream(*pieces)):
+        out.append(chunk)
+    return "".join(out)
+
+
+class DropOpeningInterjectionTest(unittest.IsolatedAsyncioTestCase):
+    async def test_drops_a_repeated_interjection(self):
+        self.assertEqual(
+            await dropped("Aww, thank you! ", "I'll work hard."),
+            "Thank you! I'll work hard.",
+        )
+
+    async def test_keeps_oh_really(self):
+        self.assertEqual(
+            await dropped("Oh, really? Okay, here goes!"),
+            "Oh, really? Okay, here goes!",
+        )
+
+    async def test_korean_interjection(self):
+        self.assertEqual(
+            await dropped("아~ ", "시험 진짜 힘들었겠다"), "시험 진짜 힘들었겠다"
+        )
+
+    async def test_short_reply(self):
+        self.assertEqual(await dropped("Wow! ", "Yes."), "Yes.")
+
+    async def test_chat_chunks(self):
+        async def chunks():
+            for piece in ("Ooh~ ", "Thank you so much!"):
+                yield llm.ChatChunk(id="1", delta=llm.ChoiceDelta(content=piece))
+
+        out = []
+        async for chunk in drop_opening_interjection(chunks()):
+            assert chunk.delta is not None
+            out.append(chunk.delta.content or "")
+        self.assertEqual("".join(out), "Thank you so much!")
 
 
 if __name__ == "__main__":

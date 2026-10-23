@@ -6,6 +6,7 @@ prompt asks for short replies, but the LLM sometimes runs on, so the reply
 stream is cut after a fixed number of sentences before it reaches TTS.
 """
 
+import re
 from collections.abc import AsyncIterable, AsyncIterator
 from typing import TypeVar
 
@@ -51,6 +52,43 @@ async def limit_sentences(
                         yield _with_text(chunk, kept)
                     return
         yield chunk
+
+
+# An interjection at the very start of the LLM's reply, said again right
+# after a prepared reaction ("Ooh~ Aww, thank you!", 2026-10-23 call)
+_OPENING_INTERJECTION = re.compile(
+    r"^\s*((?:aww+|ahh*|wow|ooh+|oh(?!,? really)|hmm+|mm-hm|헐|우와|와|아+|오+|어+|음+)[~!,.]+\s*)+",
+    re.IGNORECASE,
+)
+# Enough of the reply's start to see the whole interjection
+_OPENING_CHARS = 16
+
+
+async def drop_opening_interjection(
+    source: AsyncIterable[Chunk],
+) -> AsyncIterator[Chunk]:
+    """Pass the reply stream through without a leading interjection like "Aww,"."""
+    head: Chunk | None = None
+    buffered = ""
+    async for chunk in source:
+        text = _text_of(chunk)
+        if text is None or (head is not None and len(buffered) >= _OPENING_CHARS):
+            yield chunk
+            continue
+        if head is None:
+            head = chunk
+        buffered += text
+        if len(buffered) >= _OPENING_CHARS:
+            yield _with_text(head, _strip_interjection(buffered))
+    if head is not None and len(buffered) < _OPENING_CHARS:
+        rest = _strip_interjection(buffered)
+        if rest.strip():
+            yield _with_text(head, rest)
+
+
+def _strip_interjection(text: str) -> str:
+    rest = _OPENING_INTERJECTION.sub("", text, count=1)
+    return rest[:1].upper() + rest[1:]
 
 
 def _text_of(chunk: object) -> str | None:

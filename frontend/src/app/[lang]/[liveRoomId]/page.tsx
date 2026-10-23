@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { AgentCall } from "@/components/AgentCall";
 import { IncomingCallScreen } from "@/components/IncomingCallScreen";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { RingUntilAnswered } from "@/components/RingUntilAnswered";
 import { FANCALL_NS } from "@/i18n";
 import { LiveRoomRepository } from "@/repositories";
 import type { TokenResponse } from "@/schemas";
@@ -99,7 +100,7 @@ export default function FancallRoomPage() {
         connect={true}
         audio={true}
         video={false}
-        className="size-full"
+        className="relative size-full"
       >
         <AgentCall
           displayName={displayName}
@@ -109,6 +110,11 @@ export default function FancallRoomPage() {
           clipGraph={contact?.clipGraph}
           onHangUp={leaveCall}
           onBack={leaveCall}
+        />
+        <RingUntilAnswered
+          displayName={displayName}
+          avatarUrl={avatarUrl}
+          onDecline={leaveCall}
         />
       </LiveKitRoom>
     </PhoneFrame>
