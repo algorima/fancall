@@ -94,6 +94,27 @@ class QuietNudgerTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(session.replies, [])
 
+    async def test_waits_while_fan_is_speaking(self):
+        session = FakeSession()
+        nudger = make_nudger(session)
+
+        nudger.on_agent_state("listening")
+        nudger.on_user_state("speaking")
+        await asyncio.sleep(QUIET * 5)
+
+        self.assertEqual(session.replies, [])
+
+    async def test_counts_again_after_fan_stops_speaking(self):
+        session = FakeSession()
+        nudger = make_nudger(session)
+
+        nudger.on_agent_state("listening")
+        nudger.on_user_state("speaking")
+        nudger.on_user_state("listening")
+        await asyncio.sleep(QUIET * 5)
+
+        self.assertEqual(len(session.replies), 1)
+
     async def test_zero_max_disables_nudges(self):
         session = FakeSession()
         nudger = make_nudger(session, max_in_row=0)

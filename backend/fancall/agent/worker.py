@@ -21,6 +21,7 @@ from livekit.agents import (
     ModelSettings,
     WorkerOptions,
     cli,
+    inference,
 )
 from livekit.agents.llm import ChatContext, ChatMessage, Tool
 from livekit.agents.types import NOT_GIVEN
@@ -29,6 +30,7 @@ from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
 from fancall.agent.hangup import end_call_when_fan_leaves
+from fancall.agent.latency_log import log_latency
 from fancall.agent.quiet_nudge import QuietNudger
 from fancall.agent.reply_limit import limit_sentences
 from fancall.persona import DEFAULT_PERSONA, Persona
@@ -262,7 +264,24 @@ async def entrypoint(
         voice_id=voice_id or elevenlabs.DEFAULT_VOICE_ID,
     )
 
-    session: AgentSession = AgentSession(llm=llm, tts=tts)
+    # 팬이 말로 대화한다. Flux가 말 끝을 판단하고, 답은 그 전에 미리 만들어 둔다
+    # (실제 영통팬싸 말 사이 쉼 중앙값 1.4초: docs/call-naturalness-criteria.md)
+    session: AgentSession = AgentSession(
+        llm=llm,
+        tts=tts,
+        stt=inference.STT(
+            model_settings.stt_model,
+            extra_kwargs=(
+                {"eager_eot_threshold": model_settings.stt_eager_eot_threshold}
+                if "flux" in model_settings.stt_model
+                else NOT_GIVEN
+            ),
+        ),
+        turn_handling={
+            "turn_detection": "stt",
+            "preemptive_generation": {"preemptive_tts": True},
+        },
+    )
 
     # Hedra sunset its realtime avatar service; livekit-plugins-hedra no longer works.
     if hedra_settings.enabled:
@@ -302,6 +321,8 @@ async def entrypoint(
         max_in_row=call_settings.quiet_nudge_max_in_row,
     )
     session.on("agent_state_changed", lambda ev: nudger.on_agent_state(ev.new_state))
+    session.on("user_state_changed", lambda ev: nudger.on_user_state(ev.new_state))
+    log_latency(session)
     session.on(
         "conversation_item_added",
         lambda ev: (

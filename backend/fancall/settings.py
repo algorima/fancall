@@ -18,6 +18,12 @@ class FancallModelSettings(BaseSettings):
     ) = None
     # Most expressive realtime model; plays through the text-to-dialogue stream
     elevenlabs_model: str = "eleven_v4_turbo"
+    # Fan speech recognition through LiveKit Cloud. Flux decides when the fan has
+    # finished speaking, so the reply can start without an extra silence wait.
+    stt_model: str = "deepgram/flux-general-en"
+    # Flux sends an early "probably done" signal at this confidence; the reply
+    # starts generating then and is dropped if the fan keeps talking (0.3-0.9).
+    stt_eager_eot_threshold: float = 0.4
 
     class Config:
         env_prefix = "FANCALL_"
@@ -34,8 +40,10 @@ class FancallCallSettings(BaseSettings):
             with a goodbye. Covers LLM·TTS latency plus a two-sentence goodbye.
         closing_grace_seconds: Extra seconds allowed past the end so the
             goodbye is not cut off mid-sentence.
-        quiet_nudge_seconds: Seconds the fan may stay quiet after the agent's
-            turn before the agent speaks first.
+        quiet_nudge_seconds: Seconds of silence (agent listening, fan not
+            speaking) before the agent starts preparing a line. Generating and
+            voicing it takes about 1.5s more, so the line starts near 3s: in
+            295 real fan calls three quarters of pauses were under 2.9s.
         quiet_nudge_max_in_row: Times the agent speaks first before the fan
             replies again. 0 turns the nudge off.
     """
@@ -44,7 +52,7 @@ class FancallCallSettings(BaseSettings):
     wrap_up_lead_seconds: float = 30
     closing_lead_seconds: float = 12
     closing_grace_seconds: float = 5
-    quiet_nudge_seconds: float = 7
+    quiet_nudge_seconds: float = 1.5
     quiet_nudge_max_in_row: int = 2
 
     class Config:
