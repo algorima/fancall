@@ -8,7 +8,7 @@ from fancall.prompts import (
     CLOSING_INSTRUCTIONS,
     OPENING_INSTRUCTIONS,
     PHONE_CALL_GUIDELINES,
-    PHONE_OPENING_MESSAGE,
+    PHONE_OPENING_INSTRUCTIONS,
     ROLE_PLAYING_GUIDELINES,
     VIDEO_CALL_GUIDELINES,
     WRAP_UP_INSTRUCTIONS,
@@ -81,9 +81,13 @@ class TestPhoneCallGuidelines(unittest.TestCase):
         self.assertIn("볼 수 없다", PHONE_CALL_GUIDELINES)
 
     def test_phone_opening_starts_like_a_phone_call(self):
-        """Test the fixed phone opening greets like a phone call, not a video check"""
-        self.assertIn("여보세요", PHONE_OPENING_MESSAGE)
-        self.assertNotIn("화면", PHONE_OPENING_MESSAGE)
+        """Test the phone opening greets like a phone call, not a video check"""
+        self.assertIn("여보세요", PHONE_OPENING_INSTRUCTIONS)
+        self.assertNotIn("잘 들려요", PHONE_OPENING_INSTRUCTIONS)
+
+    def test_phone_opening_follows_character_speech_style(self):
+        """Test the phone opening is generated in the persona's own speech style"""
+        self.assertIn("캐릭터 설정", PHONE_OPENING_INSTRUCTIONS)
 
     def test_phone_guidelines_forbid_claiming_to_be_human(self):
         """Test the model admits it is AI when asked"""

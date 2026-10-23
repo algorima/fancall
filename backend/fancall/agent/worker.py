@@ -26,7 +26,7 @@ from fancall.agent.call_timer import run_call_timer
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import (
     OPENING_INSTRUCTIONS,
-    PHONE_OPENING_MESSAGE,
+    PHONE_OPENING_INSTRUCTIONS,
     compose_instructions,
 )
 from fancall.schemas import AgentDispatchRequest
@@ -56,20 +56,23 @@ class CompanionAgent(Agent):
     def __init__(
         self,
         instructions: str = DEFAULT_SYSTEM_PROMPT,
+        opening_instructions: str = OPENING_INSTRUCTIONS,
         opening_message: str | None = None,
         **kwargs,
     ):
         super().__init__(instructions=instructions, **kwargs)
+        self.opening_instructions = opening_instructions
         self.opening_message = opening_message
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
-        # 고정 첫 멘트가 있으면 LLM 없이 그대로 읽는다
+        # 호스트 앱이 첫 멘트를 주면 LLM 없이 그대로 읽는다.
+        # 팬도 "여보세요"를 겹쳐 말하기 쉬우니 영상 첫인사처럼 끼어들 수 있게 둔다
         if self.opening_message:
-            self.session.say(self.opening_message, allow_interruptions=False)
+            self.session.say(self.opening_message)
             return
-        # 실제 영통처럼 소리·화면 확인과 인사로 먼저 말을 건다
-        self.session.generate_reply(instructions=OPENING_INSTRUCTIONS)
+        # 실제 통화처럼 캐릭터 말투로 먼저 인사한다 (영상: 소리·화면 확인, 전화: 여보세요)
+        self.session.generate_reply(instructions=self.opening_instructions)
 
 
 async def entrypoint(  # pylint: disable=too-many-locals
@@ -93,7 +96,7 @@ async def entrypoint(  # pylint: disable=too-many-locals
         elevenlabs_settings: ElevenLabs TTS settings
         hedra_settings: Hedra avatar settings
         model_settings: Fancall LLM/TTS model settings
-        call_settings: Video call timing settings
+        call_settings: Call timing settings (video and phone)
     """
     logger.info("Agent entrypoint called for room: %s", ctx.room.name)
 
@@ -226,10 +229,13 @@ async def entrypoint(  # pylint: disable=too-many-locals
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
 
-    opening_message = metadata.opening_message or (
-        PHONE_OPENING_MESSAGE if phone_call else None
+    agent = CompanionAgent(
+        instructions=instructions,
+        opening_instructions=(
+            PHONE_OPENING_INSTRUCTIONS if phone_call else OPENING_INSTRUCTIONS
+        ),
+        opening_message=metadata.opening_message,
     )
-    agent = CompanionAgent(instructions=instructions, opening_message=opening_message)
     await session.start(agent=agent, room=ctx.room)
     logger.info("Agent session started.")
 
@@ -271,7 +277,7 @@ def create_worker_options(
         elevenlabs_settings: ElevenLabs TTS settings
         hedra_settings: Hedra avatar settings
         model_settings: Fancall LLM/TTS model settings
-        call_settings: Video call timing settings
+        call_settings: Call timing settings (video and phone)
 
     Returns:
         WorkerOptions configured with the agent entrypoint

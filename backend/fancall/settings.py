@@ -19,7 +19,7 @@ class FancallModelSettings(BaseSettings):
 
 
 class FancallCallSettings(BaseSettings):
-    """Video call timing settings.
+    """Call timing settings, shared by video and phone calls.
 
     Attributes:
         call_duration_seconds: Total call length before the agent leaves.
