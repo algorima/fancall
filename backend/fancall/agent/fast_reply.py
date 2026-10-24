@@ -9,6 +9,10 @@ phrases: brushing off a compliment ("아니~ 아닌데?"), thanks ("아유 고�
 soon as the fan's turn ends. Everything else, and any line that asks something,
 still goes to the LLM, since it has to answer what the fan actually said.
 
+A request to kiss or touch also gets a prepared reply, whatever its length or
+form: the trainee gets shy and changes the subject. Prompt rules alone let a
+cheek-kiss description through now and then, so the LLM never sees it.
+
 "Do you remember me?" is left to the LLM: a prepared "of course I remember"
 would be a lie when the trainee has no memory of the fan.
 
@@ -32,6 +36,7 @@ class FanMove(Enum):
     LOVE = "love"
     GOODBYE = "goodbye"
     FIRST_TIME = "first_time"
+    INTIMACY = "intimacy"
 
 
 @dataclass(frozen=True)
@@ -119,7 +124,30 @@ LINES: dict[FanMove, tuple[Line, ...]] = {
             "わ、はじめまして！ 来てくれてありがとう",
         ),
     ),
+    FanMove.INTIMACY: (
+        Line(
+            "어우, 부끄럽게 왜 그래요~ 우리 다른 얘기 해요!",
+            "Whoa, you're making me blush~ Let's talk about something else!",
+            "うわ、照れるじゃん~ 別の話しよ！",
+        ),
+        Line(
+            "에이~ 그건 비밀이에요. 오늘 뭐 했어요?",
+            "Hey~ That's a secret. So what did you do today?",
+            "えー、それは秘密~ 今日は何してた？",
+        ),
+        Line(
+            "아 진짜, 얼굴 빨개졌잖아요~ 다른 거 물어봐요!",
+            "Oh my gosh, my face is all red now~ Ask me something else!",
+            "もう、顔赤くなっちゃった~ 他のこと聞いて！",
+        ),
+    ),
 }
+
+# Asking for a kiss or touch, not just mentioning one ("a kissing scene")
+_INTIMACY = re.compile(
+    r"kiss (me|you)|make out|touch me|(키스|뽀뽀)\s?(해|하자|할래)|스킨십|キスして|チューして",
+    re.I,
+)
 
 # Checked in this order: "first time" and goodbyes are more specific than greetings
 _MOVES: tuple[tuple[FanMove, re.Pattern[str]], ...] = (
@@ -162,6 +190,8 @@ _MAX_WORDS = 10
 def fan_move(fan_text: str) -> FanMove | None:
     """The kind of fan line if it gets a prepared reply, otherwise None."""
     text = fan_text.strip()
+    if _INTIMACY.search(text):
+        return FanMove.INTIMACY
     if not text or len(text.split()) > _MAX_WORDS:
         return None
     # A question needs a real answer ("Hi! What's your name?")

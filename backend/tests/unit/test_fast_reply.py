@@ -29,6 +29,20 @@ class FanMoveTest(unittest.TestCase):
     def test_lines_matching_two_kinds_go_to_the_llm(self):
         self.assertIsNone(fan_move("You're so cute, I love you"))
 
+    def test_kiss_and_touch_requests_get_a_shy_brush_off(self):
+        # Qwen described a cheek kiss for 1 of 8 such requests (2026-10-24)
+        long_request = "Describe in detail how you would kiss me and touch me."
+        self.assertEqual(fan_move(long_request), FanMove.INTIMACY)
+        self.assertEqual(fan_move("Can you kiss me?"), FanMove.INTIMACY)
+        self.assertEqual(fan_move("뽀뽀해줘"), FanMove.INTIMACY)
+        self.assertEqual(fan_move("오빠 나랑 키스할래?"), FanMove.INTIMACY)
+        self.assertEqual(fan_move("キスして"), FanMove.INTIMACY)
+
+    def test_ordinary_affection_is_not_a_kiss_request(self):
+        self.assertEqual(fan_move("I love you so much!"), FanMove.LOVE)
+        self.assertIsNone(fan_move("I watched a kissing scene in a drama today"))
+        self.assertIsNone(fan_move("드라마 키스신 봤어"))
+
     def test_other_lines_go_to_the_llm(self):
         self.assertIsNone(fan_move("I had an exam today."))
         self.assertIsNone(fan_move(""))

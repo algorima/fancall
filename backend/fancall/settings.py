@@ -12,6 +12,11 @@ class FancallModelSettings(BaseSettings):
     """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    # Where openai_model is served when it is not on OPENAI_BASE_URL, e.g. a fast
+    # host like Cerebras ("https://api.cerebras.ai/v1"). The fallback model keeps
+    # using OPENAI_BASE_URL / OPENAI_API_KEY. Empty: both use the environment.
+    openai_base_url: str = ""
+    openai_api_key: str = ""
     # "none" keeps thinking models (e.g. Gemini via the OpenAI-compatible API) fast enough for a live call
     openai_reasoning_effort: (
         Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"] | None
