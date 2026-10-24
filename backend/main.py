@@ -11,6 +11,7 @@ Environment Variables:
     LIVEKIT_URL: LiveKit server URL
     LIVEKIT_API_KEY: LiveKit API key
     LIVEKIT_API_SECRET: LiveKit API secret
+    LIVEKIT_SIP_OUTBOUND_TRUNK_ID: LiveKit SIP outbound trunk ID (required only for phone calls)
     JWT_SECRET_KEY: JWT secret key (default: dev-secret for development)
     LOG_LEVEL: Logging level (default: INFO)
 """

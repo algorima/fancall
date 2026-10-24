@@ -45,6 +45,23 @@ export OPENAI_API_KEY=sk-...
 export ELEVEN_API_KEY=...
 ```
 
+휴대폰으로 전화를 걸 때(`phone_number`)만 필요합니다. 없으면 에이전트가 전화를 걸지 않고 종료합니다.
+
+```bash
+export LIVEKIT_SIP_OUTBOUND_TRUNK_ID=ST_...
+```
+
+### 휴대폰 전화 걸기
+
+공개 라우트 `POST /live-rooms/{id}/dispatch`는 `phone_number`가 있으면 403을 돌려줍니다. 아무나 임의의 번호로 전화를 걸 수 없게 막은 것입니다. 전화는 호스트 앱이 사용자와 번호를 검증한 뒤 서버에서 `LiveKitService.dispatch_agent`를 직접 호출해 겁니다.
+
+```python
+await livekit_service.dispatch_agent(
+    AgentDispatchRequest(..., phone_number="+821012345678"),
+    room_name=room_name,
+)
+```
+
 ---
 
 ## React/Next.js 프로젝트
