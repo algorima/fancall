@@ -121,12 +121,15 @@ class LiveKitSettings(BaseSettings):
         api_key: LiveKit API key. Defaults to 'devkey' for local development.
         api_secret: LiveKit API secret. Defaults to 'secret' for local development.
         agent_name: Agent name for LiveKit dispatch. Defaults to 'fancall'.
+        sip_outbound_trunk_id: LiveKit SIP outbound trunk used to call phones.
+            Phone calls are disabled when unset.
     """
 
     url: str = "ws://localhost:7880"  # Local LiveKit dev server
     api_key: str = "devkey"  # Default API key for local dev
     api_secret: str = "secret"  # Default API secret for local dev
     agent_name: str = "fancall"  # Agent name for LiveKit dispatch
+    sip_outbound_trunk_id: str | None = None
 
     class Config:
         env_prefix = "LIVEKIT_"
