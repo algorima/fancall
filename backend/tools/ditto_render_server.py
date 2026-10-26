@@ -126,11 +126,25 @@ class DittoStream:
             produced += CHUNK[1]
         return produced
 
-    def take(self, count: int, timeout: float) -> list[np.ndarray]:
-        """Wait for `count` rendered RGB frames."""
-        out = []
-        for _ in range(count):
-            frame = self._frames.frames.get(timeout=timeout)
+    def take(self, count: int, wait: float) -> list[np.ndarray]:
+        """Up to `count` rendered RGB frames: wait `wait` seconds for the first, then whatever is ready.
+
+        Ditto emits frames a few chunks after the audio (model context), so a
+        chunk may yield none now and several later; the agent copes with that.
+        """
+        out: list[np.ndarray] = []
+        try:
+            first = self._frames.frames.get(timeout=wait)
+        except queue.Empty:
+            return out
+        if first is None:
+            return out
+        out.append(first)
+        while len(out) < count:
+            try:
+                frame = self._frames.frames.get_nowait()
+            except queue.Empty:
+                break
             if frame is None:
                 break
             out.append(frame)
@@ -192,7 +206,7 @@ class Server:
                     break
                 pcm = np.frombuffer(message.data, dtype=np.int16)
                 pending += await loop.run_in_executor(None, stream.push, pcm)
-                frames = await loop.run_in_executor(None, stream.take, pending, 10.0)
+                frames = await loop.run_in_executor(None, stream.take, pending, 0.03)
                 pending -= len(frames)
                 if layout is not None:
                     frames = [layout.apply(f) for f in frames]
