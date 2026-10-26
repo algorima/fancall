@@ -110,6 +110,10 @@ class DittoStream:
         sdk.setup_Nd(N_d=-1)
         sdk.writer = self._frames
         sdk.writer_pbar.disable = True
+        # Warm up: the first forward pass takes seconds (CUDA init, kernel
+        # selection). Render one second of silence now so the call does not wait.
+        self.push(np.zeros(SAMPLE_RATE, dtype=np.int16))
+        self.take(10**6, wait=20.0)
 
     def push(self, pcm_int16: np.ndarray) -> int:
         """Add audio; render every whole 5-frame window that now has its lookahead."""
