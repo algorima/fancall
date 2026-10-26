@@ -30,6 +30,14 @@ from livekit.agents.types import NOT_GIVEN
 from livekit.plugins import anam, elevenlabs, lemonslice, openai, simli, tavus
 from pydantic import ValidationError
 
+from fancall.agent.avatar import (
+    FakeRenderer,
+    IdleClip,
+    RenderedVideoGenerator,
+    Renderer,
+    WebSocketRenderer,
+    start_rendered_avatar,
+)
 from fancall.agent.call_timer import run_call_timer
 from fancall.agent.fast_reply import FastReplies
 from fancall.agent.hangup import end_call_when_fan_leaves
@@ -248,6 +256,10 @@ async def wait_for_answer(ctx: JobContext, timeout: float) -> bool:
     return True
 
 
+# The room hears the trainee at this rate; TTS audio is resampled to it
+RENDER_OUTPUT_SAMPLE_RATE = 24_000
+
+
 async def start_avatar(
     ctx: JobContext,
     session: AgentSession,
@@ -264,6 +276,15 @@ async def start_avatar(
     provider is configured or startup fails, the call continues voice-only and
     the frontend shows the profile picture.
     """
+    if avatar_settings.render_url or avatar_settings.render_idle_dir:
+        try:
+            await start_self_rendered_avatar(
+                ctx, session, profile_picture_url, avatar_settings
+            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            logger.exception("Rendered avatar failed to start; continuing voice-only.")
+        return
+
     avatar: (
         anam.AvatarSession
         | tavus.AvatarSession
@@ -326,6 +347,55 @@ async def start_avatar(
         )
     except Exception:  # pylint: disable=broad-exception-caught
         logger.exception("Avatar failed to start; continuing voice-only.")
+
+
+async def start_self_rendered_avatar(
+    ctx: JobContext,
+    session: AgentSession,
+    profile_picture_url: str | None,
+    avatar_settings: AvatarSettings,
+) -> None:
+    """Draw the face on our own GPU render server, or from an idle clip without one."""
+    size = (avatar_settings.render_width, avatar_settings.render_height)
+    if avatar_settings.render_url:
+        photo = (
+            profile_picture_url
+            if profile_picture_url and profile_picture_url.startswith("http")
+            else avatar_settings.render_photo
+        )
+        if not photo:
+            raise ValueError(
+                "RENDER_PHOTO or an http profile picture is needed to render the face"
+            )
+        logger.info("Starting rendered avatar on %s", avatar_settings.render_url)
+        renderer: Renderer = WebSocketRenderer(
+            avatar_settings.render_url,
+            photo,
+            size=size,
+            layout=avatar_settings.render_layout,
+        )
+        generator = RenderedVideoGenerator(
+            renderer, output_sample_rate=RENDER_OUTPUT_SAMPLE_RATE
+        )
+    else:
+        assert avatar_settings.render_idle_dir is not None
+        logger.info(
+            "Starting idle-clip avatar from %s (no GPU)",
+            avatar_settings.render_idle_dir,
+        )
+        idle = IdleClip.load(avatar_settings.render_idle_dir, size=size)
+        generator = RenderedVideoGenerator(
+            FakeRenderer(idle.frame(0)),
+            idle=idle,
+            output_sample_rate=RENDER_OUTPUT_SAMPLE_RATE,
+        )
+    await start_rendered_avatar(
+        session,
+        ctx.room,
+        generator,
+        size=size,
+        output_sample_rate=RENDER_OUTPUT_SAMPLE_RATE,
+    )
 
 
 def _build_llm(model_settings: FancallModelSettings) -> LLM:
