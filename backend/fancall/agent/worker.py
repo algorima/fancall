@@ -33,6 +33,7 @@ from pydantic import ValidationError
 from fancall.agent.call_timer import run_call_timer
 from fancall.agent.fast_reply import FastReplies
 from fancall.agent.hangup import end_call_when_fan_leaves
+from fancall.agent.language_tail import language_tail, with_language_tail
 from fancall.agent.latency_log import log_latency
 from fancall.agent.quick_reaction import (
     REACTION_RATE,
@@ -188,7 +189,12 @@ class CompanionAgent(Agent):
             self._pending_prepared = line
             return prepend([line], _nothing())
         reply = limit_sentences(
-            Agent.default.llm_node(self, chat_ctx, tools, model_settings),
+            Agent.default.llm_node(
+                self,
+                with_language_tail(chat_ctx, language_tail(self._language)),
+                tools,
+                model_settings,
+            ),
             MAX_REPLY_SENTENCES,
         )
         if last_user == QUIET_NUDGE_USER_INPUT:
