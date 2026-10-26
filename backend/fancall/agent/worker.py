@@ -102,6 +102,7 @@ class CompanionAgent(Agent):
         prepared_fetch: ReactionFetch | None = None,
         prepared_sample_rate: int = REACTION_SAMPLE_RATE,
         reaction_rate: float = REACTION_RATE,
+        fast_replies: bool = True,
         **kwargs,
     ):
         super().__init__(instructions=instructions, **kwargs)
@@ -113,7 +114,7 @@ class CompanionAgent(Agent):
         self._prerender_task: asyncio.Task[None] | None = None
         self._fan_spoke = False
         self._pending_prepared: str | None = None
-        self._fast_replies = FastReplies(language)
+        self._fast_replies = FastReplies(language) if fast_replies else None
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
@@ -145,7 +146,9 @@ class CompanionAgent(Agent):
 
     async def _prerender(self) -> None:
         if self._prepared_fetch is not None:
-            texts = self._reactions.words + self._fast_replies.lines
+            texts = self._reactions.words + (
+                self._fast_replies.lines if self._fast_replies else ()
+            )
             self._prepared_audio = await prerender(
                 self._prepared_fetch, texts, self._prepared_sample_rate
             )
@@ -175,7 +178,11 @@ class CompanionAgent(Agent):
         fan_spoke, self._fan_spoke = self._fan_spoke, False
         last_user = _last_user_text(chat_ctx)
         fan_line = last_user if fan_spoke else ""
-        line = self._fast_replies.pick(fan_line) if fan_line else None
+        line = (
+            self._fast_replies.pick(fan_line)
+            if self._fast_replies and fan_line
+            else None
+        )
         if line and line in self._prepared_audio:
             logger.info("Fast reply %r", line)
             self._pending_prepared = line
@@ -509,6 +516,7 @@ async def entrypoint(
         prepared_fetch=reaction_fetch,
         prepared_sample_rate=tts.sample_rate,
         reaction_rate=call_settings.quick_reaction_rate,
+        fast_replies=call_settings.fast_replies,
     )
 
     # 팬이 조용하면 먼저 한마디 한다. 마무리 단계부터는 작별 인사와 겹치지 않게 멈춘다.

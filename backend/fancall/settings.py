@@ -78,6 +78,11 @@ class FancallCallSettings(BaseSettings):
             gap that reads as lag. So every LLM reply opens with one for now;
             set this back toward 0.317 once replies start within 1.4s on their
             own. Prepared fast replies never get one.
+        fast_replies: Answer greetings, compliments, love and goodbyes with
+            prepared lines from real calls instead of the LLM. Off: those
+            lines can't pick up what the fan just said or get shy in context,
+            which read as canned (2026-10-26), and the LLM's first word now
+            comes within 0.5s.
     """
 
     call_duration_seconds: float = 180
@@ -89,6 +94,7 @@ class FancallCallSettings(BaseSettings):
     quiet_after_question_seconds: float = 2.0
     end_of_turn_min_delay: float = 0.2
     quick_reaction_rate: float = 1.0
+    fast_replies: bool = False
 
     class Config:
         env_prefix = "FANCALL_"
