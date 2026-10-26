@@ -110,8 +110,32 @@ poetry run alembic revision --autogenerate -m "변경 설명"
 | `SIMLI_API_KEY` | - | Simli 아바타 API 키. `avatar_id`(Simli face ID)가 있는 페르소나에 사용 |
 | `LEMONSLICE_API_KEY` | - | LemonSlice 아바타 API 키. `profile_picture_url`만 있는 페르소나에 사용 |
 
+| `RENDER_URL` | - | 우리 GPU 렌더 서버의 WebSocket 주소 (예: `ws://gpu-box:8765/`). 있으면 호스팅 아바타보다 먼저 쓴다 |
+| `RENDER_PHOTO` | - | 렌더 서버가 움직일 사진 (서버에서 열 수 있는 경로나 URL). 페르소나에 http 프로필 사진이 있으면 그것을 쓴다 |
+| `RENDER_LAYOUT` | - | 얼굴을 상반신 통화 사진 위에 얹는 배치 JSON의 서버 쪽 경로 (선택) |
+| `RENDER_IDLE_DIR` | - | 듣고 있는 얼굴 JPEG 프레임 폴더(`clip.json`에 fps). `RENDER_URL` 없이 이것만 있으면 GPU 없이 입만 그려 통화한다 |
+| `RENDER_WIDTH` / `RENDER_HEIGHT` | `720` / `1280` | 내보내는 영상 크기 |
+
 아바타 키가 없거나 아바타 시작이 실패하면 음성 통화로 진행됩니다.
-아바타는 LiveKit 방에 별도 참가자로 접속하므로 `LIVEKIT_URL`이 외부에서 접근 가능해야 합니다 (로컬 `ws://localhost` 불가).
+호스팅 아바타(Simli 등)는 LiveKit 방에 별도 참가자로 접속하므로 `LIVEKIT_URL`이 외부에서 접근 가능해야 합니다 (로컬 `ws://localhost` 불가).
+
+### 직접 그리는 아바타 (렌더 서버)
+
+`RENDER_URL`을 쓰면 에이전트가 연습생 얼굴을 자기 영상 트랙에 직접 올립니다. 말소리를 40ms 단위로
+렌더 서버에 보내 얼굴 프레임을 받고, 같은 40ms의 음성과 짝지어 내보내므로 입과 소리가 어긋나지
+않습니다. 말이 없을 때도 무음을 계속 보내 듣는 얼굴(깜빡임·고갯짓)이 멈추지 않습니다.
+
+렌더 서버는 `tools/ditto_render_server.py`입니다. NVIDIA GPU가 있는 서버에서
+[Ditto](https://github.com/antgroup/ditto-talkinghead)(Apache-2.0) 체크아웃 옆에 띄웁니다.
+
+```bash
+python tools/ditto_render_server.py --ditto /path/to/ditto-talkinghead \
+  --data-root checkpoints/ditto_trt_Ampere_Plus \
+  --cfg checkpoints/ditto_cfg/v0.4_hubert_cfg_trt_online.pkl --port 8765
+```
+
+Ditto는 한 프레임을 그리는 데 그 뒤 80ms의 소리가 더 필요해서 프레임이 두 장 늦게 옵니다.
+에이전트는 그만큼 음성을 들고 있다가 프레임과 함께 내보냅니다. GPU 한 장이 통화 하나를 맡습니다.
 
 > **참고**: LiveKit, 데이터베이스, 모델 등 추가 설정은 기본값으로 로컬 개발 가능합니다.
 > 변경이 필요한 경우 `fancall/settings.py`의 Settings 클래스를 참고하세요.
