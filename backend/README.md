@@ -107,6 +107,7 @@ poetry run alembic revision --autogenerate -m "변경 설명"
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `FANCALL_OPENAI_MODEL` | `gpt-4o-mini` | 사용할 OpenAI LLM 모델 |
+| `FANCALL_OPENAI_REASONING_EFFORT` | - | thinking 모델의 추론 강도 (`minimal`·`low`·`medium`·`high`). 비우면 플러그인 기본값 |
 | `FANCALL_ELEVENLABS_MODEL` | `eleven_flash_v2_5` | 사용할 ElevenLabs TTS 모델 |
 | `SIMLI_API_KEY` | - | Simli 아바타 API 키. `avatar_id`(Simli face ID)가 있는 페르소나에 사용 |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` | 쿠키를 실은 요청을 허용할 프런트 origin (쉼표로 구분). 운영에서는 실제 도메인으로 설정 |

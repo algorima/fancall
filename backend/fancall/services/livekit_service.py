@@ -149,11 +149,14 @@ class LiveKitService:
                 # Prepare metadata for the agent (passed as-is)
                 metadata_json = request.model_dump_json(exclude_none=True)
 
+                # 전화번호는 개인정보라 로그에 남기지 않는다
                 logger.info(
                     "Dispatching agent '%s' to room '%s' with metadata: %s",
                     self.settings.agent_name,
                     room_name,
-                    metadata_json,
+                    request.model_dump_json(
+                        exclude_none=True, exclude={"phone_number"}
+                    ),
                 )
 
                 # Create agent dispatch
