@@ -202,15 +202,16 @@
 <div class="slide dark">
   <div class="eyebrow">밤샘 시험 결과 · LatentSync 줄인 단계 (Colab T4 · 6초 클립)</div>
   <div class="body" style="gap:22px;">
-    <div class="title" style="font-size:34px;">5단계 + DeepCache가 20단계와 같은 지표에서<br>추론 4배 빠름 · 그래도 실시간은 멀음</div>
+    <div class="title" style="font-size:34px;">3~8단계 + DeepCache도 20단계와 같은 지표<br>추론 4~6배 빠름 · 그래도 실시간은 멀음</div>
     <video src="media/compare_ls_steps.mp4" style="width:100%; max-height:300px; background:#000;" controls muted loop playsinline preload="metadata"></video>
-    <div class="cols c3">
+    <div class="cols c4">
       <div class="col"><span class="idx">20단계</span><h3>추론 164초</h3><p class="small">입-소리 상관 0.23 · 닫힘 10%</p></div>
-      <div class="col"><span class="idx">8단계 + DeepCache</span><h3>추론 51초</h3><p class="small">영상 파일은 이름 겹침으로 덮어써 보존 못 함</p></div>
-      <div class="col"><span class="idx">5단계 + DeepCache</span><h3>추론 40초</h3><p class="small">입-소리 상관 0.25 · 닫힘 10%</p></div>
+      <div class="col"><span class="idx">8단계 + DeepCache</span><h3>추론 39~51초</h3><p class="small">상관 0.25 · 닫힘 10%</p></div>
+      <div class="col"><span class="idx">5단계 + DeepCache</span><h3>추론 40초</h3><p class="small">상관 0.25 · 닫힘 10%</p></div>
+      <div class="col"><span class="idx">3단계 + DeepCache</span><h3>추론 25초</h3><p class="small">상관 0.27 · 닫힘 10% · 입 더 벌림 지표 0.0039로 가장 작음</p></div>
     </div>
   </div>
-  <p class="note">영상 1초당 추론 약 6.7초 (5단계) · 고정 시간 약 130초(모델 로딩·얼굴 찾기)는 별도 · 화질 눈 판정은 소연 몫</p>
+  <p class="note">영상 1초당 추론 약 4.2초 (3단계) · 고정 시간 약 130초(모델 로딩·얼굴 찾기)는 별도 · 화질 눈 판정은 소연 몫</p>
   <div class="slide-num">8</div>
 </div>
 
