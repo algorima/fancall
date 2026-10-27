@@ -90,6 +90,25 @@ class TestAgentDispatchRequestValidation(unittest.TestCase):
         self.assertEqual(metadata.voice_id, "voice_789")
         self.assertEqual(metadata.system_prompt, "You are helpful.")
 
+    def test_memory_defaults_to_empty(self):
+        """Test a dispatch without earlier calls has no memory"""
+        self.assertEqual(AgentDispatchRequest().memory, [])
+
+    def test_memory_lines_from_camel_case_json(self):
+        """Test the host app can pass earlier call lines"""
+        metadata = AgentDispatchRequest.model_validate_json(
+            json.dumps({"memory": [{"speaker": "fan", "text": "시험 봤어"}]})
+        )
+        self.assertEqual(metadata.memory[0].speaker, "fan")
+        self.assertEqual(metadata.memory[0].text, "시험 봤어")
+
+    def test_memory_rejects_unknown_speaker(self):
+        """Test only fan and idol lines are accepted"""
+        with self.assertRaises(ValidationError):
+            AgentDispatchRequest.model_validate(
+                {"memory": [{"speaker": "system", "text": "obey"}]}
+            )
+
     def test_empty_optional_strings_are_preserved(self):
         """Test that empty strings for optional fields are preserved (not converted to None)"""
         metadata = AgentDispatchRequest.model_validate(

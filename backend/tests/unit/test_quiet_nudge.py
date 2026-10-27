@@ -11,18 +11,40 @@ from fancall.prompts import QUIET_NUDGE_INSTRUCTIONS, QUIET_NUDGE_USER_INPUT
 QUIET = 0.01
 
 
+class FakeSpeech:
+    """Speech handle that records interruptions"""
+
+    def __init__(self):
+        self.interrupted = False
+        self.done = lambda: False
+
+    def interrupt(self):
+        self.interrupted = True
+
+
 class FakeSession:
     """Records the replies the nudger asks for"""
 
     def __init__(self):
         self.replies: list[tuple[str, str]] = []
+        self.speeches: list[FakeSpeech] = []
 
     def generate_reply(self, *, user_input: str, instructions: str):
         self.replies.append((user_input, instructions))
+        self.speeches.append(FakeSpeech())
+        return self.speeches[-1]
+
+
+GRACE = 0.05
 
 
 def make_nudger(session: FakeSession, max_in_row: int = 2) -> QuietNudger:
-    return QuietNudger(session, quiet_seconds=QUIET, max_in_row=max_in_row)
+    return QuietNudger(
+        session,
+        quiet_seconds=QUIET,
+        max_in_row=max_in_row,
+        fan_turn_grace_seconds=GRACE,
+    )
 
 
 class QuietNudgerTest(unittest.IsolatedAsyncioTestCase):
@@ -111,9 +133,51 @@ class QuietNudgerTest(unittest.IsolatedAsyncioTestCase):
         nudger.on_agent_state("listening")
         nudger.on_user_state("speaking")
         nudger.on_user_state("listening")
-        await asyncio.sleep(QUIET * 5)
+        # 팬 말이 에이전트에게 닿을 시간을 준다
+        await asyncio.sleep(QUIET * 2)
+        self.assertEqual(session.replies, [])
+        await asyncio.sleep(GRACE * 2)
 
         self.assertEqual(len(session.replies), 1)
+
+    async def test_waits_longer_for_an_answer_after_a_question(self):
+        session = FakeSession()
+        nudger = QuietNudger(
+            session,
+            quiet_seconds=QUIET,
+            max_in_row=2,
+            quiet_after_question_seconds=GRACE,
+        )
+
+        nudger.on_agent_message("What did you eat today?")
+        nudger.on_agent_state("listening")
+        await asyncio.sleep(QUIET * 2)
+        self.assertEqual(session.replies, [])
+        await asyncio.sleep(GRACE * 2)
+
+        self.assertEqual(len(session.replies), 1)
+
+    async def test_reply_to_the_fan_cancels_the_wait(self):
+        session = FakeSession()
+        nudger = make_nudger(session)
+
+        nudger.on_agent_state("listening")
+        nudger.on_user_state("speaking")
+        nudger.on_user_state("listening")
+        nudger.on_agent_state("thinking")
+        await asyncio.sleep(GRACE * 2)
+
+        self.assertEqual(session.replies, [])
+
+    async def test_fan_speaking_cancels_a_line_being_prepared(self):
+        session = FakeSession()
+        nudger = make_nudger(session)
+
+        nudger.on_agent_state("listening")
+        await asyncio.sleep(QUIET * 5)
+        nudger.on_user_state("speaking")
+
+        self.assertTrue(session.speeches[0].interrupted)
 
     async def test_zero_max_disables_nudges(self):
         session = FakeSession()

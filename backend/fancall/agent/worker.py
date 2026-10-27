@@ -8,12 +8,14 @@ a lip-synced avatar (Anam, Tavus, Simli or LemonSlice).
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator
+import os
+from collections.abc import AsyncIterable, AsyncIterator
 from functools import partial
+from pathlib import Path
 from typing import Any
 
 from aioia_core.settings import HedraSettings, OpenAIAPISettings
-from livekit import agents
+from livekit import agents, rtc
 from livekit.agents import (
     Agent,
     AgentSession,
@@ -23,20 +25,40 @@ from livekit.agents import (
     cli,
     inference,
 )
-from livekit.agents.llm import ChatContext, ChatMessage, Tool
+from livekit.agents.llm import LLM, ChatContext, ChatMessage, FallbackAdapter, Tool
 from livekit.agents.types import NOT_GIVEN
 from livekit.plugins import anam, elevenlabs, lemonslice, openai, simli, tavus
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
+from fancall.agent.fast_reply import FastReplies
 from fancall.agent.hangup import end_call_when_fan_leaves
+from fancall.agent.language_tail import language_tail, with_language_tail
 from fancall.agent.latency_log import log_latency
+from fancall.agent.quick_reaction import (
+    REACTION_RATE,
+    REACTION_SAMPLE_RATE,
+    QuickReactions,
+    ReactionFetch,
+    cached_fetch,
+    elevenlabs_pcm_fetch,
+    prepend,
+    prerender,
+    strip_prefix,
+    tts_pcm_fetch,
+)
 from fancall.agent.quiet_nudge import QuietNudger
-from fancall.agent.reply_limit import limit_sentences
+from fancall.agent.reply_limit import drop_opening_interjection, limit_sentences
+from fancall.agent.transcript_stream import publish_transcript_line
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import (
+    AI_HONESTY_NOTE,
     OPENING_INSTRUCTIONS,
+    QUICK_REACTION_NOTE,
+    QUIET_NUDGE_USER_INPUT,
     compose_instructions,
+    language_note,
+    memory_note,
     opening_user_input,
 )
 from fancall.schemas import AgentDispatchRequest
@@ -58,6 +80,15 @@ logger = logging.getLogger(__name__)
 DEFAULT_SYSTEM_PROMPT = "You are a friendly and helpful AI companion."
 # Real idols speak about 1.3 seconds at a time; anything longer is cut
 MAX_REPLY_SENTENCES = 2
+# Prepared reactions and replies, kept so each voice synthesizes each line once
+PRERENDER_CACHE_DIR = Path(
+    os.environ.get("FANCALL_PRERENDER_CACHE", Path.home() / ".cache/fancall/prerender")
+)
+
+
+async def _nothing() -> AsyncIterator[Any]:
+    return
+    yield  # pragma: no cover
 
 
 class CompanionAgent(Agent):
@@ -70,18 +101,62 @@ class CompanionAgent(Agent):
         self,
         instructions: str = DEFAULT_SYSTEM_PROMPT,
         language: str | None = None,
+        prepared_fetch: ReactionFetch | None = None,
+        prepared_sample_rate: int = REACTION_SAMPLE_RATE,
+        reaction_rate: float = REACTION_RATE,
+        fast_replies: bool = True,
         **kwargs,
     ):
         super().__init__(instructions=instructions, **kwargs)
         self._language = language
+        self._reactions = QuickReactions(language, rate=reaction_rate)
+        self._prepared_fetch = prepared_fetch
+        self._prepared_sample_rate = prepared_sample_rate
+        self._prepared_audio: dict[str, list[rtc.AudioFrame]] = {}
+        self._prerender_task: asyncio.Task[None] | None = None
+        self._fan_spoke = False
+        self._pending_prepared: str | None = None
+        self._fast_replies = FastReplies(language) if fast_replies else None
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
+        # 맞장구와 바로 대답은 미리 음성으로 만들어 두고 TTS 없이 바로 낸다
+        self._prerender_task = asyncio.create_task(self._prerender())
+        self.session.on("user_input_transcribed", self._note_fan_speech)
         # 실제 영통처럼 소리·화면 확인과 인사로 먼저 말을 건다
         self.session.generate_reply(
             user_input=opening_user_input(self._language),
             instructions=OPENING_INSTRUCTIONS,
         )
+
+    def _note_fan_speech(self, event: Any) -> None:
+        # 팬이 말했으면 다음 대답은 팬 말에 대한 대답이다 (먼저 거는 한마디와 구분)
+        if event.transcript.strip():
+            self._fan_spoke = True
+
+    def tts_node(
+        self, text: AsyncIterable[str], model_settings: ModelSettings
+    ) -> AsyncIterator[rtc.AudioFrame]:
+        """Play the prepared part llm_node put first from its audio, then the rest."""
+        prepared, self._pending_prepared = self._pending_prepared, None
+        frames = self._prepared_audio.get(prepared, []) if prepared else []
+        if not frames:
+            return Agent.default.tts_node(self, text, model_settings)
+        assert prepared is not None
+        rest = strip_prefix(text, prepared)
+        return prepend(frames, Agent.default.tts_node(self, rest, model_settings))
+
+    async def _prerender(self) -> None:
+        if self._prepared_fetch is not None:
+            texts = self._reactions.words + (
+                self._fast_replies.lines if self._fast_replies else ()
+            )
+            self._prepared_audio = await prerender(
+                self._prepared_fetch, texts, self._prepared_sample_rate
+            )
+            logger.info(
+                "Prerendered %d/%d lines", len(self._prepared_audio), len(texts)
+            )
 
     def llm_node(
         self,
@@ -89,9 +164,73 @@ class CompanionAgent(Agent):
         tools: list[Tool],
         model_settings: ModelSettings,
     ) -> AsyncIterator[Any]:
-        """Generate the reply, cut to MAX_REPLY_SENTENCES before it is spoken."""
-        reply = Agent.default.llm_node(self, chat_ctx, tools, model_settings)
-        return limit_sentences(reply, MAX_REPLY_SENTENCES)
+        """Reply to the fan, starting from prepared audio where it can.
+
+        LiveKit starts speech synthesis only on the first text, and with
+        preemptive generation this runs as soon as the fan seems done. So text
+        sent first here plays right after the fan's turn, from prepared audio
+        (tts_node swaps it in):
+        - a set-phrase fan line (greeting, compliment, love, goodbye) gets a
+          prepared reply and no LLM call at all;
+        - otherwise the reply may open with a short reaction while the LLM
+          writes the rest, cut to MAX_REPLY_SENTENCES;
+        - a line the trainee says first after a pause opens with a filler
+          ("Hmm~", "Oh, right~").
+        """
+        fan_spoke, self._fan_spoke = self._fan_spoke, False
+        last_user = _last_user_text(chat_ctx)
+        fan_line = last_user if fan_spoke else ""
+        line = (
+            self._fast_replies.pick(fan_line)
+            if self._fast_replies and fan_line
+            else None
+        )
+        if line and line in self._prepared_audio:
+            logger.info("Fast reply %r", line)
+            self._pending_prepared = line
+            return prepend([line], _nothing())
+        reply = limit_sentences(
+            Agent.default.llm_node(
+                self,
+                with_language_tail(chat_ctx, language_tail(self._language)),
+                tools,
+                model_settings,
+            ),
+            MAX_REPLY_SENTENCES,
+        )
+        if last_user == QUIET_NUDGE_USER_INPUT:
+            reaction: str | None = self._reactions.filler()
+        else:
+            reaction = self._reactions.pick(fan_line) if fan_line else None
+        if not reaction or reaction not in self._prepared_audio:
+            return reply
+        logger.info("Reacting %r", reaction)
+        self._pending_prepared = reaction
+        return prepend([reaction + " "], drop_opening_interjection(reply))
+
+
+async def _wait_until_idle(session: AgentSession) -> None:
+    """Wait until the trainee is listening and the fan is not talking."""
+    while not (session.agent_state == "listening" and session.user_state != "speaking"):
+        await asyncio.sleep(0.2)
+
+
+def _last_user_text(chat_ctx: ChatContext) -> str:
+    for item in reversed(chat_ctx.items):
+        if isinstance(item, ChatMessage) and item.role == "user":
+            return item.text_content or ""
+    return ""
+
+
+def _tell_nudger(nudger: QuietNudger, ev: Any) -> None:
+    """Pass who said what to the nudger (fan replies reset it, questions slow it)."""
+    if not isinstance(ev.item, ChatMessage):
+        return
+    if ev.item.role == "user":
+        nudger.on_user_message(ev.item.text_content or "")
+    elif ev.item.role == "assistant":
+        nudger.on_agent_message(ev.item.text_content or "")
+        logger.info("Trainee said: %s", (ev.item.text_content or "")[:300])
 
 
 # The frontend stops ringing after 25 seconds; give the fan's join a margin.
@@ -196,6 +335,32 @@ async def start_avatar(
         logger.exception("Avatar failed to start; continuing voice-only.")
 
 
+def _build_llm(model_settings: FancallModelSettings) -> LLM:
+    """The reply model, falling back to a second one when the first stalls."""
+    reasoning_effort = model_settings.openai_reasoning_effort or NOT_GIVEN
+    llms: list[LLM] = [
+        openai.LLM(
+            model=model_settings.openai_model,
+            base_url=model_settings.openai_base_url or NOT_GIVEN,
+            api_key=model_settings.openai_api_key or NOT_GIVEN,
+            reasoning_effort=reasoning_effort,
+        )
+    ]
+    if model_settings.openai_fallback_model:
+        llms.append(
+            openai.LLM(
+                model=model_settings.openai_fallback_model,
+                reasoning_effort=reasoning_effort,
+            )
+        )
+    # 첫 모델이 멈추면 대답이 통째로 늦어지므로 다른 모델로 넘어간다
+    return (
+        FallbackAdapter(llms, attempt_timeout=model_settings.openai_attempt_timeout)
+        if len(llms) > 1
+        else llms[0]
+    )
+
+
 async def entrypoint(
     ctx: JobContext,
     default_persona: Persona,
@@ -251,17 +416,18 @@ async def entrypoint(
     )
 
     # Initialize components
-    llm = openai.LLM(
-        model=model_settings.openai_model,
-        reasoning_effort=model_settings.openai_reasoning_effort or NOT_GIVEN,
-    )
+    llm = _build_llm(model_settings)
     if voice_id:
         logger.info("Using ElevenLabs voice_id: %s", voice_id)
 
-    tts = elevenlabs.TTS(
-        api_key=elevenlabs_settings.api_key or NOT_GIVEN,
-        model=model_settings.elevenlabs_model,
-        voice_id=voice_id or elevenlabs.DEFAULT_VOICE_ID,
+    tts = (
+        inference.TTS(model_settings.tts_model)
+        if model_settings.tts_model
+        else elevenlabs.TTS(
+            api_key=elevenlabs_settings.api_key or NOT_GIVEN,
+            model=model_settings.elevenlabs_model,
+            voice_id=voice_id or elevenlabs.DEFAULT_VOICE_ID,
+        )
     )
 
     # 팬이 말로 대화한다. Flux가 말 끝을 판단하고, 답은 그 전에 미리 만들어 둔다
@@ -272,13 +438,18 @@ async def entrypoint(
         stt=inference.STT(
             model_settings.stt_model,
             extra_kwargs=(
-                {"eager_eot_threshold": model_settings.stt_eager_eot_threshold}
+                {
+                    "eager_eot_threshold": model_settings.stt_eager_eot_threshold,
+                    "eot_threshold": model_settings.stt_eot_threshold,
+                }
                 if "flux" in model_settings.stt_model
                 else NOT_GIVEN
             ),
         ),
         turn_handling={
             "turn_detection": "stt",
+            # Flux가 이미 말 끝을 판단하므로 기본 0.5초 추가 대기를 줄인다
+            "endpointing": {"min_delay": call_settings.end_of_turn_min_delay},
             "preemptive_generation": {"preemptive_tts": True},
         },
     )
@@ -304,32 +475,72 @@ async def entrypoint(
     )
 
     # Compose instructions from merged system prompt (Context Composer pattern)
-    instructions = compose_instructions(
-        system_prompt, include_role_playing=False, include_video_call=True
+    instructions = (
+        compose_instructions(
+            system_prompt, include_role_playing=False, include_video_call=True
+        )
+        + "\n\n"
+        + QUICK_REACTION_NOTE
+        + "\n\n"
+        + memory_note([(line.speaker, line.text) for line in metadata.memory])
+        + "\n\n"
+        + language_note(metadata.language)
+        + "\n\n"
+        + AI_HONESTY_NOTE
     )
     logger.info(
         "Using instructions: %s",
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
 
-    agent = CompanionAgent(instructions=instructions, language=metadata.language)
+    # 맞장구와 바로 대답은 통화 TTS와 같은 목소리·같은 샘플레이트로 미리 만들어 디스크에 둔다.
+    # ElevenLabs는 LiveKit 플러그인으로 만들면 job이 죽어서(exit -11) REST로 받는다.
+    eleven_key = elevenlabs_settings.api_key or os.environ.get("ELEVEN_API_KEY")
+    reaction_fetch: ReactionFetch | None = None
+    voice_key = ""
+    if model_settings.tts_model:
+        # 통화 TTS와 같은 연결을 쓰면 첫 인사가 미리 만들기 뒤에 줄을 선다 (33초 늦은 인사, 2026-10-23)
+        reaction_fetch = tts_pcm_fetch(inference.TTS(model_settings.tts_model))
+        voice_key = model_settings.tts_model
+    elif eleven_key:
+        reaction_fetch = elevenlabs_pcm_fetch(
+            eleven_key,
+            voice_id or elevenlabs.DEFAULT_VOICE_ID,
+            model_settings.elevenlabs_model,
+            tts.sample_rate,
+        )
+        voice_key = f"{model_settings.elevenlabs_model}:{voice_id}"
+    if reaction_fetch is not None:
+        reaction_fetch = cached_fetch(
+            reaction_fetch,
+            PRERENDER_CACHE_DIR,
+            f"{voice_key}:{tts.sample_rate}",
+            before_fetch=partial(_wait_until_idle, session),
+        )
+    agent = CompanionAgent(
+        instructions=instructions,
+        language=metadata.language,
+        prepared_fetch=reaction_fetch,
+        prepared_sample_rate=tts.sample_rate,
+        reaction_rate=call_settings.quick_reaction_rate,
+        fast_replies=call_settings.fast_replies,
+    )
 
     # 팬이 조용하면 먼저 한마디 한다. 마무리 단계부터는 작별 인사와 겹치지 않게 멈춘다.
     nudger = QuietNudger(
         session,
         quiet_seconds=call_settings.quiet_nudge_seconds,
         max_in_row=call_settings.quiet_nudge_max_in_row,
+        quiet_after_question_seconds=call_settings.quiet_after_question_seconds,
     )
     session.on("agent_state_changed", lambda ev: nudger.on_agent_state(ev.new_state))
     session.on("user_state_changed", lambda ev: nudger.on_user_state(ev.new_state))
     log_latency(session)
+
+    session.on("conversation_item_added", partial(_tell_nudger, nudger))
     session.on(
         "conversation_item_added",
-        lambda ev: (
-            nudger.on_user_message(ev.item.text_content or "")
-            if isinstance(ev.item, ChatMessage) and ev.item.role == "user"
-            else None
-        ),
+        lambda ev: asyncio.create_task(publish_transcript_line(ctx.room, ev.item)),
     )
     asyncio.get_running_loop().call_later(
         call_settings.call_duration_seconds - call_settings.wrap_up_lead_seconds,

@@ -29,13 +29,14 @@ import { useTranslation } from "react-i18next";
 import type { ClipMode } from "@/components/clipGraph";
 import { ClipGraphPlayer } from "@/components/ClipGraphPlayer";
 import { LoadingQuips } from "@/components/LoadingQuips";
+import { parseTranscriptLine, TRANSCRIPT_TOPIC } from "@/components/transcript";
 import {
   coverRegionRect,
   photoAspectFromRegion,
   type Size,
 } from "@/components/videoLayout";
 import { FANCALL_NS } from "@/i18n";
-import type { ClipGraph, VideoRegion } from "@/schemas";
+import type { ClipGraph, MemoryLine, VideoRegion } from "@/schemas";
 
 export interface AgentCallProps {
   profilePictureUrl?: string | null;
@@ -58,6 +59,8 @@ export interface AgentCallProps {
    * (or MESSAGE_LIMIT_FALLBACK_MS after it was sent, if no answer comes)
    */
   onMessageLimitReached?: () => void;
+  /** Called for each line spoken in the call, so the host app can store it as memory */
+  onTranscriptLine?: (line: MemoryLine) => void;
 }
 
 const LAST_SECONDS_WARNING = 30;
@@ -66,9 +69,11 @@ const CLOSING_SECONDS = 6;
 const MAX_VISIBLE_MESSAGES = 3;
 // Narrower than 3:4 counts as portrait video that can fill the phone screen
 const PORTRAIT_ASPECT = 0.75;
-// Soft edges so the video blends into the photo underneath
+// Show only the face and hair of the video, fading into the photo underneath.
+// Lip-sync avatars move only the face, and on a wider (upper-body) call photo
+// the square video's shoulders would not line up with the photo's.
 const FEATHER_MASK =
-  "linear-gradient(to bottom, transparent, black 8%, black 92%, transparent), linear-gradient(to right, transparent, black 6%, black 94%, transparent)";
+  "radial-gradient(ellipse 36% 44% at 50% 47%, black 70%, transparent 100%)";
 const HEART_LIFETIME_MS = 1800;
 // Report the message limit even if the idol never answers the last message
 export const MESSAGE_LIMIT_FALLBACK_MS = 20_000;
@@ -138,6 +143,7 @@ export function AgentCall({
   clipGraph,
   messageLimit,
   onMessageLimitReached,
+  onTranscriptLine,
 }: AgentCallProps) {
   const { state, audioTrack, agent } = useVoiceAssistant();
   const { t } = useTranslation();
@@ -206,6 +212,25 @@ export function AgentCall({
       );
     };
   }, [room]);
+
+  // Each spoken line comes from the agent as it happens
+  useEffect(() => {
+    if (!room || !onTranscriptLine) return;
+    const handleData = (
+      payload: Uint8Array,
+      _participant?: unknown,
+      _kind?: unknown,
+      topic?: string,
+    ) => {
+      if (topic !== TRANSCRIPT_TOPIC) return;
+      const line = parseTranscriptLine(payload);
+      if (line) onTranscriptLine(line);
+    };
+    room.on(RoomEvent.DataReceived, handleData);
+    return () => {
+      room.off(RoomEvent.DataReceived, handleData);
+    };
+  }, [room, onTranscriptLine]);
 
   const handleStartAudio = useCallback(async () => {
     if (!room) return;
@@ -341,8 +366,6 @@ export function AgentCall({
                   ...regionRect,
                   maskImage: FEATHER_MASK,
                   WebkitMaskImage: FEATHER_MASK,
-                  maskComposite: "intersect",
-                  WebkitMaskComposite: "source-in",
                 }
               : undefined
           }

@@ -12,18 +12,32 @@ class FancallModelSettings(BaseSettings):
     """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    # Where openai_model is served when it is not on OPENAI_BASE_URL, e.g. a fast
+    # host like Cerebras ("https://api.cerebras.ai/v1"). The fallback model keeps
+    # using OPENAI_BASE_URL / OPENAI_API_KEY. Empty: both use the environment.
+    openai_base_url: str = ""
+    openai_api_key: str = ""
     # "none" keeps thinking models (e.g. Gemini via the OpenAI-compatible API) fast enough for a live call
     openai_reasoning_effort: (
         Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"] | None
     ) = None
+    # Model to switch to when the first one has not answered within
+    # openai_attempt_timeout (a 13s stall was seen on 2026-10-23). Empty: no fallback.
+    openai_fallback_model: str = ""
+    openai_attempt_timeout: float = 2.5
     # Most expressive realtime model; plays through the text-to-dialogue stream
     elevenlabs_model: str = "eleven_v4_turbo"
+    # LiveKit Cloud TTS as "provider/model:voice" (e.g. "inworld/inworld-tts-1.5-mini:Timothy").
+    # Empty uses ElevenLabs with the persona's voice; set it when ElevenLabs is unavailable.
+    tts_model: str = ""
     # Fan speech recognition through LiveKit Cloud. Flux decides when the fan has
     # finished speaking, so the reply can start without an extra silence wait.
     stt_model: str = "deepgram/flux-general-en"
     # Flux sends an early "probably done" signal at this confidence; the reply
     # starts generating then and is dropped if the fan keeps talking (0.3-0.9).
     stt_eager_eot_threshold: float = 0.4
+    # Flux ends the fan's turn at this confidence (0.5-0.9, Flux default 0.7).
+    stt_eot_threshold: float = 0.7
 
     class Config:
         env_prefix = "FANCALL_"
@@ -41,11 +55,34 @@ class FancallCallSettings(BaseSettings):
         closing_grace_seconds: Extra seconds allowed past the end so the
             goodbye is not cut off mid-sentence.
         quiet_nudge_seconds: Seconds of silence (agent listening, fan not
-            speaking) before the agent starts preparing a line. Generating and
-            voicing it takes about 1.5s more, so the line starts near 3s: in
-            295 real fan calls three quarters of pauses were under 2.9s.
+            speaking) before the agent speaks first. The line opens with a
+            prepared filler ("Hmm~"), heard about 1s later through the avatar,
+            so it lands under 3s: in 295 real fan calls three quarters of
+            pauses were under 2.9s. 1.5s leaves the fan room to answer first
+            (median pause 1.38s); at 0.5s the trainee kept talking over a fan
+            bot in a 2026-10-23 call. If the fan starts talking first, the line
+            is dropped.
+        quiet_after_question_seconds: Silence before speaking first when the
+            agent's last line asked the fan something; the fan is expected to
+            answer. A 2026-10-23 call with a fan bot showed the trainee asking
+            six questions in a row with no room to answer.
         quiet_nudge_max_in_row: Times the agent speaks first before the fan
-            replies again. 0 turns the nudge off.
+            replies again. 0 turns the nudge off. Real fan calls leave no long
+            silences, so the trainee keeps the call going for a while.
+        end_of_turn_min_delay: Extra wait after the speech recognizer decides
+            the fan finished. Flux already decides end of turn, so keep it short.
+        quick_reaction_rate: Share of LLM replies to the fan that open with a
+            short reaction. Idols in real 영통팬싸 open 31.7% of replies with
+            one (122 of 385) and still start the rest within 1.4s; our LLM
+            replies start 2.5-3.5s after the fan without one (2026-10-23), a
+            gap that reads as lag. So every LLM reply opens with one for now;
+            set this back toward 0.317 once replies start within 1.4s on their
+            own. Prepared fast replies never get one.
+        fast_replies: Answer greetings, compliments, love and goodbyes with
+            prepared lines from real calls instead of the LLM. Off: those
+            lines can't pick up what the fan just said or get shy in context,
+            which read as canned (2026-10-26), and the LLM's first word now
+            comes within 0.5s.
     """
 
     call_duration_seconds: float = 180
@@ -54,6 +91,10 @@ class FancallCallSettings(BaseSettings):
     closing_grace_seconds: float = 5
     quiet_nudge_seconds: float = 1.5
     quiet_nudge_max_in_row: int = 2
+    quiet_after_question_seconds: float = 2.0
+    end_of_turn_min_delay: float = 0.2
+    quick_reaction_rate: float = 1.0
+    fast_replies: bool = False
 
     class Config:
         env_prefix = "FANCALL_"

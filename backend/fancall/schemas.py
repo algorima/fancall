@@ -3,11 +3,21 @@ Fancall Pydantic schemas
 """
 
 from datetime import datetime
+from typing import Literal
 
 from humps import camelize
 from pydantic import BaseModel, ConfigDict, Field
 
 from fancall.persona import Persona
+
+
+class MemoryLine(BaseModel):
+    """One line from an earlier call between this fan and this trainee."""
+
+    model_config = ConfigDict(alias_generator=camelize, populate_by_name=True)
+
+    speaker: Literal["fan", "idol"]
+    text: str = Field(max_length=500)
 
 
 class AgentDispatchRequest(Persona):
@@ -16,6 +26,13 @@ class AgentDispatchRequest(Persona):
     language: str | None = Field(
         default=None,
         description="Fan's app language code (e.g. 'en'); used for the opening greeting",
+    )
+    memory: list[MemoryLine] = Field(
+        default_factory=list,
+        max_length=200,
+        description="Lines from earlier calls with this fan, oldest first. The host "
+        "app stores them (per signed-in fan and trainee) and passes them back so the "
+        "trainee remembers the fan.",
     )
 
 

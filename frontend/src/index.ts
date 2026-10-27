@@ -21,6 +21,7 @@ export type {
   TokenResponse,
   DispatchResponse,
   AgentDispatchRequest,
+  MemoryLine,
   Contact,
   ClipGraph,
   VideoRegion,
