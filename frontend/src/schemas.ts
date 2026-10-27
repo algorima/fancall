@@ -38,6 +38,12 @@ export const dispatchResponseSchema = z.object({
 
 export type DispatchResponse = z.infer<typeof dispatchResponseSchema>;
 
+/** One line from an earlier call between this fan and this trainee */
+export interface MemoryLine {
+  speaker: "fan" | "idol";
+  text: string;
+}
+
 /**
  * Agent dispatch request payload
  * Generic specification for LiveKit agent dispatch
@@ -49,6 +55,8 @@ export interface AgentDispatchRequest {
   systemPrompt?: string | null;
   /** Fan's app language (e.g. "en"); the idol greets in it before the fan speaks */
   language?: string | null;
+  /** Lines of earlier calls with this trainee, oldest first (max 200, 500 chars each) */
+  memory?: MemoryLine[];
 }
 
 /**

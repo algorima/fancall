@@ -29,13 +29,14 @@ import { useTranslation } from "react-i18next";
 import type { ClipMode } from "@/components/clipGraph";
 import { ClipGraphPlayer } from "@/components/ClipGraphPlayer";
 import { LoadingQuips } from "@/components/LoadingQuips";
+import { parseTranscriptLine, TRANSCRIPT_TOPIC } from "@/components/transcript";
 import {
   coverRegionRect,
   photoAspectFromRegion,
   type Size,
 } from "@/components/videoLayout";
 import { FANCALL_NS } from "@/i18n";
-import type { ClipGraph, VideoRegion } from "@/schemas";
+import type { ClipGraph, MemoryLine, VideoRegion } from "@/schemas";
 
 export interface AgentCallProps {
   profilePictureUrl?: string | null;
@@ -58,6 +59,8 @@ export interface AgentCallProps {
    * (or MESSAGE_LIMIT_FALLBACK_MS after it was sent, if no answer comes)
    */
   onMessageLimitReached?: () => void;
+  /** Called for each line spoken in the call, so the host app can store it as memory */
+  onTranscriptLine?: (line: MemoryLine) => void;
 }
 
 const LAST_SECONDS_WARNING = 30;
@@ -140,6 +143,7 @@ export function AgentCall({
   clipGraph,
   messageLimit,
   onMessageLimitReached,
+  onTranscriptLine,
 }: AgentCallProps) {
   const { state, audioTrack, agent } = useVoiceAssistant();
   const { t } = useTranslation();
@@ -208,6 +212,25 @@ export function AgentCall({
       );
     };
   }, [room]);
+
+  // Each spoken line comes from the agent as it happens
+  useEffect(() => {
+    if (!room || !onTranscriptLine) return;
+    const handleData = (
+      payload: Uint8Array,
+      _participant?: unknown,
+      _kind?: unknown,
+      topic?: string,
+    ) => {
+      if (topic !== TRANSCRIPT_TOPIC) return;
+      const line = parseTranscriptLine(payload);
+      if (line) onTranscriptLine(line);
+    };
+    room.on(RoomEvent.DataReceived, handleData);
+    return () => {
+      room.off(RoomEvent.DataReceived, handleData);
+    };
+  }, [room, onTranscriptLine]);
 
   const handleStartAudio = useCallback(async () => {
     if (!room) return;
