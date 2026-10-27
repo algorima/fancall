@@ -29,6 +29,11 @@ class AgentDispatchRequest(Persona):
         default=None,
         description="Fan's app language code (e.g. 'en'); used for the opening greeting",
     )
+    phone_number: str | None = Field(
+        default=None,
+        pattern=r"^\+[1-9]\d{6,14}$",
+        description="E.164 number the agent calls over SIP. Implies phone_call",
+    )
 
 
 # LiveRoom schemas

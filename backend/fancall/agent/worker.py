@@ -9,17 +9,29 @@ a Simli lip-synced avatar.
 import asyncio
 import logging
 import math
+from collections.abc import AsyncIterator
 from functools import partial
+from typing import Any
 
 import aiohttp
 from aioia_core.settings import OpenAIAPISettings
 from livekit import agents
-from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
+from livekit.agents import (
+    Agent,
+    AgentSession,
+    JobContext,
+    ModelSettings,
+    WorkerOptions,
+    cli,
+)
+from livekit.agents.llm import ChatContext, FunctionTool, RawFunctionTool
 from livekit.agents.types import NOT_GIVEN, NotGiven
 from livekit.plugins import elevenlabs, openai, simli
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
+from fancall.agent.phone_dialer import dial_phone
+from fancall.agent.reply_limit import limit_sentences
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import (
     OPENING_INSTRUCTIONS,
@@ -45,6 +57,8 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_SYSTEM_PROMPT = "You are a friendly and helpful AI companion."
+# Real idols speak about 1.3 seconds at a time; anything longer is cut
+MAX_REPLY_SENTENCES = 2
 
 
 class CompanionAgent(Agent):
@@ -89,6 +103,16 @@ class CompanionAgent(Agent):
         self.session.generate_reply(
             user_input=user_input, instructions=self.opening_instructions
         )
+
+    def llm_node(
+        self,
+        chat_ctx: ChatContext,
+        tools: list[FunctionTool | RawFunctionTool],
+        model_settings: ModelSettings,
+    ) -> AsyncIterator[Any]:
+        """Generate the reply, cut to MAX_REPLY_SENTENCES before it is spoken."""
+        reply = Agent.default.llm_node(self, chat_ctx, tools, model_settings)
+        return limit_sentences(reply, MAX_REPLY_SENTENCES)
 
 
 async def start_avatar(
@@ -154,7 +178,8 @@ async def entrypoint(
     Args:
         ctx: LiveKit job context
         default_persona: Default persona for fallback configuration
-        livekit_settings: LiveKit settings; the avatar joins the room with these
+        livekit_settings: LiveKit settings; the avatar joins the room with these,
+            and phone calls dial out through its SIP outbound trunk
         openai_settings: OpenAI API settings (현재 미사용: livekit.plugins.openai가 환경변수 직접 사용)
         elevenlabs_settings: ElevenLabs TTS settings
         simli_settings: Simli avatar settings
@@ -181,7 +206,7 @@ async def entrypoint(
     voice_id = metadata.voice_id or default_persona.voice_id
     system_prompt = metadata.system_prompt or default_persona.system_prompt
 
-    phone_call = metadata.phone_call
+    phone_call = metadata.phone_call or metadata.phone_number is not None
 
     logger.info(
         "Agent configuration: avatar_id=%s, voice_id=%s, phone_call=%s",
@@ -191,7 +216,10 @@ async def entrypoint(
     )
 
     # Initialize components
-    llm = openai.LLM(model=model_settings.openai_model)
+    llm = openai.LLM(
+        model=model_settings.openai_model,
+        reasoning_effort=model_settings.openai_reasoning_effort or NOT_GIVEN,
+    )
     if voice_id:
         logger.info("Using ElevenLabs voice_id: %s", voice_id)
 
@@ -236,6 +264,20 @@ async def entrypoint(
         "Using instructions: %s",
         instructions[:100] + "..." if len(instructions) > 100 else instructions,
     )
+
+    # 팬이 전화를 받은 뒤에 세션을 시작해야 첫인사가 허공에 나가지 않는다
+    if metadata.phone_number:
+        trunk_id = livekit_settings.sip_outbound_trunk_id
+        if not trunk_id:
+            logger.error("LIVEKIT_SIP_OUTBOUND_TRUNK_ID is required for phone calls")
+            ctx.shutdown(reason="SIP outbound trunk is not configured")
+            return
+        answered = await dial_phone(
+            ctx.api.sip, ctx.room.name, trunk_id, metadata.phone_number
+        )
+        if not answered:
+            ctx.shutdown(reason="Phone call was not answered")
+            return
 
     agent = CompanionAgent(
         instructions=instructions,
