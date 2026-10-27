@@ -4,6 +4,7 @@ import type {
   AgentDispatchRequest,
   DispatchResponse,
   LiveRoom,
+  MemoryLine,
   TokenResponse,
 } from "../schemas";
 import {
@@ -55,5 +56,35 @@ export class LiveRoomRepository extends BaseCrudRepository<LiveRoom> {
     });
 
     return this.validateResponse(rawResponse, dispatchResponseSchema);
+  }
+
+  /**
+   * Add lines to the signed-in fan's memory of one trainee
+   * POST /live-rooms/memory
+   */
+  async appendMemory(
+    memoryKey: string,
+    lines: MemoryLine[],
+    fetchOptions?: RequestInit,
+  ): Promise<void> {
+    const url = `${this.apiService.buildUrl(this.resource)}/memory`;
+    await this.apiService.request(url, {
+      ...fetchOptions,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memoryKey, lines }),
+    });
+  }
+
+  /**
+   * Forget the signed-in fan's memory of one trainee
+   * DELETE /live-rooms/memory/{memoryKey}
+   */
+  async forgetMemory(
+    memoryKey: string,
+    fetchOptions?: RequestInit,
+  ): Promise<void> {
+    const url = `${this.apiService.buildUrl(this.resource)}/memory/${encodeURIComponent(memoryKey)}`;
+    await this.apiService.request(url, { ...fetchOptions, method: "DELETE" });
   }
 }

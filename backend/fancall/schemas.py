@@ -27,6 +27,13 @@ class AgentDispatchRequest(Persona):
         default=None,
         description="Fan's app language code (e.g. 'en'); used for the opening greeting",
     )
+    memory_key: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Host-chosen id of the trainee this call is with. For a signed-in "
+        "fan, fancall loads the stored lines of earlier calls under this key into "
+        "`memory` when none are passed.",
+    )
     memory: list[MemoryLine] = Field(
         default_factory=list,
         max_length=200,
@@ -34,6 +41,15 @@ class AgentDispatchRequest(Persona):
         "app stores them (per signed-in fan and trainee) and passes them back so the "
         "trainee remembers the fan.",
     )
+
+
+class MemoryAppendRequest(BaseModel):
+    """Lines to add to the signed-in fan's memory of one trainee."""
+
+    model_config = ConfigDict(alias_generator=camelize, populate_by_name=True)
+
+    memory_key: str = Field(min_length=1, max_length=100)
+    lines: list[MemoryLine] = Field(max_length=50)
 
 
 # LiveRoom schemas

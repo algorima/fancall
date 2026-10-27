@@ -55,6 +55,11 @@ export interface AgentDispatchRequest {
   systemPrompt?: string | null;
   /** Fan's app language (e.g. "en"); the idol greets in it before the fan speaks */
   language?: string | null;
+  /**
+   * Id of the trainee this call is with. For a signed-in fan, fancall loads the
+   * stored lines of earlier calls under this key when `memory` is not passed
+   */
+  memoryKey?: string | null;
   /** Lines of earlier calls with this trainee, oldest first (max 200, 500 chars each) */
   memory?: MemoryLine[];
 }
