@@ -49,6 +49,7 @@ from fancall.agent.quick_reaction import (
 )
 from fancall.agent.quiet_nudge import QuietNudger
 from fancall.agent.reply_limit import drop_opening_interjection, limit_sentences
+from fancall.agent.transcript_stream import publish_transcript_line
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import (
     AI_HONESTY_NOTE,
@@ -537,6 +538,10 @@ async def entrypoint(
     log_latency(session)
 
     session.on("conversation_item_added", partial(_tell_nudger, nudger))
+    session.on(
+        "conversation_item_added",
+        lambda ev: asyncio.create_task(publish_transcript_line(ctx.room, ev.item)),
+    )
     asyncio.get_running_loop().call_later(
         call_settings.call_duration_seconds - call_settings.wrap_up_lead_seconds,
         nudger.stop,
