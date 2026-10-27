@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import sessionmaker
 
 from fancall.factories import LiveRoomRepositoryFactory
+from fancall.repositories.call_memory_repository import CallMemoryRepository
 from fancall.repositories.live_room_repository import DatabaseLiveRoomRepository
 from fancall.schemas import (
     AgentDispatchRequest,
@@ -26,6 +27,7 @@ from fancall.schemas import (
     LiveRoom,
     LiveRoomCreate,
     LiveRoomUpdate,
+    MemoryAppendRequest,
     TokenResponse,
 )
 from fancall.services.livekit_service import LiveKitService
@@ -56,6 +58,7 @@ class LiveRoomRouter(
         self._register_public_create_route()  # POST /live-rooms (public)
         self._register_token_route()  # POST /live-rooms/{id}/token
         self._register_dispatch_route()  # POST /live-rooms/{id}/dispatch
+        self._register_memory_routes()  # POST/DELETE /live-rooms/memory
 
     def _register_public_create_route(self) -> None:
         """POST /live-rooms - Public endpoint for creating live rooms"""
@@ -182,6 +185,8 @@ class LiveRoomRouter(
         async def dispatch_agent(
             room_id: str,
             request: AgentDispatchRequest,
+            user_id: str | None = Depends(self.get_current_user_id_dep),
+            db_session=Depends(self.get_db_dep),
             repository: DatabaseLiveRoomRepository = Depends(self.get_repository_dep),
         ):
             # Verify room exists
@@ -193,6 +198,16 @@ class LiveRoomRouter(
                         "detail": f"Live room not found: {room_id}",
                         "code": RESOURCE_NOT_FOUND,
                     },
+                )
+
+            # A signed-in fan's earlier calls with this trainee, unless the host sent its own
+            if user_id and request.memory_key and not request.memory:
+                request = request.model_copy(
+                    update={
+                        "memory": CallMemoryRepository(db_session).recent(
+                            user_id, request.memory_key
+                        )
+                    }
                 )
 
             # Dispatch agent
@@ -212,6 +227,48 @@ class LiveRoomRouter(
                 room_name=dispatch_response.room_name,
                 agent_name=dispatch_response.agent_name,
             )
+
+    def _register_memory_routes(self) -> None:
+        """Store and forget the signed-in fan's lines of earlier calls"""
+
+        def require_user(user_id: str | None) -> str:
+            if not user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail={
+                        "detail": "Sign in to keep call memory",
+                        "code": UNAUTHORIZED,
+                    },
+                )
+            return user_id
+
+        @self.router.post(
+            f"/{self.resource_name}/memory",
+            status_code=status.HTTP_204_NO_CONTENT,
+            summary="Add lines to call memory",
+            responses={401: {"model": ErrorResponse}},
+        )
+        async def append_memory(
+            body: MemoryAppendRequest,
+            user_id: str | None = Depends(self.get_current_user_id_dep),
+            db_session=Depends(self.get_db_dep),
+        ):
+            CallMemoryRepository(db_session).append(
+                require_user(user_id), body.memory_key, body.lines
+            )
+
+        @self.router.delete(
+            f"/{self.resource_name}/memory/{{memory_key}}",
+            status_code=status.HTTP_204_NO_CONTENT,
+            summary="Forget the memory of one trainee",
+            responses={401: {"model": ErrorResponse}},
+        )
+        async def forget_memory(
+            memory_key: str,
+            user_id: str | None = Depends(self.get_current_user_id_dep),
+            db_session=Depends(self.get_db_dep),
+        ):
+            CallMemoryRepository(db_session).delete(require_user(user_id), memory_key)
 
 
 def create_fancall_router(
