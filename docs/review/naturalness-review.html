@@ -193,18 +193,24 @@
   <div class="cols c3">
     <div class="col"><span class="idx">Ditto (T4)</span><h3>초당 2.9장</h3><p class="small">실시간 기준 25장 · 첫 프레임 18초 · 논문 자가보고 TensorRT 45장은 4090급에서 재측정 필요</p></div>
     <div class="col"><span class="idx">LatentSync (T4)</span><h3>6초 클립 178초</h3><p class="small">20단계 · 12초 클립은 15분 · fp16 강제해도 약 10% 단축</p></div>
-    <div class="col"><span class="idx">시험 중</span><h3>5~8단계 + DeepCache</h3><p class="small">Colab GPU 10-27 밤 복구 · 결과는 아래 8장 · 미완이면 칸이 비어 있음</p></div>
+    <div class="col"><span class="idx">시험 중</span><h3>5단계 + DeepCache</h3><p class="small">T4 추론 6초 클립 164초 → 40초 · 결과는 8장</p></div>
   </div>
   <div class="slide-num">7</div>
 </div>
 
-<!-- 8 · 밤샘 시험 결과 (채울 자리) -->
+<!-- 8 · 밤샘 시험 결과 -->
 <div class="slide dark">
-  <div class="eyebrow">밤샘 시험 결과 · LatentSync 줄인 단계</div>
-  <div class="body" style="gap:30px;">
-    <div class="title" id="night-result">결과 대기 중</div>
-    <p class="text">Colab 연결 10-27 22:5x · 설치 후 20 · 8 · 5단계 시간 측정</p>
+  <div class="eyebrow">밤샘 시험 결과 · LatentSync 줄인 단계 (Colab T4 · 6초 클립)</div>
+  <div class="body" style="gap:22px;">
+    <div class="title" style="font-size:34px;">5단계 + DeepCache가 20단계와 같은 지표에서<br>추론 4배 빠름 · 그래도 실시간은 멀음</div>
+    <video src="media/compare_ls_steps.mp4" style="width:100%; max-height:300px; background:#000;" controls muted loop playsinline preload="metadata"></video>
+    <div class="cols c3">
+      <div class="col"><span class="idx">20단계</span><h3>추론 164초</h3><p class="small">입-소리 상관 0.23 · 닫힘 10%</p></div>
+      <div class="col"><span class="idx">8단계 + DeepCache</span><h3>추론 51초</h3><p class="small">영상 파일은 이름 겹침으로 덮어써 보존 못 함</p></div>
+      <div class="col"><span class="idx">5단계 + DeepCache</span><h3>추론 40초</h3><p class="small">입-소리 상관 0.25 · 닫힘 10%</p></div>
+    </div>
   </div>
+  <p class="note">영상 1초당 추론 약 6.7초 (5단계) · 고정 시간 약 130초(모델 로딩·얼굴 찾기)는 별도 · 화질 눈 판정은 소연 몫</p>
   <div class="slide-num">8</div>
 </div>
 
