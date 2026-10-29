@@ -203,10 +203,10 @@ table.t{width:100%;border-collapse:collapse;font-size:15px} table.t td,table.t t
   <tr><td>LLM 첫 토큰(Gemma 4 31B)</td><td>0.95~1.26초</td><td>0.56~1.01초</td><td>판정표 도구 단독 측정은 0.53초</td></tr>
   <tr><td>TTS 첫 소리</td><td>0.92~1.12초</td><td>0.65~0.97초</td><td>LAT tts_first_audio</td></tr>
   <tr><td>팬 말 끝 → 소리 들림(봇 측정)</td><td>4.5~6.4초</td><td>3.4~4.2초</td><td>봇 감지 여유 약 0.6초 포함 · 네트워크 왕복 포함</td></tr>
-  <tr><td>(3회차) Fish + Gemini 3.1 Flash Lite(Inference)</td><td colspan="2">LLM 0.80~1.23초 · TTS 0.63~0.83초 · 체감 0.6~2.2초</td><td>LLM을 작은 모델로 바꾸자 체감이 절반 이하 · 판정표 통과 여부는 11장 뒤 표</td></tr>
+  <tr><td>(3~5회차) Fish + Gemini 3.1 Flash Lite(Inference)</td><td colspan="2">LLM 첫 토큰 0.80~1.24초 · TTS 0.63~0.83초 · 체감 0.6 / 1.8 / 2.0 / 2.3초 (3회 모두 ±0.1초)</td><td>첫 토큰은 Gemma와 비슷한데 체감은 절반 → 첫 문장이 끝나는 속도 차이. 판정표 대화 13건 2/2 통과, 한글 섞임 0/10</td></tr>
   <tr><td>입 재합성 첫 프레임</td><td colspan="2">미측정 (T4 오프라인만)</td><td>실시간 수치는 4090급 GPU 필요</td></tr>
   </table>
-  <div class="note">합격선 1.4초에 들어가려면 LLM·TTS 각 0.4초대가 필요 · 후보: 더 작은 Inference 모델, TTS 스트리밍 입력, 첫 문장 미리 만들기(이미 있음) · AWS Activate 승인 시 L4·A10G에서 재측정</div>
+  <div class="note">짧은 답(이름 불러 주기)은 0.6초로 합격선 안, 보통 답은 1.8~2.3초 · 합격선 1.4초에 들어가려면 LLM·TTS 각 0.4초대가 필요 · 후보: 더 작은 Inference 모델, TTS 스트리밍 입력, 첫 문장 미리 만들기(이미 있음) · AWS Activate 승인 시 L4·A10G에서 재측정</div>
   <div class="slide-num">10</div>
 </div>
 
