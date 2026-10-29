@@ -12,6 +12,9 @@ class FancallModelSettings(BaseSettings):
     """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    # LiveKit Inference model (e.g. "google/gemma-4-31b-it"). When set it replaces openai_model
+    # as the first reply model; openai_fallback_model still applies. Billed through LiveKit Cloud.
+    llm_inference_model: str = ""
     # Where openai_model is served when it is not on OPENAI_BASE_URL, e.g. a fast
     # host like Cerebras ("https://api.cerebras.ai/v1"). The fallback model keeps
     # using OPENAI_BASE_URL / OPENAI_API_KEY. Empty: both use the environment.
