@@ -153,6 +153,21 @@ class AvatarSettings(BaseSettings):
         tavus_pal_id: Tavus PAL in echo mode (TAVUS_PAL_ID). Stock PAL if unset.
         simli_api_key: Simli API key (SIMLI_API_KEY).
         lemonslice_api_key: LemonSlice API key (LEMONSLICE_API_KEY).
+        render_url: WebSocket URL of our own GPU render server
+            (RENDER_URL, e.g. ws://gpu-box:8765/). When set it is used before
+            any hosted provider: the agent draws the face itself from the
+            persona's photo (see fancall.agent.avatar and
+            tools/ditto_render_server.py).
+        render_photo: Photo the render server animates when the persona has
+            no http profile picture: a path or URL the server can open
+            (RENDER_PHOTO).
+        render_layout: Path on the render server to a layout JSON that puts
+            the face on the wide call photo (RENDER_LAYOUT). Optional.
+        render_idle_dir: Directory of JPEG frames of the face listening
+            (RENDER_IDLE_DIR). With no render_url, the agent animates these
+            frames itself (a drawn mouth) so a call can run without a GPU.
+        render_width / render_height: Size of the published video
+            (RENDER_WIDTH / RENDER_HEIGHT). Portrait to fill the call screen.
     """
 
     anam_api_key: str | None = None
@@ -164,6 +179,12 @@ class AvatarSettings(BaseSettings):
     tavus_pal_id: str | None = None
     simli_api_key: str | None = None
     lemonslice_api_key: str | None = None
+    render_url: str | None = None
+    render_photo: str | None = None
+    render_layout: str | None = None
+    render_idle_dir: str | None = None
+    render_width: int = 720
+    render_height: int = 1280
 
 
 class LiveKitSettings(BaseSettings):

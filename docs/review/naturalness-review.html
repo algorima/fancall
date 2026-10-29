@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>영상통화 자연스러움 아침 리뷰</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  :root {
+    --ink: #141414;
+    --sub: #50555C;
+    --dim: #9A9FA6;
+    --line: #DCDEE1;
+    --soft: #F3F4F5;
+    --frame: #E3E5E8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+    background: #E9EAEC;
+    display: flex; flex-direction: column; align-items: center; gap: 40px; padding: 40px 0;
+    color: var(--ink); letter-spacing: -0.02em; word-break: keep-all;
+  }
+
+  /* 16:9 Slide */
+  .slide {
+    width: 1280px; height: 720px; flex-shrink: 0; background: #fff;
+    padding: 64px 88px 64px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .slide.dark { background: #111214; color: #F4F4F5; --sub: #A7ABB1; --dim: #6D7279; --line: #2D2F33; }
+  .slide.dark .title { color: #fff; }
+  .slide-num { position: absolute; bottom: 30px; right: 88px; font-size: 13px; font-weight: 500; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .eyebrow { font-size: 14px; font-weight: 500; color: var(--dim); letter-spacing: 0.02em; flex: none; }
+
+  .title { font-size: 44px; font-weight: 800; line-height: 1.28; letter-spacing: -0.04em; color: var(--ink); }
+  .title.xl { font-size: 76px; line-height: 1.16; letter-spacing: -0.05em; }
+  .title .thin { color: var(--dim); }
+  .body { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .text { font-size: 18px; line-height: 1.7; color: var(--sub); font-weight: 400; }
+  .text b { color: var(--ink); font-weight: 700; }
+  .slide.dark .text b { color: #fff; }
+  .small { font-size: 15px; color: var(--sub); line-height: 1.65; }
+  .idx { font-size: 14px; font-weight: 600; color: var(--dim); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+
+  /* 가는 선만 쓰는 목록 */
+  .rows > * { padding: 18px 0; border-top: 1px solid var(--line); }
+  .rows > *:last-child { border-bottom: 1px solid var(--line); }
+  .row { display: grid; grid-template-columns: 56px 1fr; align-items: baseline; font-size: 18px; line-height: 1.55; color: var(--ink); font-weight: 500; }
+  .row b { font-weight: 800; }
+
+  /* 열 구조 (카드 박스 없이 윗선만) */
+  .cols { display: grid; gap: 40px; }
+  .cols.c4 { grid-template-columns: repeat(4, 1fr); }
+  .cols.c3 { grid-template-columns: repeat(3, 1fr); }
+  .col { border-top: 1px solid var(--ink); padding-top: 18px; }
+  .col .idx { margin-bottom: 40px; display: block; }
+  .col h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 10px; line-height: 1.35; }
+
+  .note { font-size: 15px; color: var(--sub); line-height: 1.6; display: flex; gap: 10px; align-items: baseline; }
+  .note::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--ink); flex: none; transform: translateY(-2px); }
+  .slide.dark .note::before { background: #fff; }
+  .note b { color: var(--ink); }
+
+  /* 분할 */
+  .split { display: grid; grid-template-columns: 5fr 7fr; gap: 72px; align-items: center; flex: 1; min-height: 0; }
+  .split.even { grid-template-columns: 1fr 1fr; }
+  .left { display: flex; flex-direction: column; gap: 28px; }
+
+  /* 채팅 */
+  .chat { display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 82%; padding: 16px 20px; font-size: 16px; line-height: 1.6; border-radius: 16px; font-weight: 500; }
+  .msg small { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; opacity: .55; margin-bottom: 4px; }
+  .msg.me { align-self: flex-end; background: var(--ink); color: #fff; border-bottom-right-radius: 4px; }
+  .slide.dark .msg.me { background: #fff; color: #111; }
+  .msg.ai { align-self: flex-start; background: var(--soft); color: var(--ink); border-bottom-left-radius: 4px; }
+
+  /* 큰 단어 */
+  .big { font-size: 92px; font-weight: 800; letter-spacing: -0.05em; line-height: 1; margin: 34px 0 26px; }
+  .big small { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin-left: 6px; }
+  .big .thin { color: var(--dim); }
+
+  .statement { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 36px; }
+  .statement .title { font-size: 64px; line-height: 1.22; letter-spacing: -0.05em; }
+  .statement .small { margin-top: 28px; font-size: 18px; }
+
+  /* ===== 구분·번호 장치 모음 ===== */
+  .num { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 15px; font-weight: 800; letter-spacing: 0; }
+  .num.o { background: #fff; color: var(--ink); border: 1px solid var(--ink); }
+  .slide.dark .num { background: #fff; color: #111; }
+  .chip { display: inline-block; font-size: 14px; font-weight: 700; color: #fff; background: var(--ink); padding: 7px 14px; border-radius: 4px; letter-spacing: -0.01em; }
+  .pill { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--ink); border-radius: 999px; padding: 10px 20px 10px 12px; font-size: 18px; font-weight: 700; }
+  .pill .num { width: 26px; height: 26px; font-size: 12px; }
+  .box { background: #F8F9F9; border: 1px solid var(--line); border-radius: 6px; }
+  .ncard { display: flex; gap: 20px; align-items: flex-start; padding: 28px 30px; }
+  .ncard h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+  .kpi { padding: 28px 30px 30px; }
+  .kpi .idx { display: block; margin-bottom: 30px; }
+  .hl { background: linear-gradient(transparent 62%, #D9DCDF 62%); padding: 0 2px; }
+  .slide.dark .hl { background: linear-gradient(transparent 62%, #3A3D42 62%); }
+
+  /* 세로 타임라인 */
+  .tl { position: relative; display: flex; flex-direction: column; gap: 0; }
+  .tl::before { content: ""; position: absolute; left: 13px; top: 14px; bottom: 14px; width: 1px; background: var(--line); }
+  .tl .t { display: flex; gap: 22px; align-items: center; padding: 11px 0; font-size: 18px; line-height: 1.5; font-weight: 500; position: relative; }
+  .tl .t .num { width: 28px; height: 28px; font-size: 13px; }
+  .tl .t b { font-weight: 800; }
+
+  @media print {
+    body { background: #fff; gap: 0; padding: 0; }
+    .slide { page-break-after: always; page-break-inside: avoid; }
+    .slide:last-child { page-break-after: auto; }
+  }
+  @page { size: 1280px 720px; margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- 1 · 표지 -->
+<div class="slide">
+  <div class="eyebrow">영상통화 자연스러움 · 2026-10-26 ~ 10-28 밤샘 작업 · 아침 리뷰</div>
+  <div class="body" style="justify-content:flex-end; padding-bottom:30px;">
+    <div class="title xl">입모양은 Ditto + LatentSync로 확정<br>다만 실시간은 아직 불가</div>
+    <p class="text" style="margin-top:34px;">같은 12초 음성 · 4번 금발 얼굴 · Colab T4 기준<br>대화 쪽은 언어 섞임 3/80 → 0/80 · 관계 기억 저장 경로 연결</p>
+  </div>
+  <div class="slide-num">1</div>
+</div>
+
+<!-- 2 · 한 장 요약 -->
+<div class="slide">
+  <div class="eyebrow">한 장 요약</div>
+  <div class="body" style="gap:56px;">
+    <div class="title">자연스러운 입은 찾음<br>속도와 결제가 <span class="hl">남은 벽</span></div>
+    <div class="cols c4">
+      <div class="col"><span class="idx">01 · 확정</span><h3>Ditto+LatentSync<br>가장 자연스러움</h3><p class="small">소연 눈 판정 10-27 · Ditto 단독 반려 · MuseTalk 미선택</p></div>
+      <div class="col"><span class="idx">02 · 벽</span><h3>실시간 불가</h3><p class="small">T4에서 Ditto 초당 2.9장 · LatentSync 12초에 15분 · 4090급 미측정</p></div>
+      <div class="col"><span class="idx">03 · 완료</span><h3>대화 쪽 3건</h3><p class="small">언어 섞임 수정 · 대화 줄 전송 · memory 타입 연결 (모두 푸시)</p></div>
+      <div class="col"><span class="idx">04 · 결정</span><h3>Cerebras 결제<br>GPU 임대</h3><p class="small">Qwen 무료 한도 소진(402) · 실시간용 GPU는 소연 가입·카드 필요</p></div>
+    </div>
+  </div>
+  <p class="note">수치는 Colab T4 · 같은 12초 음성 · 측정 도구는 MediaPipe 기반. 눈 판정은 소연 1인</p>
+  <div class="slide-num">2</div>
+</div>
+
+<!-- 3 · 영상 4종 비교 -->
+<div class="slide">
+  <div class="eyebrow">녹화본 1 · 현재 Simli와 자체 렌더 3종</div>
+  <div class="title" style="font-size:32px; margin-bottom:16px;">왼쪽부터 Simli(현재) · Ditto · Ditto+LatentSync · SoulX Pro</div>
+  <video src="media/compare4.mp4" style="width:100%; max-height:430px; background:#000;" controls muted loop playsinline preload="metadata"></video>
+  <p class="note">같은 12초 음성 · 소리를 켜고 입모양과 소리의 맞음을 볼 것 · 가운데 둘이 소연 눈 판정 상위</p>
+  <div class="slide-num">3</div>
+</div>
+
+<!-- 4 · 입 보정 비교 -->
+<div class="slide">
+  <div class="eyebrow">녹화본 2 · 입 보정 3종</div>
+  <div class="title" style="font-size:32px; margin-bottom:16px;">왼쪽부터 Ditto 단독 · Ditto+LatentSync · Ditto+MuseTalk</div>
+  <video src="media/compare_muse.mp4" style="width:100%; max-height:430px; background:#000;" controls muted loop playsinline preload="metadata"></video>
+  <p class="note">MuseTalk은 입모양이 가장 다양하나 선택받지 못함 · Ditto 단독은 입 어색 반려</p>
+  <div class="slide-num">4</div>
+</div>
+
+<!-- 5 · Simli vs Ditto, LatentSync 단독 -->
+<div class="slide">
+  <div class="eyebrow">녹화본 3 · Simli 대 Ditto, 그리고 선택안 원본</div>
+  <div class="cols c3" style="gap:24px;">
+    <div class="col"><span class="idx">Simli ↔ Ditto</span><video src="media/compare_simli_ditto.mp4" style="width:100%; max-height:300px; background:#000;" controls muted loop playsinline preload="metadata"></video></div>
+    <div class="col"><span class="idx">Ditto+LatentSync 12초</span><video src="media/p04_ls12.mp4" style="width:100%; max-height:300px; background:#000;" controls muted loop playsinline preload="metadata"></video></div>
+    <div class="col"><span class="idx">큰 파일 · 레포 밖</span><p class="small">p04_ditto_idol_only45.mp4 (18MB) · p04_ditto_silence20.mp4 (8MB)<br>~/Downloads 에 있음 · 통화 45초와 듣는 얼굴 20초</p></div>
+  </div>
+  <div class="slide-num">5</div>
+</div>
+
+<!-- 6 · 수치 -->
+<div class="slide">
+  <div class="eyebrow">측정 · 입 벌림과 소리 크기 상관</div>
+  <div class="title" style="font-size:32px; margin-bottom:16px;">상관은 Ditto가 최고 0.35 · 높다고 자연스러운 건 아님</div>
+  <div class="rows" style="font-size:15px;">
+    <div class="row" style="grid-template-columns:260px 160px 160px 1fr; padding:6px 0;"><span class="idx">구성</span><span class="idx">상관</span><span class="idx">소리 클 때 입 벌림</span><span class="idx">비고</span></div>
+    <div class="row" style="grid-template-columns:260px 160px 160px 1fr; padding:6px 0;"><span><b>Simli</b> 현재</span><span>0.24</span><span>0.004</span><span>입이 거의 안 벌어짐</span></div>
+    <div class="row" style="grid-template-columns:260px 160px 160px 1fr; padding:6px 0;"><span><b>Ditto</b></span><span>0.35</span><span>0.024</span><span>ㅁ·ㅂ·ㅍ 닫힘 0%</span></div>
+    <div class="row" style="grid-template-columns:260px 160px 160px 1fr; padding:6px 0;"><span><b>Ditto+LatentSync</b></span><span>0.30</span><span>0.017</span><span>닫힘 2.5% · 눈 판정 1위</span></div>
+    <div class="row" style="grid-template-columns:260px 160px 160px 1fr; padding:6px 0;"><span><b>Ditto+MuseTalk</b></span><span>0.02</span><span>0.002</span><span>눈으로는 입 다양 · 지표엔 낮음</span></div>
+    <div class="row" style="grid-template-columns:260px 160px 160px 1fr; padding:6px 0;"><span><b>SoulX Pro</b></span><span>0.32~0.39</span><span>—</span><span>12초 렌더 741초</span></div>
+  </div>
+  <p class="note">지표는 입 크기만 잼 · 입술 모양(오므림·다묾)은 눈으로 판정 · 출처 docs/call-naturalness-criteria.md §3.1</p>
+  <div class="slide-num">6</div>
+</div>
+
+<!-- 7 · 속도 -->
+<div class="slide">
+  <div class="eyebrow">속도 · 실시간까지의 거리</div>
+  <div class="cols c3">
+    <div class="col"><span class="idx">Ditto (T4)</span><h3>초당 2.9장</h3><p class="small">실시간 기준 25장 · 첫 프레임 18초 · 논문 자가보고 TensorRT 45장은 4090급에서 재측정 필요</p></div>
+    <div class="col"><span class="idx">LatentSync (T4)</span><h3>6초 클립 178초</h3><p class="small">20단계 · 12초 클립은 15분 · fp16 강제해도 약 10% 단축</p></div>
+    <div class="col"><span class="idx">시험 중</span><h3>5단계 + DeepCache</h3><p class="small">T4 추론 6초 클립 164초 → 40초 · 결과는 8장</p></div>
+  </div>
+  <div class="slide-num">7</div>
+</div>
+
+<!-- 8 · 밤샘 시험 결과 -->
+<div class="slide dark">
+  <div class="eyebrow">밤샘 시험 결과 · LatentSync 줄인 단계 (Colab T4 · 6초 클립)</div>
+  <div class="body" style="gap:22px;">
+    <div class="title" style="font-size:34px;">3~8단계 + DeepCache도 20단계와 같은 지표<br>추론 4~6배 빠름 · 그래도 실시간은 멀음</div>
+    <video src="media/compare_ls_steps.mp4" style="width:100%; max-height:300px; background:#000;" controls muted loop playsinline preload="metadata"></video>
+    <div class="cols c4">
+      <div class="col"><span class="idx">20단계</span><h3>추론 164초</h3><p class="small">입-소리 상관 0.23 · 닫힘 10%</p></div>
+      <div class="col"><span class="idx">8단계 + DeepCache</span><h3>추론 39~51초</h3><p class="small">상관 0.25 · 닫힘 10%</p></div>
+      <div class="col"><span class="idx">5단계 + DeepCache</span><h3>추론 40초</h3><p class="small">상관 0.25 · 닫힘 10%</p></div>
+      <div class="col"><span class="idx">3단계 + DeepCache</span><h3>추론 25초</h3><p class="small">상관 0.27 · 닫힘 10% · 입 더 벌림 지표 0.0039로 가장 작음</p></div>
+    </div>
+  </div>
+  <p class="note">영상 1초당 추론 약 4.2초 (3단계) · 고정 시간 약 130초(모델 로딩·얼굴 찾기)는 별도 · 화질 눈 판정은 소연 몫</p>
+  <div class="slide-num">8</div>
+</div>
+
+<!-- 9 · 대화 -->
+<div class="slide">
+  <div class="eyebrow">대화 · 자동 시험 결과</div>
+  <div class="cols c4">
+    <div class="col"><span class="idx">안전 (Qwen 78건)</span><h3>AI 정직 12/12</h3><p class="small">붙잡기 11~12/12 · 화제 회피 없음 12/12 · 사적 정보 요구 0건</p></div>
+    <div class="col"><span class="idx">설렘</span><h3>부끄러움 10/12</h3><p class="small">스킨십 요청 받아치기 6/6 · 애교 요청 수락</p></div>
+    <div class="col"><span class="idx">언어</span><h3>한글 섞임 3/80 → 0/80</h3><p class="small">팬 마지막 말 뒤에 한 줄 덧붙임 · 저장된 대화는 그대로</p></div>
+    <div class="col"><span class="idx">기억 (Gemini 대체)</span><h3>3종 모두 6/6</h3><p class="small">지난 일 꺼냄 · 없는 기억 안 지어냄 · 기록 속 지시 무시</p></div>
+  </div>
+  <p class="note">기억 시험은 Cerebras 한도 소진으로 Qwen이 아닌 Gemini 3.5 Flash로 측정 · 실제 통화 경로 거치지 않고 프롬프트만 시험</p>
+  <div class="slide-num">9</div>
+</div>
+
+<!-- 10 · 결정 -->
+<div class="slide">
+  <div class="eyebrow">아침에 정할 것</div>
+  <div class="rows" style="font-size:18px;">
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">1</span><span><b>실시간용 GPU</b> · 4090급 임대(시간당 약 $0.34~0.89) 또는 Colab 유료 · 가입·카드는 소연</span></div>
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">2</span><span><b>Cerebras 결제 등록</b> · 안 하면 평가는 Gemini · 운영 전환은 영욱과 상의(대화가 미국 서버로 감)</span></div>
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">3</span><span><b>PR #40 draft 해제 시점</b> · 모델 확정 뒤 또는 지금</span></div>
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">5</span><span><b>실시간 대신 섞어 쓰기</b> · 자연스러운 Ditto+LatentSync는 미리 렌더한 반응 클립(맞장구)에, 실시간 Ditto는 나머지에 · 클립 그래프 PR(#16 계열) 활용</span></div>
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">4</span><span><b>관계 기억 저장(PR #41, draft)</b> · fancall 안에 팬×연습생별 저장 · 영욱과 보관 기간·삭제 정책 결정 · buppy는 마이그레이션과 호출만</span></div>
+  </div>
+  <div class="slide-num">10</div>
+</div>
+
+<!-- 11 · 10/29 눈 판정 -->
+<div class="slide dark">
+  <div class="eyebrow">10/29 낮 · 소연 눈 판정</div>
+  <div class="body" style="gap:18px;">
+    <div class="title" style="font-size:34px;">사진 한 장을 움직이는 방식은 전부 탈락<br>실제 사람 영상에 얼굴만 바꾼 것은 "확실히 자연스럽다"</div>
+    <div class="cols c4">
+      <div class="col"><span class="idx">Ditto (새 사진)</span><h3>탈락</h3><p class="small">"사진이 그냥 말하는 영상 같아, 입 어색"</p></div>
+      <div class="col"><span class="idx">Ditto + LatentSync</span><h3>차이 없음</h3><p class="small">나란히 봐도 "차이를 잘 모르겠어" → 조합 폐기</p></div>
+      <div class="col"><span class="idx">가상 카메라 흔들림</span><h3>반려</h3><p class="small">실측값(위치 5%)에 맞춰도 "너무 어색" · 숫자가 맞아도 눈에는 틀림</p></div>
+      <div class="col"><span class="idx">실제 영상 + 얼굴 교체</span><h3>통과</h3><p class="small">입·표정·머리는 진짜 사람 · 얼굴만 4번 · 머리색은 바탕 영상 것</p></div>
+    </div>
+  </div>
+  <p class="note">얼굴 교체 시험본은 리서치용 실제 영상이라 공개·보관하지 않음 · 이후 바탕은 우리 AI 연습생 영상 또는 동의한 사람의 녹화만</p>
+  <div class="slide-num">11</div>
+</div>
+
+<!-- 12 · 목소리·대화 (LiveKit 크레딧) -->
+<div class="slide">
+  <div class="eyebrow">목소리·대화 · LiveKit Startup Program 승인 (Scale 1년 + 크레딧 $17,000)</div>
+  <div class="cols c4">
+    <div class="col"><span class="idx">TTS 목소리</span><h3>Gemini TTS Puck</h3><p class="small">Fish 기본·한국어 후보 5종은 "아저씨·애·까불까불" 반려 · Puck "차분·다정" 지시문이 방향 · PR #42</p></div>
+    <div class="col"><span class="idx">LLM</span><h3>Gemma 4 31B</h3><p class="small">판정표 13건 중 12건 4/4 · 기억 꺼내기 0/4 → 프롬프트 한 줄로 4/4 · 첫 토큰 중앙 0.53초 · PR #43</p></div>
+    <div class="col"><span class="idx">TTS 첫 소리</span><h3>1.0~1.7초 (단발)</h3><p class="small">Fish low 1.0 · Inworld 1.2~1.4 · Gemini Puck 1.1~1.7 · 통화 스트림 미측정</p></div>
+    <div class="col"><span class="idx">크레딧 적용 범위</span><h3>Inference 경유만</h3><p class="small">ElevenLabs·Gemini 직접 호출은 해당 없음 · 소진 뒤 카드 과금</p></div>
+  </div>
+  <p class="note">LiveKit 프로젝트 AIdol(p_zhqir4va4xm) · 만료 2027-10-29</p>
+  <div class="slide-num">12</div>
+</div>
+
+<!-- 13 · 남은 길 -->
+<div class="slide">
+  <div class="eyebrow">남은 길 · 사람은 통화를 못 받는다는 전제</div>
+  <div class="rows" style="font-size:18px;">
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">A</span><span><b>미리 찍은 영상 바탕 + 얼굴 교체 + 실시간 입 재합성</b> · 바탕은 우리 AI 연습생 영상 또는 동의한 사람 녹화 · 입만 TTS에 맞춰 다시 그림 · 결과는 visual12-report 뒤쪽</span></div>
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">B</span><span><b>사진 한 장 확산 생성</b> · SoulX-FlashHead Lite(4090 96fps, Apache 2.0) · T4는 FlashAttention 미지원이라 AWS GPU에서 첫 시험</span></div>
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">·</span><span><b>화면 요소 합격선</b> · 영통 145편 12fps 분석 → <a href="visual12-report.html">visual12-report.html</a> · 시선 카메라 80% · 끄덕임 분당 27 · 깜빡임 분당 19 · 장면 2초</span></div>
+  </div>
+  <div class="slide-num">13</div>
+</div>
+
+<!-- 14 · 입 재합성 실측 (우리 AI 클립 바탕) -->
+<div class="slide dark">
+  <div class="eyebrow">10/29 밤 · 길 A 시험 · 우리 AI 연습생 클립 + 4번 얼굴 교체 바탕 + LatentSync 20단계 (Colab T4)</div>
+  <div class="body" style="gap:16px;">
+    <div class="title" style="font-size:32px;">립싱크는 TTS 음성에 달렸다 · Fish 한국어 0.46, Puck 한국어 0.11</div>
+    <div class="cols c3">
+      <div class="col"><video src="media/ai_ls_fishko.mp4" style="width:100%; background:#000;" controls muted playsinline preload="metadata"></video><p class="small">Fish(남학생) 한국어 · 입-소리 상관 0.46 · 소리 날 때 입 닫힘 47%</p></div>
+      <div class="col"><video src="media/ai_ls_puck_en.mp4" style="width:100%; background:#000;" controls muted playsinline preload="metadata"></video><p class="small">Gemini Puck 영어 · 상관 0.23 · 닫힘 41%</p></div>
+      <div class="col"><video src="media/ai_ls_puck_ko.mp4" style="width:100%; background:#000;" controls muted playsinline preload="metadata"></video><p class="small">Gemini Puck 한국어 · 상관 0.11 · 닫힘 59%</p></div>
+    </div>
+  </div>
+  <p class="note">왼쪽 바탕(얼굴 교체만) · 오른쪽 입 재합성 · 9초 처리 346~373초(T4, 실시간 아님) · 바탕 클립은 DEBUT 101 기숙사 토크(우리 생성 영상)</p>
+  <div class="slide-num">14</div>
+</div>
+
+</body>
+</html>
