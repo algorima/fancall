@@ -1,0 +1,235 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>영통 화면 요소 12fps 분석</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><style>
+  :root {
+    --ink: #141414;
+    --sub: #50555C;
+    --dim: #9A9FA6;
+    --line: #DCDEE1;
+    --soft: #F3F4F5;
+    --frame: #E3E5E8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+    background: #E9EAEC;
+    display: flex; flex-direction: column; align-items: center; gap: 40px; padding: 40px 0;
+    color: var(--ink); letter-spacing: -0.02em; word-break: keep-all;
+  }
+
+  /* 16:9 Slide */
+  .slide {
+    width: 1280px; height: 720px; flex-shrink: 0; background: #fff;
+    padding: 64px 88px 64px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .slide.dark { background: #111214; color: #F4F4F5; --sub: #A7ABB1; --dim: #6D7279; --line: #2D2F33; }
+  .slide.dark .title { color: #fff; }
+  .slide-num { position: absolute; bottom: 30px; right: 88px; font-size: 13px; font-weight: 500; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .eyebrow { font-size: 14px; font-weight: 500; color: var(--dim); letter-spacing: 0.02em; flex: none; }
+
+  .title { font-size: 44px; font-weight: 800; line-height: 1.28; letter-spacing: -0.04em; color: var(--ink); }
+  .title.xl { font-size: 76px; line-height: 1.16; letter-spacing: -0.05em; }
+  .title .thin { color: var(--dim); }
+  .body { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .text { font-size: 18px; line-height: 1.7; color: var(--sub); font-weight: 400; }
+  .text b { color: var(--ink); font-weight: 700; }
+  .slide.dark .text b { color: #fff; }
+  .small { font-size: 15px; color: var(--sub); line-height: 1.65; }
+  .idx { font-size: 14px; font-weight: 600; color: var(--dim); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+
+  /* 가는 선만 쓰는 목록 */
+  .rows > * { padding: 18px 0; border-top: 1px solid var(--line); }
+  .rows > *:last-child { border-bottom: 1px solid var(--line); }
+  .row { display: grid; grid-template-columns: 56px 1fr; align-items: baseline; font-size: 18px; line-height: 1.55; color: var(--ink); font-weight: 500; }
+  .row b { font-weight: 800; }
+
+  /* 열 구조 (카드 박스 없이 윗선만) */
+  .cols { display: grid; gap: 40px; }
+  .cols.c4 { grid-template-columns: repeat(4, 1fr); }
+  .cols.c3 { grid-template-columns: repeat(3, 1fr); }
+  .col { border-top: 1px solid var(--ink); padding-top: 18px; }
+  .col .idx { margin-bottom: 40px; display: block; }
+  .col h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 10px; line-height: 1.35; }
+
+  .note { font-size: 15px; color: var(--sub); line-height: 1.6; display: flex; gap: 10px; align-items: baseline; }
+  .note::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--ink); flex: none; transform: translateY(-2px); }
+  .slide.dark .note::before { background: #fff; }
+  .note b { color: var(--ink); }
+
+  /* 분할 */
+  .split { display: grid; grid-template-columns: 5fr 7fr; gap: 72px; align-items: center; flex: 1; min-height: 0; }
+  .split.even { grid-template-columns: 1fr 1fr; }
+  .left { display: flex; flex-direction: column; gap: 28px; }
+
+  /* 채팅 */
+  .chat { display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 82%; padding: 16px 20px; font-size: 16px; line-height: 1.6; border-radius: 16px; font-weight: 500; }
+  .msg small { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; opacity: .55; margin-bottom: 4px; }
+  .msg.me { align-self: flex-end; background: var(--ink); color: #fff; border-bottom-right-radius: 4px; }
+  .slide.dark .msg.me { background: #fff; color: #111; }
+  .msg.ai { align-self: flex-start; background: var(--soft); color: var(--ink); border-bottom-left-radius: 4px; }
+
+  /* 큰 단어 */
+  .big { font-size: 92px; font-weight: 800; letter-spacing: -0.05em; line-height: 1; margin: 34px 0 26px; }
+  .big small { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin-left: 6px; }
+  .big .thin { color: var(--dim); }
+
+  .statement { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 36px; }
+  .statement .title { font-size: 64px; line-height: 1.22; letter-spacing: -0.05em; }
+  .statement .small { margin-top: 28px; font-size: 18px; }
+
+  /* ===== 구분·번호 장치 모음 ===== */
+  .num { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 15px; font-weight: 800; letter-spacing: 0; }
+  .num.o { background: #fff; color: var(--ink); border: 1px solid var(--ink); }
+  .slide.dark .num { background: #fff; color: #111; }
+  .chip { display: inline-block; font-size: 14px; font-weight: 700; color: #fff; background: var(--ink); padding: 7px 14px; border-radius: 4px; letter-spacing: -0.01em; }
+  .pill { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--ink); border-radius: 999px; padding: 10px 20px 10px 12px; font-size: 18px; font-weight: 700; }
+  .pill .num { width: 26px; height: 26px; font-size: 12px; }
+  .box { background: #F8F9F9; border: 1px solid var(--line); border-radius: 6px; }
+  .ncard { display: flex; gap: 20px; align-items: flex-start; padding: 28px 30px; }
+  .ncard h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+  .kpi { padding: 28px 30px 30px; }
+  .kpi .idx { display: block; margin-bottom: 30px; }
+  .hl { background: linear-gradient(transparent 62%, #D9DCDF 62%); padding: 0 2px; }
+  .slide.dark .hl { background: linear-gradient(transparent 62%, #3A3D42 62%); }
+
+  /* 세로 타임라인 */
+  .tl { position: relative; display: flex; flex-direction: column; gap: 0; }
+  .tl::before { content: ""; position: absolute; left: 13px; top: 14px; bottom: 14px; width: 1px; background: var(--line); }
+  .tl .t { display: flex; gap: 22px; align-items: center; padding: 11px 0; font-size: 18px; line-height: 1.5; font-weight: 500; position: relative; }
+  .tl .t .num { width: 28px; height: 28px; font-size: 13px; }
+  .tl .t b { font-weight: 800; }
+
+  @media print {
+    body { background: #fff; gap: 0; padding: 0; }
+    .slide { page-break-after: always; page-break-inside: avoid; }
+    .slide:last-child { page-break-after: auto; }
+  }
+  @page { size: 1280px 720px; margin: 0; }
+
+table.t{width:100%;border-collapse:collapse;font-size:15px} table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left} table.t th{color:var(--sub);font-weight:500}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px} .grid8{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+</style></head><body>
+
+<div class="slide dark">
+  <div class="eyebrow">영상통화 자연스러움 · 실제 영통팬싸 화면 분석 · 2026-10-29</div>
+  <div class="title xl">화면에 보이는 것 전부, 12fps로 센 숫자</div>
+  <div class="text">유튜브 영통팬싸 56편 · 2.2시간 · 프레임마다 시선·머리·표정·손·장면 전환 기록</div>
+  <div class="note">생성 결과의 합격선 = 이 분포. 눈 판정은 소연, 숫자는 여기</div>
+  <div class="slide-num">1</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">데이터와 방법</div>
+  <div class="title">영상 56편, 프레임 96,277장</div>
+  <div class="rows">
+    <div class="row"><div class="idx">01</div><div class="text">입력: 10/26 리서치의 영통팬싸 유튜브 목록 재다운로드(360p). 얼굴이 60% 이상 잡힌 통화만 사용</div></div>
+    <div class="row"><div class="idx">02</div><div class="text">프레임마다(12fps): MediaPipe 얼굴 478점 → 머리 각도·홍채 위치(시선)·블렌드셰이프 13종, 손 검출, 밝기, 장면 전환(색 분포 거리), 소리 크기</div></div>
+    <div class="row"><div class="idx">03</div><div class="text">말함/들음: 소리 있음 + 입이 움직임(0.5초 창 jawOpen 표준편차 0.035 초과). 팬 목소리만 있는 구간은 들음</div></div>
+    <div class="row"><div class="idx">04</div><div class="text">시선: 통화별 홍채 위치 중앙값 기준 편차. 가로 0.18 초과 = 옆, 세로 +0.12 초과 = 화면 아래, 그 외 = 카메라. 깜빡임 프레임은 직전 값 유지, 0.5초 다수결</div></div>
+    <div class="row"><div class="idx">05</div><div class="text">장면: 말함↔들음·시선·컷·얼굴 크기 급변 경계로 자르고 1.5초 미만은 앞 장면에 합침</div></div>
+  </div>
+  <div class="note">한계: 한 화면에 팬과 아이돌이 같이 잡히면 큰 얼굴 하나만 봄 · "위/가림" 시선은 손이 눈을 가리는 경우가 섞임 · 소리는 팬·아이돌 구분 없음</div>
+  <div class="slide-num">2</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">통화 단위 분포 · 56편</div>
+  <div class="title">시선의 78%는 카메라, 끄덕임 분당 25, 깜빡임 분당 19</div>
+  <table class="t"><tr><th>항목</th><th>하위 25%</th><th>중앙값</th><th>상위 25%</th></tr><tr><td>통화 길이(초)</td><td>86.80</td><td>117.10</td><td>171.10</td></tr><tr><td>장면 수</td><td>33.25</td><td>45.50</td><td>57.25</td></tr><tr><td>장면 길이 중앙값(초)</td><td>1.92</td><td>2.04</td><td>2.17</td></tr><tr><td>아이돌 말하는 비율</td><td>0.15</td><td>0.22</td><td>0.30</td></tr><tr><td>깜빡임/분</td><td>15.20</td><td>19.30</td><td>24.27</td></tr><tr><td>끄덕임/분</td><td>20.32</td><td>27.50</td><td>34.62</td></tr><tr><td>컷 수</td><td>0.00</td><td>2.50</td><td>15.25</td></tr><tr><td>손 보이는 비율</td><td>0.20</td><td>0.33</td><td>0.54</td></tr><tr><td>시선: 카메라</td><td>0.66</td><td>0.79</td><td>0.86</td></tr><tr><td>시선: 화면 아래</td><td>0.02</td><td>0.06</td><td>0.12</td></tr><tr><td>시선: 옆</td><td>0.02</td><td>0.04</td><td>0.11</td></tr></table>
+  <div class="note">끄덕임 = pitch 속도 -25°/s 넘는 순간 수 · 컷 수 상위 25%는 편집된 영상</div>
+  <div class="slide-num">3</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">말할 때와 들을 때 · 장면 661개 vs 1999개</div>
+  <div class="title">들을 때 더 웃고, 시선은 더 자주 화면 아래로</div>
+  <table class="t"><tr><th>항목</th><th>말함</th><th>들음</th></tr><tr><td>장면 길이 중앙값(초)</td><td>1.83</td><td>2.17</td></tr><tr><td>시선 카메라 비율</td><td>0.82</td><td>0.70</td></tr><tr><td>시선 화면 아래 비율</td><td>0.06</td><td>0.10</td></tr><tr><td>시선 옆 비율</td><td>0.06</td><td>0.12</td></tr><tr><td>머리 흔들림(°, 장면 내 표준편차)</td><td>2.2</td><td>2.1</td></tr><tr><td>고개 숙임 pitch(°)</td><td>11.8</td><td>12.7</td></tr><tr><td>입 벌림 평균</td><td>0.185</td><td>0.104</td></tr><tr><td>웃음 평균</td><td>0.13</td><td>0.19</td></tr><tr><td>눈썹 올림</td><td>0.36</td><td>0.32</td></tr><tr><td>손 보이는 비율</td><td>0.36</td><td>0.41</td></tr><tr><td>손이 얼굴 근처</td><td>0.18</td><td>0.22</td></tr><tr><td>얼굴 크기(화면 비율)</td><td>0.105</td><td>0.097</td></tr></table>
+  <div class="slide-num">4</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">장면 종류 · 시간 비중</div>
+  <div class="title">통화 시간의 대부분은 "들으며 카메라 보기"</div>
+  <table class="t"><tr><th>상태</th><th>시선</th><th>손</th><th>시간 비중</th></tr><tr><td>들음</td><td>카메라</td><td>손없음</td><td>41.7%</td></tr><tr><td>들음</td><td>카메라</td><td>손</td><td>22.0%</td></tr><tr><td>말함</td><td>카메라</td><td>손없음</td><td>10.2%</td></tr><tr><td>말함</td><td>카메라</td><td>손</td><td>4.9%</td></tr><tr><td>들음</td><td>옆</td><td>손없음</td><td>4.3%</td></tr><tr><td>들음</td><td>화면 아래</td><td>손없음</td><td>3.7%</td></tr><tr><td>들음</td><td>옆</td><td>손</td><td>2.9%</td></tr><tr><td>들음</td><td>위/가림</td><td>손없음</td><td>2.6%</td></tr><tr><td>들음</td><td>화면 아래</td><td>손</td><td>2.5%</td></tr><tr><td>들음</td><td>위/가림</td><td>손</td><td>2.2%</td></tr><tr><td>말함</td><td>옆</td><td>손없음</td><td>0.8%</td></tr><tr><td>말함</td><td>화면 아래</td><td>손없음</td><td>0.6%</td></tr></table>
+  <div class="note">생성 시스템이 가장 오래 보여 줄 장면이 이것. 입보다 듣는 얼굴의 질이 체감을 좌우</div>
+  <div class="slide-num">5</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">대표 장면 키프레임 1 · 말할 때</div>
+  <div class="grid8"><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/camera/nohand · 1.9초 · pitch 11° yaw 1°<br>입 0.09 · 웃음 0.30 · 얼굴 13%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/camera/nohand · 1.9초 · pitch 12° yaw 9°<br>입 0.15 · 웃음 0.13 · 얼굴 7%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/camera/hand · 2.0초 · pitch 15° yaw -3°<br>입 0.13 · 웃음 0.00 · 얼굴 9%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/camera/hand · 2.0초 · pitch 15° yaw 3°<br>입 0.05 · 웃음 0.00 · 얼굴 8%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/screen/nohand · 1.8초 · pitch 13° yaw -3°<br>입 0.06 · 웃음 0.00 · 얼굴 15%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/screen/nohand · 1.8초 · pitch 7° yaw -1°<br>입 0.07 · 웃음 0.03 · 얼굴 14%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/screen/hand · 1.8초 · pitch 15° yaw -2°<br>입 0.15 · 웃음 0.04 · 얼굴 8%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/screen/hand · 1.8초 · pitch 15° yaw -1°<br>입 0.11 · 웃음 0.00 · 얼굴 19%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/side/nohand · 1.8초 · pitch 10° yaw -3°<br>입 0.29 · 웃음 0.00 · 얼굴 32%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/side/nohand · 1.8초 · pitch 17° yaw -3°<br>입 0.20 · 웃음 0.20 · 얼굴 15%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/side/hand · 1.8초 · pitch 10° yaw 15°<br>입 0.06 · 웃음 0.04 · 얼굴 7%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/side/hand · 1.8초 · pitch 13° yaw 32°<br>입 0.07 · 웃음 0.18 · 얼굴 24%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/up/nohand · 1.8초 · pitch 29° yaw -7°<br>입 0.25 · 웃음 0.45 · 얼굴 5%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/up/nohand · 1.8초 · pitch 12° yaw -1°<br>입 0.29 · 웃음 0.00 · 얼굴 30%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/up/hand · 1.8초 · pitch 18° yaw -6°<br>입 0.17 · 웃음 0.21 · 얼굴 31%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">speak/up/hand · 1.8초 · pitch 12° yaw -12°<br>입 0.24 · 웃음 0.62 · 얼굴 11%</div></div></div>
+  <div class="slide-num">6</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">대표 장면 키프레임 2 · 들을 때</div>
+  <div class="grid8"><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/camera/nohand · 2.6초 · pitch -2° yaw -10°<br>입 0.01 · 웃음 0.00 · 얼굴 8%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/camera/nohand · 2.6초 · pitch 17° yaw -0°<br>입 0.31 · 웃음 0.00 · 얼굴 43%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/camera/hand · 2.4초 · pitch 3° yaw -2°<br>입 0.05 · 웃음 0.00 · 얼굴 11%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/camera/hand · 2.4초 · pitch 18° yaw 0°<br>입 0.14 · 웃음 0.00 · 얼굴 38%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/screen/nohand · 2.0초 · pitch 6° yaw 11°<br>입 0.38 · 웃음 0.51 · 얼굴 20%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/screen/nohand · 2.0초 · pitch 10° yaw 2°<br>입 0.27 · 웃음 0.21 · 얼굴 10%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/screen/hand · 1.8초 · pitch 15° yaw -9°<br>입 0.27 · 웃음 0.27 · 얼굴 11%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/screen/hand · 1.8초 · pitch 6° yaw -4°<br>입 0.15 · 웃음 0.18 · 얼굴 12%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/side/nohand · 2.1초 · pitch 6° yaw 8°<br>입 0.05 · 웃음 0.01 · 얼굴 13%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/side/nohand · 2.1초 · pitch 14° yaw -3°<br>입 0.13 · 웃음 0.22 · 얼굴 4%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/side/hand · 2.0초 · pitch 17° yaw -17°<br>입 0.00 · 웃음 0.27 · 얼굴 4%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/side/hand · 2.1초 · pitch 0° yaw -19°<br>입 0.03 · 웃음 0.12 · 얼굴 13%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/up/nohand · 1.9초 · pitch 25° yaw -5°<br>입 0.20 · 웃음 0.52 · 얼굴 4%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/up/nohand · 1.9초 · pitch 15° yaw -10°<br>입 0.17 · 웃음 0.38 · 얼굴 12%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/up/hand · 2.1초 · pitch 19° yaw -3°<br>입 0.08 · 웃음 0.90 · 얼굴 4%</div></div><div class="ncard"><div class="box small" style="padding:18px 8px;text-align:center">프레임 비공개<br>(실제 영상)</div><div class="small">listen/up/hand · 2.1초 · pitch 16° yaw -11°<br>입 0.09 · 웃음 0.25 · 얼굴 7%</div></div></div>
+  <div class="slide-num">7</div>
+</div>
+
+
+<div class="slide dark">
+  <div class="eyebrow">생성으로 옮기기 · 전제</div>
+  <div class="title xl">사진 한 장을 움직이는 방식은 탈락, 남은 길은 둘</div>
+  <div class="cols c3">
+    <div class="col"><div class="big">A</div><div class="text">사람 영상 바탕 + 얼굴 교체 + 실시간 입 재합성</div><div class="small">머리·표정·손·몸은 진짜 사람(한 번 녹화). 얼굴은 4번으로 교체(오프라인). 입만 TTS 소리에 맞춰 실시간으로 다시 그림</div></div>
+    <div class="col"><div class="big">B</div><div class="text">사진 한 장에서 전부 생성 (확산 계열)</div><div class="small">SoulX-FlashHead Lite · LLIA · AVTR-1. 4090급 GPU에서 실시간 보고. "사진 느낌"을 벗어나는지는 눈 판정 필요</div></div>
+    <div class="col"><div class="big">×</div><div class="text">사진 1장 키포인트 방식</div><div class="small">Ditto · Simli · LivePortrait 계열. 10/28 눈 판정 "사진이 말하는 느낌"으로 탈락</div></div>
+  </div>
+  <div class="slide-num">8</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">요소별 생성 방법 · 길 A (사람 영상 바탕)</div>
+  <table class="t"><tr><th>화면 요소</th><th>실측 분포</th><th>어떻게 만드나</th><th>실시간 제약</th></tr>
+  <tr><td>머리 움직임·끄덕임</td><td>흔들림 1.9~2.0° · 끄덕임 분당 25</td><td>녹화 클립 그대로. 들음/말함·시선별 클립을 장면 표 비중대로 준비</td><td>없음 (재생)</td></tr>
+  <tr><td>시선</td><td>카메라 78% · 화면 아래 7% · 옆 4%</td><td>클립 선택 규칙: 기본 카메라, 팬이 길게 말할 때 화면 아래·옆 클립 섞기</td><td>없음</td></tr>
+  <tr><td>표정(웃음·눈썹)</td><td>들을 때 웃음 0.20 · 말할 때 0.16</td><td>클립 종류로 커버. 반응 클립(웃음·놀람)을 LLM 신호로 호출</td><td>클립 전환 ≤ 1프레임</td></tr>
+  <tr><td>입</td><td>말할 때 입 벌림 0.19</td><td>실시간 입 재합성. 후보 MuseTalk(30fps 보고) · LatentSync(품질 기준, 실시간 아님)</td><td>첫 프레임 ≤ 300ms, 25fps 유지가 관건</td></tr>
+  <tr><td>손</td><td>보이는 비율 27% · 얼굴 근처 소수</td><td>클립에 포함(하트·손 흔들기 반응 클립)</td><td>없음</td></tr>
+  <tr><td>얼굴 정체성</td><td>—</td><td>녹화 영상 전체를 4번 얼굴로 한 번 교체(insightface, M1에서 15초→1분)</td><td>없음 (오프라인)</td></tr>
+  <tr><td>깜빡임</td><td>분당 19</td><td>클립 그대로</td><td>없음</td></tr>
+  <tr><td>화질·구도</td><td>얼굴 8~17% · 세로 폰</td><td>녹화 때 폰 앞카메라 구도, 송출 때 360p·15fps 압축</td><td>없음</td></tr>
+  </table>
+  <div class="slide-num">9</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">시간 예산 · 팬 말 끝 → 연습생 입 움직임까지</div>
+  <div class="title">합격선 1.4초 안에 들어가려면 입 재합성에 남는 시간은 약 300ms</div>
+  <table class="t"><tr><th>단계</th><th>측정치</th><th>출처</th></tr>
+  <tr><td>말 끝 판정(Flux STT)</td><td>0.25~0.63초</td><td>10/23 통화 로그</td></tr>
+  <tr><td>LLM 첫 토큰(Gemma 4 31B, LiveKit Inference)</td><td>중앙 0.53초 · p90 0.80초</td><td>10/29 판정표 도구 124회</td></tr>
+  <tr><td>TTS 첫 소리(Gemini Puck / Fish low)</td><td>1.0~1.7초 단발 호출 · 통화 스트림 미측정</td><td>10/29 샘플</td></tr>
+  <tr><td>입 재합성 첫 프레임</td><td>미측정 (오늘 밤 Colab T4 시험)</td><td>—</td></tr>
+  <tr><td>합계(현재)</td><td>1.8초 넘음 → TTS 첫 소리를 0.4초대로 줄여야 함</td><td>—</td></tr>
+  </table>
+  <div class="note">실시간 수치는 4090급 GPU가 있어야 잰다 · AWS Activate 승인 시 g6(L4)·g5(A10G)에서 재측정</div>
+  <div class="slide-num">10</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">길 B · 사진 한 장 확산 생성 후보 (문헌·저장소 조사)</div>
+  <table class="t"><tr><th>모델</th><th>속도</th><th>조건</th><th>라이선스·공개</th></tr>
+  <tr><td>SoulX-FlashHead Lite (1.3B, Wan 기반)</td><td>4090 한 장 96fps · 25fps 3동시</td><td>단일 GPU 스트리밍 데모 있음</td><td>Apache 2.0 · 가중치 공개</td></tr>
+  <tr><td>AVTR-1 (153M 모션 + LivePortrait 렌더)</td><td>4060 Ti 1.2× · L4 0.99× · A100 2.2×</td><td>듣기 모션 포함, 25fps, 5프레임(200ms) 단위</td><td>모델 상업 가능(연매출 $10M 미만) · 렌더러는 비상업</td></tr>
+  <tr><td>LLIA (확산 일관성 모델)</td><td>4090D 45fps@512 · 첫 생성 215ms</td><td>말함/들음/대기 상태 전환</td><td>코드 미공개</td></tr>
+  <tr><td>EchoMimicV3-Flash</td><td>실시간 아님 (오프라인용)</td><td>12GB VRAM · 무료 T4에선 RAM 부족으로 실패(10/28)</td><td>Apache 2.0</td></tr>
+  </table>
+  <div class="note">AVTR-1은 렌더러가 LivePortrait 계열이라 "사진 느낌" 위험. 눈 판정 1순위는 SoulX-FlashHead Lite</div>
+  <div class="slide-num">11</div>
+</div>
+
+<div class="slide">
+  <div class="eyebrow">아침에 정할 것</div>
+  <div class="rows">
+    <div class="row"><div class="idx">01</div><div class="text">길 A 녹화 대상: 팀원 남자 1명 vs 외부 배우. 필요한 클립 종류는 5장 표 기준 (들음·카메라 60% 이상, 반응 클립 10여 종)</div></div>
+    <div class="row"><div class="idx">02</div><div class="text">입 재합성 결과 눈 판정 (MuseTalk / LatentSync 비교 영상, 되면)</div></div>
+    <div class="row"><div class="idx">03</div><div class="text">AWS Activate 승인 후 첫 GPU 시험 순서: SoulX Lite → MuseTalk 실시간 → AVTR-1</div></div>
+    <div class="row"><div class="idx">04</div><div class="text">TTS 첫 소리 단축: Gemini Puck 스트리밍 측정 vs Fish low. 통화 로그로 재기</div></div>
+  </div>
+  <div class="slide-num">12</div>
+</div>
+
+</body></html>

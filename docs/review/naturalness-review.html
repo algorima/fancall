@@ -241,5 +241,45 @@
   <div class="slide-num">10</div>
 </div>
 
+<!-- 11 · 10/29 눈 판정 -->
+<div class="slide dark">
+  <div class="eyebrow">10/29 낮 · 소연 눈 판정</div>
+  <div class="body" style="gap:18px;">
+    <div class="title" style="font-size:34px;">사진 한 장을 움직이는 방식은 전부 탈락<br>실제 사람 영상에 얼굴만 바꾼 것은 "확실히 자연스럽다"</div>
+    <div class="cols c4">
+      <div class="col"><span class="idx">Ditto (새 사진)</span><h3>탈락</h3><p class="small">"사진이 그냥 말하는 영상 같아, 입 어색"</p></div>
+      <div class="col"><span class="idx">Ditto + LatentSync</span><h3>차이 없음</h3><p class="small">나란히 봐도 "차이를 잘 모르겠어" → 조합 폐기</p></div>
+      <div class="col"><span class="idx">가상 카메라 흔들림</span><h3>반려</h3><p class="small">실측값(위치 5%)에 맞춰도 "너무 어색" · 숫자가 맞아도 눈에는 틀림</p></div>
+      <div class="col"><span class="idx">실제 영상 + 얼굴 교체</span><h3>통과</h3><p class="small">입·표정·머리는 진짜 사람 · 얼굴만 4번 · 머리색은 바탕 영상 것</p></div>
+    </div>
+  </div>
+  <p class="note">얼굴 교체 시험본은 리서치용 실제 영상이라 공개·보관하지 않음 · 이후 바탕은 우리 AI 연습생 영상 또는 동의한 사람의 녹화만</p>
+  <div class="slide-num">11</div>
+</div>
+
+<!-- 12 · 목소리·대화 (LiveKit 크레딧) -->
+<div class="slide">
+  <div class="eyebrow">목소리·대화 · LiveKit Startup Program 승인 (Scale 1년 + 크레딧 $17,000)</div>
+  <div class="cols c4">
+    <div class="col"><span class="idx">TTS 목소리</span><h3>Gemini TTS Puck</h3><p class="small">Fish 기본·한국어 후보 5종은 "아저씨·애·까불까불" 반려 · Puck "차분·다정" 지시문이 방향 · PR #42</p></div>
+    <div class="col"><span class="idx">LLM</span><h3>Gemma 4 31B</h3><p class="small">판정표 13건 중 12건 4/4 · 기억 꺼내기 0/4 → 프롬프트 한 줄로 4/4 · 첫 토큰 중앙 0.53초 · PR #43</p></div>
+    <div class="col"><span class="idx">TTS 첫 소리</span><h3>1.0~1.7초 (단발)</h3><p class="small">Fish low 1.0 · Inworld 1.2~1.4 · Gemini Puck 1.1~1.7 · 통화 스트림 미측정</p></div>
+    <div class="col"><span class="idx">크레딧 적용 범위</span><h3>Inference 경유만</h3><p class="small">ElevenLabs·Gemini 직접 호출은 해당 없음 · 소진 뒤 카드 과금</p></div>
+  </div>
+  <p class="note">LiveKit 프로젝트 AIdol(p_zhqir4va4xm) · 만료 2027-10-29</p>
+  <div class="slide-num">12</div>
+</div>
+
+<!-- 13 · 남은 길 -->
+<div class="slide">
+  <div class="eyebrow">남은 길 · 사람은 통화를 못 받는다는 전제</div>
+  <div class="rows" style="font-size:18px;">
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">A</span><span><b>미리 찍은 영상 바탕 + 얼굴 교체 + 실시간 입 재합성</b> · 바탕은 우리 AI 연습생 영상 또는 동의한 사람 녹화 · 입만 TTS에 맞춰 다시 그림 · 결과는 visual12-report 뒤쪽</span></div>
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">B</span><span><b>사진 한 장 확산 생성</b> · SoulX-FlashHead Lite(4090 96fps, Apache 2.0) · T4는 FlashAttention 미지원이라 AWS GPU에서 첫 시험</span></div>
+    <div class="row" style="grid-template-columns:60px 1fr; padding:14px 0;"><span class="num">·</span><span><b>화면 요소 합격선</b> · 영통 145편 12fps 분석 → <a href="visual12-report.html">visual12-report.html</a> · 시선 카메라 80% · 끄덕임 분당 27 · 깜빡임 분당 19 · 장면 2초</span></div>
+  </div>
+  <div class="slide-num">13</div>
+</div>
+
 </body>
 </html>
