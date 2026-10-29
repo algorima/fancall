@@ -35,8 +35,10 @@ from fancall.agent.reply_limit import limit_sentences
 from fancall.persona import DEFAULT_PERSONA, Persona
 from fancall.prompts import (
     OPENING_INSTRUCTIONS,
+    OPENING_MESSAGE_INSTRUCTIONS,
     PHONE_OPENING_INSTRUCTIONS,
     compose_instructions,
+    opening_user_input,
 )
 from fancall.schemas import AgentDispatchRequest
 from fancall.settings import (
@@ -70,21 +72,37 @@ class CompanionAgent(Agent):
         instructions: str = DEFAULT_SYSTEM_PROMPT,
         opening_instructions: str = OPENING_INSTRUCTIONS,
         opening_message: str | None = None,
+        language: str | None = None,
+        phone_call: bool = False,
         **kwargs,
     ):
         super().__init__(instructions=instructions, **kwargs)
         self.opening_instructions = opening_instructions
         self.opening_message = opening_message
+        self.language = language
+        self.phone_call = phone_call
 
     async def on_enter(self) -> None:
         """Called when agent becomes active in the session."""
         # 호스트 앱이 첫 멘트를 주면 LLM 없이 그대로 읽는다.
         # 팬도 "여보세요"를 겹쳐 말하기 쉬우니 영상 첫인사처럼 끼어들 수 있게 둔다
+        # 팬의 앱 언어를 알면 고정 첫 멘트도 그 언어로 옮겨 말해야 하므로 LLM을 거친다
+        user_input = opening_user_input(self.language, phone_call=self.phone_call)
         if self.opening_message:
-            self.session.say(self.opening_message)
+            if not self.language:
+                self.session.say(self.opening_message)
+                return
+            self.session.generate_reply(
+                user_input=user_input,
+                instructions=OPENING_MESSAGE_INSTRUCTIONS.format(
+                    opening_message=self.opening_message
+                ),
+            )
             return
         # 실제 통화처럼 캐릭터 말투로 먼저 인사한다 (영상: 소리·화면 확인, 전화: 여보세요)
-        self.session.generate_reply(instructions=self.opening_instructions)
+        self.session.generate_reply(
+            user_input=user_input, instructions=self.opening_instructions
+        )
 
     def llm_node(
         self,
@@ -267,6 +285,8 @@ async def entrypoint(
             PHONE_OPENING_INSTRUCTIONS if phone_call else OPENING_INSTRUCTIONS
         ),
         opening_message=metadata.opening_message,
+        language=metadata.language,
+        phone_call=phone_call,
     )
     await session.start(agent=agent, room=ctx.room)
     logger.info("Agent session started.")
