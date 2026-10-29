@@ -25,12 +25,13 @@ from livekit.agents import (
     cli,
     inference,
 )
-from livekit.agents.llm import LLM, ChatContext, ChatMessage, FallbackAdapter, Tool
+from livekit.agents.llm import ChatContext, ChatMessage, Tool
 from livekit.agents.types import NOT_GIVEN
-from livekit.plugins import anam, elevenlabs, lemonslice, openai, simli, tavus
+from livekit.plugins import anam, elevenlabs, lemonslice, simli, tavus
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
+from fancall.agent.cloud_llm import build_llm
 from fancall.agent.fast_reply import FastReplies
 from fancall.agent.hangup import end_call_when_fan_leaves
 from fancall.agent.language_tail import language_tail, with_language_tail
@@ -335,32 +336,6 @@ async def start_avatar(
         logger.exception("Avatar failed to start; continuing voice-only.")
 
 
-def _build_llm(model_settings: FancallModelSettings) -> LLM:
-    """The reply model, falling back to a second one when the first stalls."""
-    reasoning_effort = model_settings.openai_reasoning_effort or NOT_GIVEN
-    llms: list[LLM] = [
-        openai.LLM(
-            model=model_settings.openai_model,
-            base_url=model_settings.openai_base_url or NOT_GIVEN,
-            api_key=model_settings.openai_api_key or NOT_GIVEN,
-            reasoning_effort=reasoning_effort,
-        )
-    ]
-    if model_settings.openai_fallback_model:
-        llms.append(
-            openai.LLM(
-                model=model_settings.openai_fallback_model,
-                reasoning_effort=reasoning_effort,
-            )
-        )
-    # 첫 모델이 멈추면 대답이 통째로 늦어지므로 다른 모델로 넘어간다
-    return (
-        FallbackAdapter(llms, attempt_timeout=model_settings.openai_attempt_timeout)
-        if len(llms) > 1
-        else llms[0]
-    )
-
-
 async def entrypoint(
     ctx: JobContext,
     default_persona: Persona,
@@ -416,7 +391,7 @@ async def entrypoint(
     )
 
     # Initialize components
-    llm = _build_llm(model_settings)
+    llm = build_llm(model_settings)
     if voice_id:
         logger.info("Using ElevenLabs voice_id: %s", voice_id)
 
