@@ -30,6 +30,10 @@ class FancallModelSettings(BaseSettings):
     # LiveKit Cloud TTS as "provider/model:voice" (e.g. "inworld/inworld-tts-1.5-mini:Timothy").
     # Empty uses ElevenLabs with the persona's voice; set it when ElevenLabs is unavailable.
     tts_model: str = ""
+    # Language code for tts_model when the provider needs one (e.g. "ko", "en"). Empty: model default.
+    tts_language: str = ""
+    # Speaking-style instructions for providers that take them (Gemini TTS). Empty: none.
+    tts_instructions: str = ""
     # Fan speech recognition through LiveKit Cloud. Flux decides when the fan has
     # finished speaking, so the reply can start without an extra silence wait.
     stt_model: str = "deepgram/flux-general-en"

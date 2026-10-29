@@ -31,6 +31,7 @@ from livekit.plugins import anam, elevenlabs, lemonslice, openai, simli, tavus
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
+from fancall.agent.cloud_tts import build_cloud_tts
 from fancall.agent.fast_reply import FastReplies
 from fancall.agent.hangup import end_call_when_fan_leaves
 from fancall.agent.language_tail import language_tail, with_language_tail
@@ -421,7 +422,7 @@ async def entrypoint(
         logger.info("Using ElevenLabs voice_id: %s", voice_id)
 
     tts = (
-        inference.TTS(model_settings.tts_model)
+        build_cloud_tts(model_settings)
         if model_settings.tts_model
         else elevenlabs.TTS(
             api_key=elevenlabs_settings.api_key or NOT_GIVEN,
@@ -500,7 +501,7 @@ async def entrypoint(
     voice_key = ""
     if model_settings.tts_model:
         # 통화 TTS와 같은 연결을 쓰면 첫 인사가 미리 만들기 뒤에 줄을 선다 (33초 늦은 인사, 2026-10-23)
-        reaction_fetch = tts_pcm_fetch(inference.TTS(model_settings.tts_model))
+        reaction_fetch = tts_pcm_fetch(build_cloud_tts(model_settings))
         voice_key = model_settings.tts_model
     elif eleven_key:
         reaction_fetch = elevenlabs_pcm_fetch(
