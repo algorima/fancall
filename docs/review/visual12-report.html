@@ -203,6 +203,7 @@ table.t{width:100%;border-collapse:collapse;font-size:15px} table.t td,table.t t
   <tr><td>LLM 첫 토큰(Gemma 4 31B)</td><td>0.95~1.26초</td><td>0.56~1.01초</td><td>판정표 도구 단독 측정은 0.53초</td></tr>
   <tr><td>TTS 첫 소리</td><td>0.92~1.12초</td><td>0.65~0.97초</td><td>LAT tts_first_audio</td></tr>
   <tr><td>팬 말 끝 → 소리 들림(봇 측정)</td><td>4.5~6.4초</td><td>3.4~4.2초</td><td>봇 감지 여유 약 0.6초 포함 · 네트워크 왕복 포함</td></tr>
+  <tr><td>(3회차) Fish + Gemini 3.1 Flash Lite(Inference)</td><td colspan="2">LLM 0.80~1.23초 · TTS 0.63~0.83초 · 체감 0.6~2.2초</td><td>LLM을 작은 모델로 바꾸자 체감이 절반 이하 · 판정표 통과 여부는 11장 뒤 표</td></tr>
   <tr><td>입 재합성 첫 프레임</td><td colspan="2">미측정 (T4 오프라인만)</td><td>실시간 수치는 4090급 GPU 필요</td></tr>
   </table>
   <div class="note">합격선 1.4초에 들어가려면 LLM·TTS 각 0.4초대가 필요 · 후보: 더 작은 Inference 모델, TTS 스트리밍 입력, 첫 문장 미리 만들기(이미 있음) · AWS Activate 승인 시 L4·A10G에서 재측정</div>
@@ -219,6 +220,22 @@ table.t{width:100%;border-collapse:collapse;font-size:15px} table.t td,table.t t
   </table>
   <div class="note">AVTR-1은 렌더러가 LivePortrait 계열이라 "사진 느낌" 위험. 눈 판정 1순위는 SoulX-FlashHead Lite</div>
   <div class="slide-num">11</div>
+</div>
+
+
+<div class="slide">
+  <div class="eyebrow">길 A 설계 · 필요한 클립 종류 (장면 표 시간 비중에서)</div>
+  <div class="title">듣는 클립이 80%, 그중 카메라 응시가 63%</div>
+  <table class="t"><tr><th>클립 종류</th><th>시간 비중</th><th>길이 중앙</th><th>녹화 지시</th></tr>
+  <tr><td>듣기 · 카메라 · 손 없음</td><td>40%</td><td>2.4초</td><td>가만히 듣기, 작은 끄덕임 분당 25, 미소 섞기 · 길게 여러 벌</td></tr>
+  <tr><td>듣기 · 카메라 · 손 보임</td><td>23%</td><td>2.3초</td><td>턱 괴기·머리 만지기·하트 · 5~6종</td></tr>
+  <tr><td>말하기 · 카메라</td><td>15%</td><td>1.8~1.9초</td><td>입은 재합성하므로 아무 말이나 자연스럽게 · 손 있는 판 포함</td></tr>
+  <tr><td>듣기 · 화면 아래</td><td>7%</td><td>2.0초</td><td>폰 화면 내려다보기(팬 말 길 때)</td></tr>
+  <tr><td>듣기 · 옆</td><td>6%</td><td>1.9초</td><td>잠깐 옆 보기·웃음 터짐</td></tr>
+  <tr><td>반응(웃음 0.4 이상)</td><td>장면의 28%</td><td>2.1초</td><td>크게 웃기·놀라기·부끄러워하기 · LLM 신호로 호출</td></tr>
+  </table>
+  <div class="note">녹화 1회(약 10분)로 위 종류를 각 3~6벌 · 얼굴 교체는 오프라인 1회 · 전환은 같은 자세 끝점끼리(클립 그래프)</div>
+  <div class="slide-num">13</div>
 </div>
 
 <div class="slide">
