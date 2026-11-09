@@ -162,7 +162,29 @@ async def start_avatar(
         logger.exception("Simli avatar failed to start; continuing voice-only.")
 
 
-async def entrypoint(
+# The frontend stops ringing after 25 seconds; give the fan's join a margin.
+ANSWER_TIMEOUT_SECONDS = 60
+
+
+async def wait_for_answer(ctx: JobContext, timeout: float) -> bool:
+    """
+    Wait for the fan to join the room before the idol starts speaking.
+
+    The frontend dispatches the agent while the phone is still ringing so the
+    worker is ready when the fan answers. The opening greeting and the call
+    timer start only after the fan joins, and an unanswered call ends the job
+    here instead of letting the idol talk to an empty room.
+    """
+    try:
+        await asyncio.wait_for(ctx.wait_for_participant(), timeout=timeout)
+    except asyncio.TimeoutError:
+        logger.info("Call was not answered within %ss. Shutting down.", timeout)
+        ctx.shutdown(reason="Call was not answered")
+        return False
+    return True
+
+
+async def entrypoint(  # pylint: disable=too-many-locals
     ctx: JobContext,
     default_persona: Persona,
     livekit_settings: LiveKitSettings,
@@ -241,6 +263,14 @@ async def entrypoint(
     )
 
     session: AgentSession = AgentSession(llm=llm, tts=tts, stt=stt)
+
+    # 팬이 받은 뒤에 아바타를 띄운다. 먼저 띄우면 거절·부재중일 때도 대기 시간 내내
+    # Simli 세션이 열려 있다. 휴대폰으로 거는 통화는 팬이 방에 먼저 들어오지 않으므로
+    # 여기서 기다리지 않고 아래 dial_phone이 받을 때까지 기다린다
+    if not metadata.phone_number and not await wait_for_answer(
+        ctx, ANSWER_TIMEOUT_SECONDS
+    ):
+        return
 
     # 전화에는 화면이 없으므로 아바타를 띄우지 않는다
     if not phone_call:
