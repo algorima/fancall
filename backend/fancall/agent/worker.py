@@ -264,6 +264,14 @@ async def entrypoint(  # pylint: disable=too-many-locals
 
     session: AgentSession = AgentSession(llm=llm, tts=tts, stt=stt)
 
+    # 팬이 받은 뒤에 아바타를 띄운다. 먼저 띄우면 거절·부재중일 때도 대기 시간 내내
+    # Simli 세션이 열려 있다. 휴대폰으로 거는 통화는 팬이 방에 먼저 들어오지 않으므로
+    # 여기서 기다리지 않고 아래 dial_phone이 받을 때까지 기다린다
+    if not metadata.phone_number and not await wait_for_answer(
+        ctx, ANSWER_TIMEOUT_SECONDS
+    ):
+        return
+
     # 전화에는 화면이 없으므로 아바타를 띄우지 않는다
     if not phone_call:
         await start_avatar(
@@ -274,9 +282,6 @@ async def entrypoint(  # pylint: disable=too-many-locals
             simli_settings,
             call_settings,
         )
-
-    if not await wait_for_answer(ctx, ANSWER_TIMEOUT_SECONDS):
-        return
 
     # Compose instructions from merged system prompt (Context Composer pattern)
     instructions = compose_instructions(
