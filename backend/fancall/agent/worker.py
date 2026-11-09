@@ -28,6 +28,7 @@ from livekit.plugins import anam, elevenlabs, lemonslice, openai, simli, tavus
 from pydantic import ValidationError
 
 from fancall.agent.call_timer import run_call_timer
+from fancall.agent.hangup import end_call_when_fan_leaves
 from fancall.agent.quiet_nudge import QuietNudger
 from fancall.agent.reply_limit import limit_sentences
 from fancall.persona import DEFAULT_PERSONA, Persona
@@ -271,6 +272,8 @@ async def entrypoint(
 
     if not await wait_for_answer(ctx, ANSWER_TIMEOUT_SECONDS):
         return
+    # 팬이 끊으면 아바타까지 바로 내보낸다 (Simli 세션·시간이 남지 않게)
+    end_call_when_fan_leaves(ctx)
 
     await start_avatar(
         ctx,
