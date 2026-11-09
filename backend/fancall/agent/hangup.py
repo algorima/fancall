@@ -29,7 +29,10 @@ def end_call_when_fan_leaves(ctx: JobContext) -> None:
             return
         ended = True
         logger.info("Fan %s hung up; deleting the room.", participant.identity)
-        ctx.delete_room()
-        ctx.shutdown(reason="Fan hung up")
+        # shutdown 은 방 연결과 HTTP 세션을 바로 닫는다. 먼저 부르면 진행 중인 삭제
+        # 요청이 끊겨 아바타가 방에 남을 수 있으니 삭제가 끝난 뒤에 부른다
+        ctx.delete_room().add_done_callback(
+            lambda _deleted: ctx.shutdown(reason="Fan hung up")
+        )
 
     ctx.room.on("participant_disconnected", on_participant_disconnected)
