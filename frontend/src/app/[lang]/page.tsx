@@ -39,7 +39,9 @@ export default function FancallEntryPage() {
     const room = (async () => {
       const response = await repository.create({ variables: {} });
       const liveRoomId = response.data.id;
-      await repository.dispatchAgent(liveRoomId, {});
+      await repository.dispatchAgent(liveRoomId, {
+        language: i18n.language,
+      });
       router.prefetch(`/${i18n.language}/${liveRoomId}`);
       return liveRoomId;
     })();

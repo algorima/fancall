@@ -6,6 +6,7 @@ import uuid
 
 from aioia_core.auth import UserInfoProvider
 from aioia_core.errors import (
+    FORBIDDEN,
     INTERNAL_SERVER_ERROR,
     RESOURCE_CREATION_FAILED,
     RESOURCE_NOT_FOUND,
@@ -175,6 +176,7 @@ class LiveRoomRouter(
             response_model=DispatchResponse,
             summary="Dispatch Agent",
             responses={
+                403: {"model": ErrorResponse},
                 404: {"model": ErrorResponse},
                 500: {"model": ErrorResponse},
             },
@@ -184,6 +186,16 @@ class LiveRoomRouter(
             request: AgentDispatchRequest,
             repository: DatabaseLiveRoomRepository = Depends(self.get_repository_dep),
         ):
+            # 공개 라우트라 아무 번호로나 전화를 걸게 둘 수 없다. 전화는 호스트 앱이 검증 후 건다
+            if request.phone_number is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "detail": "Phone calls cannot be started from this endpoint",
+                        "code": FORBIDDEN,
+                    },
+                )
+
             # Verify room exists
             live_room = repository.get_by_id(room_id)
             if not live_room:

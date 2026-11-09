@@ -2,6 +2,7 @@
 Fancall settings
 """
 
+from openai.types.shared import ReasoningEffort
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
@@ -10,6 +11,9 @@ class FancallModelSettings(BaseSettings):
     """Fancall LLM/TTS model settings."""
 
     openai_model: str = "gpt-4o-mini"
+    # Unset keeps the plugin default. Thinking models need a low effort to answer
+    # fast enough for a live call. Allowed values follow the installed openai SDK
+    openai_reasoning_effort: ReasoningEffort = None
     elevenlabs_model: str = "eleven_flash_v2_5"
     stt_model: str = "gpt-4o-mini-transcribe"  # Phone calls only
     stt_language: str = "ko"  # Phone calls only
@@ -117,12 +121,15 @@ class LiveKitSettings(BaseSettings):
         api_key: LiveKit API key. Defaults to 'devkey' for local development.
         api_secret: LiveKit API secret. Defaults to 'secret' for local development.
         agent_name: Agent name for LiveKit dispatch. Defaults to 'fancall'.
+        sip_outbound_trunk_id: LiveKit SIP outbound trunk used to call phones.
+            Phone calls are disabled when unset.
     """
 
     url: str = "ws://localhost:7880"  # Local LiveKit dev server
     api_key: str = "devkey"  # Default API key for local dev
     api_secret: str = "secret"  # Default API secret for local dev
     agent_name: str = "fancall"  # Agent name for LiveKit dispatch
+    sip_outbound_trunk_id: str | None = None
 
     class Config:
         env_prefix = "LIVEKIT_"

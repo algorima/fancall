@@ -48,4 +48,6 @@ export interface AgentDispatchRequest {
   /** ElevenLabs voice ID. A Fish Audio voice ID will fail TTS; omit to use the default voice. */
   voiceId?: string | null;
   systemPrompt?: string | null;
+  /** Fan's app language (e.g. "en"); the idol greets in it before the fan speaks */
+  language?: string | null;
 }
